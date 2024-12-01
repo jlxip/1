@@ -6,6 +6,8 @@
 
 /* Incredibly common stuff */
 
+typedef unsigned char uint8_t;
+
 #define throw(X)                                                               \
     do {                                                                       \
         printf("--------------------\n"                                        \

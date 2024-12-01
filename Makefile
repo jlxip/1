@@ -1,6 +1,11 @@
 PROJNAME := 1
 CFLAGS += -ansi -Isrc/h
 
+ifdef DEBUG
+    OL := -g
+    NO_STRIP := pls
+endif
+
 # ---------------------
 
 # tbs 1.0.0-RC7

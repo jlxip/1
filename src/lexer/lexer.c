@@ -2,6 +2,8 @@
 #define CREATE_TOKEN_STRINGS
 #endif
 
+/* Hand-written lexer for this project */
+
 #include "lexer.h"
 #include <buffer.h>
 #include <error.h>

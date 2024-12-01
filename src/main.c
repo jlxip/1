@@ -2,10 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void test_lalr(void);
+
 int main(int argc, const char *argv[]) {
     FILE *file = NULL;
     long sz = 0;
     char *code = NULL;
+
+    test_lalr();
+
     if (argc < 2) {
         printf("Usage:   1 <path/to/main>\n"
                "Example: 1 src/main.1\n");
@@ -25,7 +30,7 @@ int main(int argc, const char *argv[]) {
     fread(code, sz, 1, file);
     fclose(file);
 
-    parse(code);
+    /*parse(code);*/
     free(code);
     return 0;
 }

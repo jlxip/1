@@ -28,13 +28,20 @@ static void buffer_2x(buffer buf) {
     if (X == NULL || X->signature != BUFFER_SIGNATURE)                         \
         throw("buffer_push called on uninitialized buffer");
 
-void _buffer_push(buffer buf, void *element) {
+void buffer_push(buffer buf, void *element) {
     char *target = NULL;
     buffer_assert(buf);
     if (buf->used == buf->alloc)
         buffer_2x(buf);
     target = (char *)buf->a + buf->used++ * buf->datasize;
     memcpy(target, element, buf->datasize);
+}
+
+void buffer_pop(buffer buf) {
+    buffer_assert(buf);
+    if (buf->used == 0)
+        throw("buffer_pop called on empty buffer");
+    buf->used--;
 }
 
 void buffer_shrink(buffer buf) {
@@ -56,4 +63,37 @@ void buffer_out(buffer *buf) {
 void buffer_sort(buffer buf, int (*comp)(const void *, const void *)) {
     buffer_assert(buf);
     qsort(buf->a, buf->used, buf->datasize, comp);
+}
+
+/* --- Getters --- */
+
+size_t buffer_num(buffer buf) {
+    buffer_assert(buf);
+    return buf->used;
+}
+
+size_t buffer_empty(buffer buf) { return buffer_num(buf) == 0; }
+
+void *_buffer_front(buffer buf) {
+    buffer_assert(buf);
+    if (buf->used == 0)
+        throw("buffer_front called on empty buffer");
+    return buf->a;
+}
+
+void *_buffer_back(buffer buf) {
+    buffer_assert(buf);
+    if (buf->used == 0)
+        throw("buffer_back called on empty buffer");
+    return (uint8_t *)buf->a + (buf->used - 1) * buf->datasize;
+}
+
+size_t buffer_has(buffer buf, void *element) {
+    size_t i;
+    for (i = 0; i < buf->used; ++i) {
+        const void *e = (uint8_t *)buf->a + i * buf->datasize;
+        if (0 == memcmp(e, element, buf->datasize))
+            return 1;
+    }
+    return 0;
 }
