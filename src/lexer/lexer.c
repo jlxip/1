@@ -5,7 +5,7 @@
 /* Hand-written lexer for this project */
 
 #include "lexer.h"
-#include <buffer.h>
+#include <ds/buffer.h>
 #include <error.h>
 
 size_t lineno = 0;

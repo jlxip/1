@@ -7,8 +7,9 @@
     has runtime libraries. Special thanks to Dragon Book.
 */
 
-#include <buffer.h>
 #include <common.h>
+#include <ds/buffer.h>
+#include <ds/set.h>
 
 typedef struct {
     size_t lhs;
@@ -42,7 +43,7 @@ void Grammar_augment(Grammar *g);
 void Grammar_out(Grammar *g);
 
 /* functions.c */
-buffer get_first(const Grammar *g, size_t symbol);
-/*buffer get_follow(const Grammar *g, size_t symbol);*/
+set get_first(const Grammar *g, size_t symbol);
+/*set get_follow(const Grammar *g, size_t symbol);*/
 
 #endif

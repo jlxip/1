@@ -1,5 +1,5 @@
-#include <buffer.h>
 #include <common.h>
+#include <ds/buffer.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -44,6 +44,20 @@ void buffer_pop(buffer buf) {
     buf->used--;
 }
 
+void buffer_remove(buffer buf, size_t idx) {
+    char *data = (char *)buf->a;
+    size_t src, dst;
+
+    buffer_assert(buf);
+    if (idx >= buf->used)
+        throw("invalid idx in call to buffer_remove");
+
+    dst = idx * buf->datasize;
+    src = dst + buf->datasize;
+    memmove(data + dst, data + src, buf->datasize);
+    buf->used--;
+}
+
 void buffer_shrink(buffer buf) {
     buffer_assert(buf);
     buf->a = realloc(buf->a, (buf->alloc = buf->used) * buf->datasize);
@@ -55,7 +69,7 @@ void buffer_out(buffer *buf) {
 
     free((*buf)->a);
     buffer_reset(*buf);
-    (*buf)->signature = 0xDEADBEEF;
+    (*buf)->signature = BUFFER_SIGNATURE;
     free(*buf);
     *buf = NULL;
 }
@@ -88,12 +102,12 @@ void *_buffer_back(buffer buf) {
     return (uint8_t *)buf->a + (buf->used - 1) * buf->datasize;
 }
 
-size_t buffer_has(buffer buf, void *element) {
+size_t buffer_find(buffer buf, void *element) {
     size_t i;
     for (i = 0; i < buf->used; ++i) {
         const void *e = (uint8_t *)buf->a + i * buf->datasize;
         if (0 == memcmp(e, element, buf->datasize))
-            return 1;
+            return i;
     }
-    return 0;
+    return BUFFER_NOT_FOUND;
 }

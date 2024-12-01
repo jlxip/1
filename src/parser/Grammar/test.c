@@ -28,22 +28,22 @@ enum TEST1 {
     TEST1_NT_B
 };
 
-#define TEST_NUMBUF(N) assert(buffer_num(buf) == (N))
+#define TEST_NUMBUF(N) assert(set_num(s) == (N))
 #define TEST_BUF(X)                                                            \
     do {                                                                       \
         x = (X);                                                               \
-        assert(buffer_has(buf, &x));                                           \
+        assert(set_has(s, &x));                                                \
     } while (0)
 #define TEST_NOTBUF(X)                                                         \
     do {                                                                       \
         x = (X);                                                               \
-        assert(!buffer_has(buf, &x));                                          \
+        assert(!set_has(s, &x));                                               \
     } while (0)
 
 void test_lalr(void) {
-    Grammar g;  /* recycled */
-    buffer buf; /* recycled */
-    size_t x;   /* recycled */
+    Grammar g; /* recycled */
+    set s;     /* recycled */
+    size_t x;  /* recycled */
 
     /*
         Test FIRST and FOLLOW: non-tricky grammar
@@ -68,35 +68,35 @@ void test_lalr(void) {
     Grammar_shrink(&g);
 
     /* FIRST(E) = { (, id } */
-    buf = get_first(&g, TEST0_NT_E);
+    s = get_first(&g, TEST0_NT_E);
     TEST_NUMBUF(2);
     TEST_BUF(TEST0_T_opar);
     TEST_BUF(TEST0_T_id);
-    buffer_out(&buf);
+    set_out(&s);
     /* FIRST(E') = { +, epsilon } */
-    buf = get_first(&g, TEST0_NT_Ep);
+    s = get_first(&g, TEST0_NT_Ep);
     TEST_NUMBUF(2);
     TEST_BUF(TEST0_T_plus);
     TEST_BUF(EPSILON);
-    buffer_out(&buf);
+    set_out(&s);
     /* FIRST(T) = { (, id } */
-    buf = get_first(&g, TEST0_NT_T);
+    s = get_first(&g, TEST0_NT_T);
     TEST_NUMBUF(2);
     TEST_BUF(TEST0_T_opar);
     TEST_BUF(TEST0_T_id);
-    buffer_out(&buf);
+    set_out(&s);
     /* FIRST(T') = { *, epsilon } */
-    buf = get_first(&g, TEST0_NT_Tp);
+    s = get_first(&g, TEST0_NT_Tp);
     TEST_NUMBUF(2);
     TEST_BUF(TEST0_T_star);
     TEST_BUF(EPSILON);
-    buffer_out(&buf);
+    set_out(&s);
     /* FIRST(F) = { (, id } */
-    buf = get_first(&g, TEST0_NT_F);
+    s = get_first(&g, TEST0_NT_F);
     TEST_NUMBUF(2);
     TEST_BUF(TEST0_T_opar);
     TEST_BUF(TEST0_T_id);
-    buffer_out(&buf);
+    set_out(&s);
     Grammar_out(&g);
 
     /*
@@ -115,24 +115,24 @@ void test_lalr(void) {
     Grammar_shrink(&g);
 
     /* FIRST(E) = { a, b } <- Tricky: no epsilon! */
-    buf = get_first(&g, TEST1_NT_E);
+    s = get_first(&g, TEST1_NT_E);
     TEST_NUMBUF(2);
     TEST_BUF(TEST1_T_a);
     TEST_BUF(TEST1_T_b);
     TEST_NOTBUF(EPSILON);
-    buffer_out(&buf);
+    set_out(&s);
     /* FIRST(A) = { a, epsilon } */
-    buf = get_first(&g, TEST1_NT_A);
+    s = get_first(&g, TEST1_NT_A);
     TEST_NUMBUF(2);
     TEST_BUF(TEST1_T_a);
     TEST_BUF(EPSILON);
-    buffer_out(&buf);
+    set_out(&s);
     /* FIRST(B) = { b } */
-    buf = get_first(&g, TEST1_NT_B);
+    s = get_first(&g, TEST1_NT_B);
     TEST_NUMBUF(1);
     TEST_BUF(TEST1_T_b);
     TEST_NOTBUF(EPSILON);
-    buffer_out(&buf);
+    set_out(&s);
     Grammar_out(&g);
 
     /*

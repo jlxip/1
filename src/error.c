@@ -1,4 +1,4 @@
-#include <buffer.h>
+#include <ds/buffer.h>
 #include <error.h>
 #include <stdio.h>
 #include <stdlib.h>

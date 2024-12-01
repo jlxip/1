@@ -1,7 +1,7 @@
 #ifndef TOKENS_H
 #define TOKENS_H
 
-#include <buffer.h>
+#include <ds/buffer.h>
 #include <stddef.h>
 
 /* https://realpython.com/python-keywords/ */
