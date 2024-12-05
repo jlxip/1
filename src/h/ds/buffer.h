@@ -18,7 +18,7 @@ typedef struct {
 typedef _buffer_t *buffer;
 
 void buffer_new(buffer *buf, size_t datasize);
-void buffer_push(buffer buf, void *element);
+void buffer_push(buffer buf, const void *element);
 void buffer_pop(buffer buf);
 void buffer_remove(buffer buf, size_t idx);
 void buffer_out(buffer *buf);
@@ -33,10 +33,10 @@ void buffer_sort(buffer buf, int (*comp)(const void *, const void *));
 /* Getters */
 size_t buffer_num(buffer buf);
 size_t buffer_empty(buffer buf);
-void *_buffer_front(buffer buf);
-#define buffer_front(B, T) (T *)_buffer_front(B)
-void *_buffer_back(buffer buf);
-#define buffer_back(B, T) (T *)_buffer_back(B)
-size_t buffer_find(buffer buf, void *element);
+size_t buffer_find(buffer buf, const void *element);
+void *_buffer_get(buffer buf, size_t idx);
+#define buffer_get(B, I, T) ((T *)_buffer_get(B, I))
+#define buffer_front(B, T) buffer_get(B, 0, T)
+#define buffer_back(B, T) buffer_get(B, buffer_num(B) - 1, T)
 
 #endif

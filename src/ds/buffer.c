@@ -28,7 +28,7 @@ static void buffer_2x(buffer buf) {
     if (X == NULL || X->signature != BUFFER_SIGNATURE)                         \
         throw("buffer_push called on uninitialized buffer");
 
-void buffer_push(buffer buf, void *element) {
+void buffer_push(buffer buf, const void *element) {
     char *target = NULL;
     buffer_assert(buf);
     if (buf->used == buf->alloc)
@@ -88,21 +88,7 @@ size_t buffer_num(buffer buf) {
 
 size_t buffer_empty(buffer buf) { return buffer_num(buf) == 0; }
 
-void *_buffer_front(buffer buf) {
-    buffer_assert(buf);
-    if (buf->used == 0)
-        throw("buffer_front called on empty buffer");
-    return buf->a;
-}
-
-void *_buffer_back(buffer buf) {
-    buffer_assert(buf);
-    if (buf->used == 0)
-        throw("buffer_back called on empty buffer");
-    return (uint8_t *)buf->a + (buf->used - 1) * buf->datasize;
-}
-
-size_t buffer_find(buffer buf, void *element) {
+size_t buffer_find(buffer buf, const void *element) {
     size_t i;
     for (i = 0; i < buf->used; ++i) {
         const void *e = (uint8_t *)buf->a + i * buf->datasize;
@@ -110,4 +96,11 @@ size_t buffer_find(buffer buf, void *element) {
             return i;
     }
     return BUFFER_NOT_FOUND;
+}
+
+void *_buffer_get(buffer buf, size_t idx) {
+    buffer_assert(buf);
+    if (buf->used <= idx)
+        throw("buffer_get called on bad index");
+    return (uint8_t *)buf->a + idx * buf->datasize;
 }
