@@ -23,7 +23,8 @@ void set_join(set s, const set other) {
 
 void set_remove(set s, const void *element) {
     size_t idx = buffer_find(s, element);
-    assert(idx != BUFFER_NOT_FOUND);
+    if (idx == BUFFER_NOT_FOUND)
+        return;
     buffer_remove(s, idx);
 }
 

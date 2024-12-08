@@ -22,8 +22,14 @@ void map_new(map *m, size_t ksize, size_t vsize) {
     (*m)->vsize = vsize;
 }
 
+#define map_assert(X)                                                          \
+    if ((X) == NULL)                                                           \
+        throw("called on uninitialized map");
+
 void map_add(map m, const void *k, const void *v) {
-    uint8_t *kv = malloc(m->ksize + m->vsize);
+    uint8_t *kv;
+    map_assert(m);
+    kv = malloc(m->ksize + m->vsize);
     memcpy(kv, k, m->ksize);
     memcpy(kv + m->ksize, v, m->vsize);
     buffer_push(m->b, kv);
@@ -31,18 +37,30 @@ void map_add(map m, const void *k, const void *v) {
 }
 
 void map_out(map *m) {
+    if (*m == NULL)
+        return; /* Fail quietly */
     buffer_out(&(*m)->b);
     free(*m);
     *m = NULL;
 }
-void map_shrink(map m) { buffer_shrink(m->b); }
+void map_shrink(map m) {
+    map_assert(m);
+    buffer_shrink(m->b);
+}
 
 /* --- Getters --- */
-size_t map_num(map m) { return buffer_num(m->b); }
-size_t map_empty(map m) { return buffer_empty(m->b); }
+size_t map_num(map m) {
+    map_assert(m);
+    return buffer_num(m->b);
+}
+size_t map_empty(map m) {
+    map_assert(m);
+    return buffer_empty(m->b);
+}
 
 static size_t map_find(map m, const void *k) {
     size_t i;
+    map_assert(m);
     for (i = 0; i < buffer_num(m->b); ++i) {
         const void *x = buffer_get(m->b, i, void);
         if (0 == memcmp(x, k, m->ksize))

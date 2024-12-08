@@ -4,6 +4,7 @@ CFLAGS += -ansi -Isrc/h
 ifdef DEBUG
     OL := -g
     NO_STRIP := pls
+    CFLAGS += -DDEBUG
 endif
 
 # ---------------------

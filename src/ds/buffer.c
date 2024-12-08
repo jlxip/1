@@ -26,7 +26,7 @@ static void buffer_2x(buffer buf) {
 
 #define buffer_assert(X)                                                       \
     if ((X) == NULL || (X)->signature != BUFFER_SIGNATURE)                     \
-        throw("buffer_push called on uninitialized buffer");
+        throw("called on uninitialized buffer");
 
 void buffer_push(buffer buf, const void *element) {
     char *target = NULL;
@@ -102,6 +102,7 @@ size_t buffer_empty(buffer buf) { return buffer_num(buf) == 0; }
 
 size_t buffer_find(buffer buf, const void *element) {
     size_t i;
+    buffer_assert(buf);
     for (i = 0; i < buf->used; ++i) {
         const void *e = (uint8_t *)buf->a + i * buf->datasize;
         if (0 == memcmp(e, element, buf->datasize))

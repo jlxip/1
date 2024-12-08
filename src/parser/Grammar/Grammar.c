@@ -9,6 +9,9 @@ void Grammar_new(Grammar *g, size_t ntok, size_t nsym, size_t start) {
     g->nsym = nsym;
     g->start = start;
     g->augmented = 0;
+    g->firsts = NULL;
+    g->epsilons = NULL;
+    g->follows = NULL;
 }
 
 void Grammar_add(Grammar *g, size_t lhs, size_t n, ...) {
@@ -66,4 +69,15 @@ void Grammar_out(Grammar *g) {
         set_out(v);
     }
     map_out(&g->firsts);
+
+    /* Free epsilons: map<size_t, size_t> */
+    map_out(&g->epsilons);
+
+    /* Free follows: map<size_t, set<size_t>> */
+    for (i = 0; i < buffer_num(g->follows->b); ++i) {
+        uint8_t *kv = buffer_get(g->follows->b, i, void);
+        set *v = (set *)(kv + g->follows->ksize);
+        set_out(v);
+    }
+    map_out(&g->follows);
 }

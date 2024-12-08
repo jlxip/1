@@ -30,15 +30,18 @@ enum TEST1 {
     TEST1_NSYM
 };
 
-#define GET_FIRSTS(X)                                                          \
+#define GETAMAP(X, M)                                                          \
     do {                                                                       \
         set *ptr;                                                              \
         x = (X);                                                               \
-        ptr = map_get(g.firsts, &x, set);                                      \
+        ptr = map_get((M), &x, set);                                           \
         if (!ptr)                                                              \
             throw("Not a thing: " #X);                                         \
         s = *ptr;                                                              \
     } while (0)
+#define GET_FIRSTS(X) GETAMAP(X, g.firsts)
+#define GET_FOLLOWS(X) GETAMAP(X, g.follows);
+
 #define TEST_NUMBUF(N) assert(set_num(s) == (N))
 #define TEST_BUF(X)                                                            \
     do {                                                                       \
@@ -58,7 +61,7 @@ void test_lalr(void) {
 
     /*
         Test FIRST and FOLLOW: non-tricky grammar
-        Source: Dragon Book, Example 4.17
+        Source: Dragon Book, Example 4.17 (Grammar 4.11)
 
         E  -> T E'
         E' -> + T E' | epsilon
@@ -78,6 +81,7 @@ void test_lalr(void) {
     Grammar_augment(&g);
     Grammar_shrink(&g);
     Grammar_compute_firsts(&g);
+    Grammar_compute_follows(&g);
 
     /* FIRST(E) = { (, id } */
     GET_FIRSTS(TEST0_NT_E);
@@ -104,6 +108,36 @@ void test_lalr(void) {
     TEST_NUMBUF(2);
     TEST_BUF(TEST0_T_opar);
     TEST_BUF(TEST0_T_id);
+
+    /* FOLLOW(E) = { $, ) } */
+    GET_FOLLOWS(TEST0_NT_E);
+    TEST_NUMBUF(2);
+    TEST_BUF(TEST0_NSYM);
+    TEST_BUF(TEST0_T_cpar);
+    /* FOLLOW(E') = { $, ) } */
+    GET_FOLLOWS(TEST0_NT_Ep);
+    TEST_NUMBUF(2);
+    TEST_BUF(TEST0_NSYM);
+    TEST_BUF(TEST0_T_cpar);
+    /* FOLLOW(T) = { +, $, ) } */
+    GET_FOLLOWS(TEST0_NT_T);
+    TEST_NUMBUF(3);
+    TEST_BUF(TEST0_T_plus);
+    TEST_BUF(TEST0_NSYM);
+    TEST_BUF(TEST0_T_cpar);
+    /* FOLLOW(T') = { +, $, ) } */
+    GET_FOLLOWS(TEST0_NT_Tp);
+    TEST_NUMBUF(3);
+    TEST_BUF(TEST0_T_plus);
+    TEST_BUF(TEST0_NSYM);
+    TEST_BUF(TEST0_T_cpar);
+    /* FOLLOW(F) = { *, +, $, ) } */
+    GET_FOLLOWS(TEST0_NT_F);
+    TEST_NUMBUF(4);
+    TEST_BUF(TEST0_T_star);
+    TEST_BUF(TEST0_T_plus);
+    TEST_BUF(TEST0_NSYM);
+    TEST_BUF(TEST0_T_cpar);
     Grammar_out(&g);
 
     /*
@@ -121,6 +155,7 @@ void test_lalr(void) {
     Grammar_augment(&g);
     Grammar_shrink(&g);
     Grammar_compute_firsts(&g);
+    Grammar_compute_follows(&g);
 
     /* FIRST(E) = { a, b } <- Tricky: no epsilon! */
     GET_FIRSTS(TEST1_NT_E);
@@ -138,6 +173,19 @@ void test_lalr(void) {
     TEST_NUMBUF(1);
     TEST_BUF(TEST1_T_b);
     TEST_NOTBUF(EPSILON);
+
+    /* FOLLOW(E) = { $ } */
+    GET_FOLLOWS(TEST1_NT_E);
+    TEST_NUMBUF(1);
+    TEST_BUF(TEST1_NSYM);
+    /* FOLLOW(A) = { b } */
+    GET_FOLLOWS(TEST1_NT_A);
+    TEST_NUMBUF(1);
+    TEST_BUF(TEST1_T_b);
+    /* FOLLOW(B) = { $ } */
+    GET_FOLLOWS(TEST1_NT_B);
+    TEST_NUMBUF(1);
+    TEST_BUF(TEST1_NSYM);
     Grammar_out(&g);
 
     /*
@@ -156,6 +204,7 @@ void test_lalr(void) {
     Grammar_augment(&g);
     Grammar_shrink(&g);
     Grammar_compute_firsts(&g);
+    Grammar_compute_follows(&g);
 
     /* FIRST(E) = { a, b, epsilon } */
     GET_FIRSTS(TEST1_NT_E);
@@ -173,6 +222,20 @@ void test_lalr(void) {
     TEST_NUMBUF(2);
     TEST_BUF(TEST1_T_b);
     TEST_BUF(EPSILON);
+
+    /* FOLLOW(E) = { $ } */
+    GET_FOLLOWS(TEST1_NT_E);
+    TEST_NUMBUF(1);
+    TEST_BUF(TEST1_NSYM);
+    /* FOLLOW(A) = { b, $ } */
+    GET_FOLLOWS(TEST1_NT_A);
+    TEST_NUMBUF(2);
+    TEST_BUF(TEST1_T_b);
+    TEST_BUF(TEST1_NSYM);
+    /* FOLLOW(B) = { $ } */
+    GET_FOLLOWS(TEST1_NT_B);
+    TEST_NUMBUF(1);
+    TEST_BUF(TEST1_NSYM);
     Grammar_out(&g);
 
     printf("NICE!\n");

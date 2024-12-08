@@ -20,11 +20,12 @@ typedef struct {
 #define EPSILON 0
 
 /*
-    Symbols are assumed to be terminals + N_TOKENS + non-terminals
-        - sym = 0             <==> Epsilon
-        - 0 < sym < N_TOKENS  <==> Terminal (token)
-        - sym = N_TOKENS      <==> Augmented start symbol
-        - sym > N_TOKENS      <==> Non-terminal
+    Symbols are assumed to be terminals + N_TOKENS + non-terminals + N_SYMBOLS
+        - sym = 0                 <==> Epsilon
+        - 0 < sym < N_TOKENS      <==> Terminal (token)
+        - sym = N_TOKENS          <==> Augmented start symbol
+        - N_TOKENS < sym < N_SYM  <==> Non-terminal
+        - sym = N_SYMBOLS         <==> $
 */
 /*#define IS_TERMINAL(G, X) ((X) < ((G)->ntok))
 #define IS_NON_TERMINAL(G, X) (!(IS_TERMINAL(X)))*/
@@ -35,8 +36,9 @@ typedef struct {
     size_t nsym;
     size_t start;
     size_t augmented;
-    map firsts; /* map<size_t, set<size_t>> */
-    /*map follows;*/
+    map firsts;   /* map<size_t, set<size_t>> */
+    map epsilons; /* map<size_t, size_t> */
+    map follows;  /* map<size_t, set<size_t>> */
 } Grammar;
 
 /* Grammar.c */
@@ -48,6 +50,6 @@ void Grammar_out(Grammar *g);
 
 /* functions.c */
 void Grammar_compute_firsts(Grammar *g);
-/*set get_follow(const Grammar *g, size_t symbol);*/
+void Grammar_compute_follows(Grammar *g);
 
 #endif
