@@ -9,11 +9,12 @@
 
 #include <common.h>
 #include <ds/buffer.h>
+#include <ds/map.h>
 #include <ds/set.h>
 
 typedef struct {
     size_t lhs;
-    buffer rhs;
+    buffer rhs; /* buffer<size_t> */
 } Production;
 
 #define EPSILON 0
@@ -25,25 +26,28 @@ typedef struct {
         - sym = N_TOKENS      <==> Augmented start symbol
         - sym > N_TOKENS      <==> Non-terminal
 */
-#define IS_TERMINAL(G, X) ((X) < ((G)->ntok))
-#define IS_NON_TERMINAL(G, X) (!(IS_TERMINAL(X)))
+/*#define IS_TERMINAL(G, X) ((X) < ((G)->ntok))
+#define IS_NON_TERMINAL(G, X) (!(IS_TERMINAL(X)))*/
 
 typedef struct {
-    buffer g;
+    buffer g; /* buffer<Production> */
     size_t ntok;
+    size_t nsym;
     size_t start;
     size_t augmented;
+    map firsts; /* map<size_t, set<size_t>> */
+    /*map follows;*/
 } Grammar;
 
 /* Grammar.c */
-void Grammar_new(Grammar *g, size_t ntok, size_t start);
+void Grammar_new(Grammar *g, size_t ntok, size_t nsym, size_t start);
 void Grammar_add(Grammar *g, size_t lhs, size_t n, ...);
 void Grammar_shrink(Grammar *g);
 void Grammar_augment(Grammar *g);
 void Grammar_out(Grammar *g);
 
 /* functions.c */
-set get_first(const Grammar *g, size_t symbol);
+void Grammar_compute_firsts(Grammar *g);
 /*set get_follow(const Grammar *g, size_t symbol);*/
 
 #endif

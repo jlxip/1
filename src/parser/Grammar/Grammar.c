@@ -2,10 +2,11 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
-void Grammar_new(Grammar *g, size_t ntok, size_t start) {
+void Grammar_new(Grammar *g, size_t ntok, size_t nsym, size_t start) {
     g->g = NULL;
     buffer_new(&g->g, sizeof(Production));
     g->ntok = ntok;
+    g->nsym = nsym;
     g->start = start;
     g->augmented = 0;
 }
@@ -49,12 +50,20 @@ void Grammar_augment(Grammar *g) {
 }
 
 void Grammar_out(Grammar *g) {
-    Production *x;
-
-    /* Free production rules */
-    for (buffer_iter(g->g, Production, x))
-        buffer_out(&x->rhs);
+    size_t i;
 
     /* Free my G */
+    for (i = 0; i < buffer_num(g->g); ++i) {
+        Production *prod = buffer_get(g->g, i, Production);
+        buffer_out(&prod->rhs);
+    }
     buffer_out(&g->g);
+
+    /* Free firsts: map<size_t, set<size_t>> */
+    for (i = 0; i < buffer_num(g->firsts->b); ++i) {
+        uint8_t *kv = buffer_get(g->firsts->b, i, void);
+        set *v = (set *)(kv + g->firsts->ksize);
+        set_out(v);
+    }
+    map_out(&g->firsts);
 }

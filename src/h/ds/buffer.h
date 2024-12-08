@@ -21,14 +21,10 @@ void buffer_new(buffer *buf, size_t datasize);
 void buffer_push(buffer buf, const void *element);
 void buffer_pop(buffer buf);
 void buffer_remove(buffer buf, size_t idx);
+buffer buffer_copy(const buffer buf);
 void buffer_out(buffer *buf);
 void buffer_shrink(buffer buf);
 void buffer_sort(buffer buf, int (*comp)(const void *, const void *));
-
-#define buffer_iter(X, T, x)                                                   \
-    x = (X)->a ? (T *)((X)->a) : NULL;                                         \
-    (x - (T *)((X)->a)) < (long int)((X)->used);                               \
-    ++x
 
 /* Getters */
 size_t buffer_num(buffer buf);

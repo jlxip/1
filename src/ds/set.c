@@ -14,12 +14,20 @@ void set_add(set s, const void *element) {
     buffer_push(s, element);
 }
 
+void set_join(set s, const set other) {
+    size_t i;
+    assert(s->datasize == other->datasize);
+    for (i = 0; i < buffer_num(other); ++i)
+        set_add(s, buffer_get(other, i, void));
+}
+
 void set_remove(set s, const void *element) {
     size_t idx = buffer_find(s, element);
     assert(idx != BUFFER_NOT_FOUND);
     buffer_remove(s, idx);
 }
 
+set set_copy(const set s) { return buffer_copy(s); }
 void set_out(set *s) { buffer_out(s); }
 void set_shrink(set s) { buffer_shrink(s); }
 

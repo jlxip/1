@@ -6,62 +6,47 @@
     Just like set, this is a terrible implementation of unordered_map
 */
 
-typedef union {
-    struct {
-        void *k, *v;
-    } data;
-    struct {
-        size_t k, v;
-    } sizes;
-} KV;
-
 void map_new(map *m, size_t ksize, size_t vsize) {
-    KV sizes;
-    sizes.sizes.k = ksize;
-    sizes.sizes.v = vsize;
-    buffer_new(m, sizeof(KV));
-    buffer_push(*m, &sizes);
+    /*
+        This does absolutely zero checks for alignment, and it WILL explode
+        if not taken into account when using it
+    */
+    if (m == NULL)
+        return;
+    if (*m != NULL)
+        throw("map_new called on non-NULL map");
+    *m = (map)malloc(sizeof(_map_t));
+    (*m)->b = NULL;
+    buffer_new(&(*m)->b, ksize + vsize);
+    (*m)->ksize = ksize;
+    (*m)->vsize = vsize;
 }
-
-static size_t map_getksize(map m) { return ((const KV *)m->a)->sizes.k; }
-static size_t map_getvsize(map m) { return ((const KV *)m->a)->sizes.v; }
 
 void map_add(map m, const void *k, const void *v) {
-    KV entry;
-    size_t ksize = map_getksize(m);
-    size_t vsize = map_getvsize(m);
-
-    entry.data.k = malloc(ksize);
-    entry.data.v = malloc(vsize);
-    memcpy(entry.data.k, k, ksize);
-    memcpy(entry.data.v, v, vsize);
-
-    buffer_push(m, &entry);
+    uint8_t *kv = malloc(m->ksize + m->vsize);
+    memcpy(kv, k, m->ksize);
+    memcpy(kv + m->ksize, v, m->vsize);
+    buffer_push(m->b, kv);
+    free(kv);
 }
 
-void map_out(map *m) { buffer_out(m); }
-void map_shrink(map m) { buffer_shrink(m); }
+void map_out(map *m) {
+    buffer_out(&(*m)->b);
+    free(*m);
+    *m = NULL;
+}
+void map_shrink(map m) { buffer_shrink(m->b); }
 
 /* --- Getters --- */
-size_t map_num(map m) { return buffer_num(m); }
-size_t map_empty(map m) { return buffer_empty(m); }
+size_t map_num(map m) { return buffer_num(m->b); }
+size_t map_empty(map m) { return buffer_empty(m->b); }
 
 static size_t map_find(map m, const void *k) {
-    const KV *sizes;
-    const KV *x;
-    size_t idx = 0;
-
-    assert(k);
-    for (buffer_iter(m, KV, x)) {
-        if (!idx) {
-            sizes = x;
-            ++idx;
-            continue;
-        }
-
-        if (0 == memcmp(x->data.k, k, sizes->sizes.k))
-            return idx;
-        ++idx;
+    size_t i;
+    for (i = 0; i < buffer_num(m->b); ++i) {
+        const void *x = buffer_get(m->b, i, void);
+        if (0 == memcmp(x, k, m->ksize))
+            return i;
     }
 
     return BUFFER_NOT_FOUND;
@@ -73,9 +58,7 @@ size_t map_has(map m, const void *k) {
 
 void *_map_get(map m, const void *k) {
     size_t idx = map_find(m, k);
-    KV *kv;
     if (idx == BUFFER_NOT_FOUND)
         return NULL;
-    kv = buffer_get(m, idx, KV);
-    return kv->data.v;
+    return buffer_get(m->b, idx, uint8_t) + m->ksize;
 }

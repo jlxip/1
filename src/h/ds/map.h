@@ -3,15 +3,18 @@
 
 #include <ds/buffer.h>
 
-typedef buffer map;
+typedef struct {
+    /* "Inherits" buffer if you know what I mean */
+    buffer b;
+    size_t ksize, vsize;
+} _map_t;
+typedef _map_t *map;
 
 void map_new(map *m, size_t ksize, size_t vsize);
 void map_add(map m, const void *k, const void *v);
 /*void map_remove(set s, void *k);*/
 void map_out(map *m);
 void map_shrink(map m);
-
-/*#define map_iter(X, T, x) buffer_iter(X, T, x)*/
 
 /* Getters */
 size_t map_num(map m);

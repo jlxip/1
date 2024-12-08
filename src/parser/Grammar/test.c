@@ -14,7 +14,8 @@ enum TEST0 {
     TEST0_NT_Ep,
     TEST0_NT_T,
     TEST0_NT_Tp,
-    TEST0_NT_F
+    TEST0_NT_F,
+    TEST0_NSYM
 };
 
 enum TEST1 {
@@ -25,9 +26,19 @@ enum TEST1 {
 
     TEST1_NT_E,
     TEST1_NT_A,
-    TEST1_NT_B
+    TEST1_NT_B,
+    TEST1_NSYM
 };
 
+#define GET_FIRSTS(X)                                                          \
+    do {                                                                       \
+        set *ptr;                                                              \
+        x = (X);                                                               \
+        ptr = map_get(g.firsts, &x, set);                                      \
+        if (!ptr)                                                              \
+            throw("Not a thing: " #X);                                         \
+        s = *ptr;                                                              \
+    } while (0)
 #define TEST_NUMBUF(N) assert(set_num(s) == (N))
 #define TEST_BUF(X)                                                            \
     do {                                                                       \
@@ -55,7 +66,7 @@ void test_lalr(void) {
         T' -> * F T' | epsilon
         F  -> ( E ) | id
     */
-    Grammar_new(&g, TEST0_T_NTOKENS, TEST0_NT_E);
+    Grammar_new(&g, TEST0_T_NTOKENS, TEST0_NSYM, TEST0_NT_E);
     Grammar_add(&g, TEST0_NT_E, 2, TEST0_NT_T, TEST0_NT_Ep);
     Grammar_add(&g, TEST0_NT_Ep, 3, TEST0_T_plus, TEST0_NT_T, TEST0_NT_Ep);
     Grammar_add(&g, TEST0_NT_Ep, EPSILON);
@@ -66,37 +77,33 @@ void test_lalr(void) {
     Grammar_add(&g, TEST0_NT_F, 1, TEST0_T_id);
     Grammar_augment(&g);
     Grammar_shrink(&g);
+    Grammar_compute_firsts(&g);
 
     /* FIRST(E) = { (, id } */
-    s = get_first(&g, TEST0_NT_E);
+    GET_FIRSTS(TEST0_NT_E);
     TEST_NUMBUF(2);
     TEST_BUF(TEST0_T_opar);
     TEST_BUF(TEST0_T_id);
-    set_out(&s);
     /* FIRST(E') = { +, epsilon } */
-    s = get_first(&g, TEST0_NT_Ep);
+    GET_FIRSTS(TEST0_NT_Ep);
     TEST_NUMBUF(2);
     TEST_BUF(TEST0_T_plus);
     TEST_BUF(EPSILON);
-    set_out(&s);
     /* FIRST(T) = { (, id } */
-    s = get_first(&g, TEST0_NT_T);
+    GET_FIRSTS(TEST0_NT_T);
     TEST_NUMBUF(2);
     TEST_BUF(TEST0_T_opar);
     TEST_BUF(TEST0_T_id);
-    set_out(&s);
     /* FIRST(T') = { *, epsilon } */
-    s = get_first(&g, TEST0_NT_Tp);
+    GET_FIRSTS(TEST0_NT_Tp);
     TEST_NUMBUF(2);
     TEST_BUF(TEST0_T_star);
     TEST_BUF(EPSILON);
-    set_out(&s);
     /* FIRST(F) = { (, id } */
-    s = get_first(&g, TEST0_NT_F);
+    GET_FIRSTS(TEST0_NT_F);
     TEST_NUMBUF(2);
     TEST_BUF(TEST0_T_opar);
     TEST_BUF(TEST0_T_id);
-    set_out(&s);
     Grammar_out(&g);
 
     /*
@@ -106,33 +113,31 @@ void test_lalr(void) {
         A -> a | epsilon
         B -> b
     */
-    Grammar_new(&g, TEST1_T_NTOKENS, TEST1_NT_E);
+    Grammar_new(&g, TEST1_T_NTOKENS, TEST1_NSYM, TEST1_NT_E);
     Grammar_add(&g, TEST1_NT_E, 2, TEST1_NT_A, TEST1_NT_B);
     Grammar_add(&g, TEST1_NT_A, 1, TEST1_T_a);
     Grammar_add(&g, TEST1_NT_A, EPSILON);
     Grammar_add(&g, TEST1_NT_B, 1, TEST1_T_b);
     Grammar_augment(&g);
     Grammar_shrink(&g);
+    Grammar_compute_firsts(&g);
 
     /* FIRST(E) = { a, b } <- Tricky: no epsilon! */
-    s = get_first(&g, TEST1_NT_E);
+    GET_FIRSTS(TEST1_NT_E);
     TEST_NUMBUF(2);
     TEST_BUF(TEST1_T_a);
     TEST_BUF(TEST1_T_b);
     TEST_NOTBUF(EPSILON);
-    set_out(&s);
     /* FIRST(A) = { a, epsilon } */
-    s = get_first(&g, TEST1_NT_A);
+    GET_FIRSTS(TEST1_NT_A);
     TEST_NUMBUF(2);
     TEST_BUF(TEST1_T_a);
     TEST_BUF(EPSILON);
-    set_out(&s);
     /* FIRST(B) = { b } */
-    s = get_first(&g, TEST1_NT_B);
+    GET_FIRSTS(TEST1_NT_B);
     TEST_NUMBUF(1);
     TEST_BUF(TEST1_T_b);
     TEST_NOTBUF(EPSILON);
-    set_out(&s);
     Grammar_out(&g);
 
     /*
@@ -142,7 +147,7 @@ void test_lalr(void) {
         A -> a | epsilon
         B -> b | epsilon
     */
-    Grammar_new(&g, TEST1_T_NTOKENS, TEST1_NT_E);
+    Grammar_new(&g, TEST1_T_NTOKENS, TEST1_NSYM, TEST1_NT_E);
     Grammar_add(&g, TEST1_NT_E, 2, TEST1_NT_A, TEST1_NT_B);
     Grammar_add(&g, TEST1_NT_A, 1, TEST1_T_a);
     Grammar_add(&g, TEST1_NT_A, EPSILON);
@@ -150,6 +155,24 @@ void test_lalr(void) {
     Grammar_add(&g, TEST1_NT_B, EPSILON);
     Grammar_augment(&g);
     Grammar_shrink(&g);
+    Grammar_compute_firsts(&g);
+
+    /* FIRST(E) = { a, b, epsilon } */
+    GET_FIRSTS(TEST1_NT_E);
+    TEST_NUMBUF(3);
+    TEST_BUF(TEST1_T_a);
+    TEST_BUF(TEST1_T_b);
+    TEST_BUF(EPSILON);
+    /* FIRST(A) = { a, epsilon } */
+    GET_FIRSTS(TEST1_NT_A);
+    TEST_NUMBUF(2);
+    TEST_BUF(TEST1_T_a);
+    TEST_BUF(EPSILON);
+    /* FIRST(B) = { b, epsilon } */
+    GET_FIRSTS(TEST1_NT_B);
+    TEST_NUMBUF(2);
+    TEST_BUF(TEST1_T_b);
+    TEST_BUF(EPSILON);
     Grammar_out(&g);
 
     printf("NICE!\n");

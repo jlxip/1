@@ -18,7 +18,7 @@ int sort_by_line(const void *va, const void *vb) {
 
 size_t print_all_errors(void) {
     size_t any = 0;
-    Error *x = NULL;
+    size_t i;
 
     buffer_shrink(errors);
 
@@ -26,7 +26,8 @@ size_t print_all_errors(void) {
     buffer_sort(errors, sort_by_line);
 
     /* Print all errors */
-    for (buffer_iter(errors, Error, x)) {
+    for (i = 0; i < buffer_num(errors); ++i) {
+        Error *x = buffer_get(errors, i, Error);
         printf("ERROR: L%lu: %s\n", x->line, x->msg);
         free(x->msg);
         any = 1;
