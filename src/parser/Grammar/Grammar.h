@@ -27,8 +27,8 @@ typedef struct {
         - N_TOKENS < sym < N_SYM  <==> Non-terminal
         - sym = N_SYMBOLS         <==> $
 */
-/*#define IS_TERMINAL(G, X) ((X) < ((G)->ntok))
-#define IS_NON_TERMINAL(G, X) (!(IS_TERMINAL(X)))*/
+#define IS_TERMINAL(G, X) ((X) < ((G)->ntok))
+#define IS_NON_TERMINAL(G, X) (!(IS_TERMINAL(X)))
 
 typedef struct {
     buffer g; /* buffer<Production> */
@@ -41,6 +41,15 @@ typedef struct {
     map follows;  /* map<size_t, set<size_t>> */
 } Grammar;
 
+/* LR(1) item */
+typedef struct {
+    size_t prod; /* index for Grammar.g */
+    size_t dot;  /* position before symbol in rhs */
+    set look;    /* second component, lookahead symbols: set<size_t> */
+} Item;
+/* Value of "dot" when it's at the end of the production */
+#define END_OF_PRODUCTION (~0ul)
+
 /* Grammar.c */
 void Grammar_new(Grammar *g, size_t ntok, size_t nsym, size_t start);
 void Grammar_add(Grammar *g, size_t lhs, size_t n, ...);
@@ -48,8 +57,10 @@ void Grammar_shrink(Grammar *g);
 void Grammar_augment(Grammar *g);
 void Grammar_out(Grammar *g);
 
-/* functions.c */
+/* functions */
 void Grammar_compute_firsts(Grammar *g);
+set Grammar_first_many(const Grammar *g, const buffer syms);
 void Grammar_compute_follows(Grammar *g);
+set Grammar_closure(const Grammar *g, const Item *item);
 
 #endif

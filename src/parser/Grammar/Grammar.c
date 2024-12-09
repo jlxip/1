@@ -63,21 +63,26 @@ void Grammar_out(Grammar *g) {
     buffer_out(&g->g);
 
     /* Free firsts: map<size_t, set<size_t>> */
-    for (i = 0; i < buffer_num(g->firsts->b); ++i) {
-        uint8_t *kv = buffer_get(g->firsts->b, i, void);
-        set *v = (set *)(kv + g->firsts->ksize);
-        set_out(v);
+    if (g->firsts) {
+        for (i = 0; i < buffer_num(g->firsts->b); ++i) {
+            uint8_t *kv = buffer_get(g->firsts->b, i, void);
+            set *v = (set *)(kv + g->firsts->ksize);
+            set_out(v);
+        }
+        map_out(&g->firsts);
     }
-    map_out(&g->firsts);
 
     /* Free epsilons: map<size_t, size_t> */
-    map_out(&g->epsilons);
+    if (g->epsilons)
+        map_out(&g->epsilons);
 
     /* Free follows: map<size_t, set<size_t>> */
-    for (i = 0; i < buffer_num(g->follows->b); ++i) {
-        uint8_t *kv = buffer_get(g->follows->b, i, void);
-        set *v = (set *)(kv + g->follows->ksize);
-        set_out(v);
+    if (g->follows) {
+        for (i = 0; i < buffer_num(g->follows->b); ++i) {
+            uint8_t *kv = buffer_get(g->follows->b, i, void);
+            set *v = (set *)(kv + g->follows->ksize);
+            set_out(v);
+        }
+        map_out(&g->follows);
     }
-    map_out(&g->follows);
 }
