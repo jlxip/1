@@ -65,21 +65,10 @@ enum TEST2 {
         assert(!set_has(s, &x));                                               \
     } while (0)
 
-#define TEST_NUMLOOK(N) assert(set_num(item.look) == (N))
-#define TEST_HASLOOK(X)                                                        \
+#define TEST_ITEM                                                              \
     do {                                                                       \
-        x = (X);                                                               \
-        assert(set_has(item.look, &x));                                        \
-    } while (0)
-
-#define RECYCLE_SET_CLOSURE                                                    \
-    do {                                                                       \
-        size_t i;                                                              \
-        for (i = 0; i < set_num(s); ++i) {                                     \
-            Item *aux = buffer_get(s, i, Item);                                \
-            set_out(&aux->look);                                               \
-        }                                                                      \
-        set_out(&s);                                                           \
+        assert(set_has(s, &item));                                             \
+        destroy_item(&item);                                                   \
     } while (0)
 
 void test_lalr(void) {
@@ -291,44 +280,23 @@ void test_lalr(void) {
             C  -> ·cC, c/d
             C  -> ·d, c/d
     */
-    item.prod = 3; /* Augmented start */
-    item.dot = 0;
-    item.look = NULL;
-    set_new(&item.look, sizeof(size_t));
-    x = TEST2_NSYM; /* $ */
-    set_add(item.look, &x);
+    item = Item_new(3 /* S' -> S */, 0 /* ·S */, 1, TEST2_NSYM /* $ */);
     s = Grammar_closure(&g, &item);
-    set_out(&item.look);
     TEST_NUM(4);
-    /* Hardcoded item index due to bad set implementation */
     /* Hardcoded prod index due to order in Grammar_add above */
     /* S' -> ·S, $ */
-    item = *buffer_get(s, 0, Item);
-    assert(item.prod == 3); /* Augmented start */
-    assert(item.dot == 0);
-    TEST_NUMLOOK(1);
-    TEST_HASLOOK(TEST2_NSYM);
+    /* Item already set */
+    TEST_ITEM;
     /* S -> ·CC, $ */
-    item = *buffer_get(s, 1, Item);
-    assert(item.prod == 0);
-    assert(item.dot == 0);
-    TEST_NUMLOOK(1);
-    TEST_HASLOOK(TEST2_NSYM);
+    item = Item_new(0 /* S -> CC */, 0 /* ·CC */, 1, TEST2_NSYM /* $ */);
+    TEST_ITEM;
     /* C -> ·cC, c/d */
-    item = *buffer_get(s, 2, Item);
-    assert(item.prod == 1);
-    assert(item.dot == 0);
-    TEST_NUMLOOK(2);
-    TEST_HASLOOK(TEST2_T_c);
-    TEST_HASLOOK(TEST2_T_d);
+    item = Item_new(1 /* C -> cC */, 0 /* ·cC */, 2, TEST2_T_c, TEST2_T_d);
+    TEST_ITEM;
     /* C -> ·d, c/d */
-    item = *buffer_get(s, 3, Item);
-    assert(item.prod == 2);
-    assert(item.dot == 0);
-    TEST_NUMLOOK(2);
-    TEST_HASLOOK(TEST2_T_c);
-    TEST_HASLOOK(TEST2_T_d);
-    RECYCLE_SET_CLOSURE;
+    item = Item_new(2 /* C -> d */, 0 /* ·d */, 2, TEST2_T_c, TEST2_T_d);
+    TEST_ITEM;
+    set_out(&s);
 
     /*
         A bit more tricky
@@ -338,39 +306,19 @@ void test_lalr(void) {
             C -> ·cC, c/d <- Tricky, must perform FIRST(epsilon c/d)
             C -> ·d, c/d
     */
-    item.prod = 1; /* order in Grammar_add above */
-    item.dot = 1;
-    item.look = NULL;
-    set_new(&item.look, sizeof(size_t));
-    x = TEST2_T_c;
-    set_add(item.look, &x);
-    x = TEST2_T_d;
-    set_add(item.look, &x);
+    item = Item_new(1 /* C -> cC */, 1 /* c·C */, 2, TEST2_T_c, TEST2_T_d);
     s = Grammar_closure(&g, &item);
-    set_out(&item.look);
     TEST_NUM(3);
     /* C -> c·C, c/d */
-    item = *buffer_get(s, 0, Item);
-    assert(item.prod == 1);
-    assert(item.dot == 1);
-    TEST_NUMLOOK(2);
-    TEST_HASLOOK(TEST2_T_c);
-    TEST_HASLOOK(TEST2_T_d);
+    /* Item already set */
+    TEST_ITEM;
     /* C -> ·cC, c/d */
-    item = *buffer_get(s, 1, Item);
-    assert(item.prod == 1);
-    assert(item.dot == 0);
-    TEST_NUMLOOK(2);
-    TEST_HASLOOK(TEST2_T_c);
-    TEST_HASLOOK(TEST2_T_d);
+    item = Item_new(1 /* C -> cC */, 0 /* ·cC */, 2, TEST2_T_c, TEST2_T_d);
+    TEST_ITEM;
     /* C -> ·d, c/d */
-    item = *buffer_get(s, 2, Item);
-    assert(item.prod == 2);
-    assert(item.dot == 0);
-    TEST_NUMLOOK(2);
-    TEST_HASLOOK(TEST2_T_c);
-    TEST_HASLOOK(TEST2_T_d);
-    RECYCLE_SET_CLOSURE;
+    item = Item_new(2 /* C -> d */, 0 /* ·d */, 2, TEST2_T_c, TEST2_T_d);
+    TEST_ITEM;
+    set_out(&s);
     Grammar_out(&g);
 
     printf("NICE!\n");

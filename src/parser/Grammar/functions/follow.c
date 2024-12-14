@@ -35,13 +35,13 @@ static void compute_derives_to_epsilon(Grammar *g, size_t sym) {
 
 static void rec_compute_follow(Grammar *g, size_t sym, map cache, set stack) {
     size_t iprod;
-    set ret = NULL;
+    set ret = NULL; /* set<size_t> */
 
     if (map_has(cache, &sym) || set_has(stack, &sym))
         return;
 
     set_add(stack, &sym);
-    set_new(&ret, sizeof(size_t));
+    set_new_size_t(&ret);
 
     /* Start symbol includes $ */
     if (sym == g->start)
@@ -86,7 +86,7 @@ static void rec_compute_follow(Grammar *g, size_t sym, map cache, set stack) {
                 FOLLOW(B) must include FIRST(X) - { epsilon }
             */
             copy = set_copy(*map_get(g->firsts, &follow, set));
-            set_remove(copy, &EEPSILON);
+            set_remove_if_there(copy, &EEPSILON);
             set_join(ret, copy);
             set_out(&copy);
 
@@ -115,21 +115,24 @@ static void rec_compute_follow(Grammar *g, size_t sym, map cache, set stack) {
 
     /* Save this result */
     map_add(cache, &sym, &ret);
+    set_out(&ret);
     set_remove(stack, &sym);
 }
 
 void Grammar_compute_follows(Grammar *g) {
-    set stack = NULL;
+    set stack = NULL; /* set<size_t> */
     size_t i;
 
     if (map_empty(g->firsts))
         throw("tried to call compute_follows() without firsts");
 
-    map_new(&g->follows, sizeof(size_t), sizeof(set));
-    set_new(&stack, sizeof(size_t));
+    map_new_size_t(
+        &g->follows, sizeof(set), hash_set, equal_set, copy_set, destroy_set);
+    set_new_size_t(&stack);
 
     /* First compute, for all NTs, if X -*> epsilon */
-    map_new(&g->epsilons, sizeof(size_t), sizeof(size_t));
+    map_new_size_t(&g->epsilons, sizeof(size_t), hash_size_t, equal_size_t,
+        copy_size_t, destroy_size_t);
     map_add(g->epsilons, &EZERO, &EONE); /* epsilon -*> epsilon */
     for (i = 1; i < g->ntok; ++i)
         map_add(g->epsilons, &i, &EZERO); /* token !-*> epsilon */

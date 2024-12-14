@@ -41,8 +41,6 @@ typedef unsigned char uint8_t;
 
 #define todo() throw("TO DO!")
 
-#define pass                                                                   \
-    do {                                                                       \
-    } while (0)
+#define NOT_FOUND (~0ul)
 
 #endif

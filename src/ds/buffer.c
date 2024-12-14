@@ -108,7 +108,7 @@ size_t buffer_find(buffer buf, const void *element) {
         if (0 == memcmp(e, element, buf->datasize))
             return i;
     }
-    return BUFFER_NOT_FOUND;
+    return NOT_FOUND;
 }
 
 void *_buffer_get(buffer buf, size_t idx) {

@@ -2,6 +2,60 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
+/* --- Item --- */
+
+Item Item_new(size_t prod, size_t dot, size_t nlook, ...) {
+    va_list args;
+    Item ret;
+    ret.prod = prod;
+    ret.dot = dot;
+    ret.look = NULL;
+    set_new_size_t(&ret.look);
+
+    va_start(args, nlook);
+    while (nlook--) {
+        size_t x = va_arg(args, size_t);
+        set_add(ret.look, &x);
+    }
+    va_end(args);
+    return ret;
+}
+
+size_t hash_item(const void *ptr) {
+    size_t ret;
+    const Item *item = (const Item *)ptr;
+    ret = hash_size_t(&item->prod);
+    ret = combine_hashes(ret, hash_size_t(&item->dot));
+    ret = combine_hashes(ret, hash_set(&item->look));
+    return ret;
+}
+
+size_t equal_item(const void *ptra, const void *ptrb) {
+    const Item *a = (const Item *)ptra;
+    const Item *b = (const Item *)ptrb;
+    if (a->prod != b->prod)
+        return 0;
+    if (a->dot != b->dot)
+        return 0;
+    return equal_set(&a->look, &b->look);
+}
+
+void *copy_item(const void *ptr) {
+    const Item *item = (const Item *)ptr;
+    Item *ret = malloc(sizeof(Item));
+    ret->prod = item->prod;
+    ret->dot = item->dot;
+    ret->look = set_copy(item->look);
+    return ret;
+}
+
+void destroy_item(void *ptr) {
+    Item *item = (Item *)ptr;
+    set_out(&item->look);
+}
+
+/* --- Grammar --- */
+
 void Grammar_new(Grammar *g, size_t ntok, size_t nsym, size_t start) {
     g->g = NULL;
     buffer_new(&g->g, sizeof(Production));
@@ -63,26 +117,14 @@ void Grammar_out(Grammar *g) {
     buffer_out(&g->g);
 
     /* Free firsts: map<size_t, set<size_t>> */
-    if (g->firsts) {
-        for (i = 0; i < buffer_num(g->firsts->b); ++i) {
-            uint8_t *kv = buffer_get(g->firsts->b, i, void);
-            set *v = (set *)(kv + g->firsts->ksize);
-            set_out(v);
-        }
+    if (g->firsts)
         map_out(&g->firsts);
-    }
 
     /* Free epsilons: map<size_t, size_t> */
     if (g->epsilons)
         map_out(&g->epsilons);
 
     /* Free follows: map<size_t, set<size_t>> */
-    if (g->follows) {
-        for (i = 0; i < buffer_num(g->follows->b); ++i) {
-            uint8_t *kv = buffer_get(g->follows->b, i, void);
-            set *v = (set *)(kv + g->follows->ksize);
-            set_out(v);
-        }
+    if (g->follows)
         map_out(&g->follows);
-    }
 }

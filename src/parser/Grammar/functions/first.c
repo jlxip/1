@@ -6,7 +6,7 @@ static const size_t EEPSILON = EPSILON;
 
 static void rec_compute_first(Grammar *g, size_t sym, map cache, set stack) {
     size_t iprod;
-    set ret = NULL;
+    set ret = NULL; /* set<size_t> */
 
     if (map_has(cache, &sym) || set_has(stack, &sym))
         return;
@@ -14,7 +14,7 @@ static void rec_compute_first(Grammar *g, size_t sym, map cache, set stack) {
     set_add(stack, &sym);
 
     /* If not in cache, surely not terminal */
-    set_new(&ret, sizeof(size_t));
+    set_new_size_t(&ret);
 
     /* Check productions */
     for (iprod = 0; iprod < buffer_num(g->g); ++iprod) {
@@ -56,24 +56,27 @@ static void rec_compute_first(Grammar *g, size_t sym, map cache, set stack) {
 
     /* Save this result */
     map_add(cache, &sym, &ret);
+    set_out(&ret);
     set_remove(stack, &sym);
 }
 
 void Grammar_compute_firsts(Grammar *g) {
-    set stack = NULL;
+    set stack = NULL; /* set<size_t> */
     size_t i;
 
     if (!g->augmented)
         throw("tried to call compute_first() on non-augmented grammar");
 
-    map_new(&g->firsts, sizeof(size_t), sizeof(set));
-    set_new(&stack, sizeof(size_t));
+    map_new_size_t(
+        &g->firsts, sizeof(set), hash_set, equal_set, copy_set, destroy_set);
+    set_new_size_t(&stack);
 
     for (i = 1; i < g->ntok; ++i) {
         set s = NULL;
-        set_new(&s, sizeof(size_t));
+        set_new_size_t(&s);
         set_add(s, &i);
         map_add(g->firsts, &i, &s);
+        set_out(&s);
     }
 
     /* It's augmented so ntok is the start and is included */
@@ -87,7 +90,7 @@ void Grammar_compute_firsts(Grammar *g) {
 
 /* Computes FIRST(alpha), such as FIRST(A B C) */
 set Grammar_first_many(const Grammar *g, const buffer syms) {
-    set ret = NULL;
+    set ret = NULL; /* set<size_t> */
     size_t i;
 
     if (!g->firsts)
@@ -99,7 +102,7 @@ set Grammar_first_many(const Grammar *g, const buffer syms) {
             FIRST(A) - { epsilon } + FIRST(B), otherwise
     */
 
-    set_new(&ret, sizeof(size_t));
+    set_new_size_t(&ret);
     for (i = 0; i < buffer_num(syms); ++i) {
         size_t sym = *buffer_get(syms, i, size_t);
         const set *other = map_get(g->firsts, &sym, set);

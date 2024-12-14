@@ -9,19 +9,14 @@ static set Grammar_closure_once(const Grammar *g, const Item *item) {
     const Production *prod;
     size_t sym;
     size_t i;
-    Item copy;
     buffer beta = NULL;
 
     /* If dot is at the end of item, no closure */
     if (item->dot == END_OF_PRODUCTION)
         return ret;
 
-    set_new(&ret, sizeof(Item));
-
-    /* Add the item */
-    copy = *item;
-    copy.look = set_copy(copy.look);
-    set_add(ret, &copy);
+    set_new_Item(&ret);
+    set_add(ret, item);
 
     /* Get symbol next to the dot */
     prod = buffer_get(g->g, item->prod, Production);
@@ -60,38 +55,11 @@ static set Grammar_closure_once(const Grammar *g, const Item *item) {
         }
 
         set_add(ret, &new);
+        destroy_item(&new);
     }
 
     buffer_out(&beta);
     return ret;
-}
-
-/* This has to be done manually since set sucks and compares shallow */
-/* I believe this can't be helped in ANSI C */
-static size_t hasitem(const set *s, const Item *item) {
-    size_t i, j;
-    for (i = 0; i < set_num(*s); ++i) {
-        const Item *other = buffer_get(*s, i, Item);
-        if (item->prod != other->prod)
-            continue;
-        if (item->dot != other->dot)
-            continue;
-        /* Compare second component */
-        if (set_num(item->look) != set_num(other->look))
-            continue;
-        for (j = 0; j < set_num(item->look); ++j) {
-            size_t sym = *buffer_get(item->look, j, size_t);
-            if (!set_has(other->look, &sym))
-                goto nope;
-        }
-
-        return 1; /* Success! */
-
-    nope:
-        continue;
-    }
-
-    return 0;
 }
 
 /* Acutal iterative LR(1) item closure */
@@ -108,34 +76,43 @@ set Grammar_closure(const Grammar *g, const Item *item) {
         return ret; /* If there were something to expand it would've already
                        happened */
 
-    now = set_num(ret);
-
     /* Just keep expanding until there's no changes */
-    /* I'm not proud at all to announce that this is in fact O(n^6) */
+    now = set_num(ret);
     while (now > prev) {
-        size_t i, j;
-        for (i = 0; i < now; ++i) {
-            const Item *this = buffer_get(ret, i, Item);
+        set to_add = NULL; /* set<Item> */
+        set_iterator it;
+
+        set_new_Item(&to_add);
+        it = set_it_begin(ret);
+        while (!set_it_finished(&it)) {
+            const Item *this = set_it_get(&it, Item);
             set aux = Grammar_closure_once(g, this); /* set<Item> */
-            if (!aux)
-                continue; /* nothing to do here */
-            if (set_num(aux) == 1) {
-                /* No new expansions */
-                set_out(&buffer_get(aux, 0, Item)->look);
-                set_out(&aux);
+            if (!aux) {
+                /* Nothing to do here */
+                set_it_next(&it);
                 continue;
             }
-            /* add the new ones */
-            for (j = 0; j < set_num(aux); ++j) {
-                Item *brainrot = buffer_get(aux, j, Item);
-                if (!hasitem(&ret, brainrot))
-                    set_add(ret, brainrot);
-                else
-                    set_out(&brainrot->look);
+            if (set_num(aux) == 1) {
+                /* No new expansions */
+                set_out(&aux);
+                set_it_next(&it);
+                continue;
             }
+
+            /* Save the new ones */
+            set_join(to_add, aux);
             set_out(&aux);
+            set_it_next(&it);
         }
 
+        /* Now that we're done iterating, add the new ones */
+        it = set_it_begin(to_add);
+        while (!set_it_finished(&it)) {
+            set_add(ret, set_it_get(&it, void));
+            set_it_next(&it);
+        }
+
+        set_out(&to_add);
         prev = now;
         now = set_num(ret);
     }

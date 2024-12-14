@@ -3,7 +3,6 @@
 
 #include <stddef.h>
 
-#define BUFFER_NOT_FOUND (~0ul)
 /* Thanks Applus for this */
 #define BUFFER_SIGNATURE 0xFABADAC0C1D0
 

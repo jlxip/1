@@ -49,6 +49,13 @@ typedef struct {
 } Item;
 /* Value of "dot" when it's at the end of the production */
 #define END_OF_PRODUCTION (~0ul)
+Item Item_new(size_t prod, size_t dot, size_t nlook, ...);
+size_t hash_item(const void *ptr);
+size_t equal_item(const void *a, const void *b);
+void *copy_item(const void *a);
+void destroy_item(void *a);
+#define set_new_Item(S)                                                        \
+    set_new(S, hash_item, equal_item, copy_item, destroy_item)
 
 /* Grammar.c */
 void Grammar_new(Grammar *g, size_t ntok, size_t nsym, size_t start);
