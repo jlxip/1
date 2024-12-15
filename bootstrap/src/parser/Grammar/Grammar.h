@@ -36,9 +36,10 @@ typedef struct {
     size_t nsym;
     size_t start;
     size_t augmented;
-    map firsts;   /* map<size_t, set<size_t>> */
-    map epsilons; /* map<size_t, size_t> */
-    map follows;  /* map<size_t, set<size_t>> */
+    map firsts;        /* map<size_t, set<size_t>> */
+    map epsilons;      /* map<size_t, size_t> */
+    map follows;       /* map<size_t, set<size_t>> */
+    buffer collection; /* buffer<set<Item>> */
 } Grammar;
 
 /* LR(1) item */
@@ -70,5 +71,6 @@ set Grammar_first_many(const Grammar *g, const buffer syms);
 void Grammar_compute_follows(Grammar *g);
 set Grammar_closure(const Grammar *g, const Item *item);
 set Grammar_goto(const Grammar *g, const set items, size_t sym);
+void Grammar_compute_collection(Grammar *g);
 
 #endif

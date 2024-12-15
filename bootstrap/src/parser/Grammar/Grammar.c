@@ -66,6 +66,7 @@ void Grammar_new(Grammar *g, size_t ntok, size_t nsym, size_t start) {
     g->firsts = NULL;
     g->epsilons = NULL;
     g->follows = NULL;
+    g->collection = NULL;
 }
 
 void Grammar_add(Grammar *g, size_t lhs, size_t n, ...) {
@@ -127,4 +128,13 @@ void Grammar_out(Grammar *g) {
     /* Free follows: map<size_t, set<size_t>> */
     if (g->follows)
         map_out(&g->follows);
+
+    /* Free collection: buffer<set<Item>> */
+    if (g->collection) {
+        for (i = 0; i < buffer_num(g->collection); ++i) {
+            set *s = buffer_get(g->collection, i, set);
+            set_out(s);
+        }
+        buffer_out(&g->collection);
+    }
 }

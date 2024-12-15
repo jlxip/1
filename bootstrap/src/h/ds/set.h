@@ -16,6 +16,7 @@ void set_new(set *s, hash_function hash, equal_function eq, copy_function copy,
     set_new(S, hash_string, equal_string, copy_string, destroy_string)
 #define set_new_size_t(S)                                                      \
     set_new(S, hash_size_t, equal_size_t, copy_size_t, destroy_size_t)
+#define set_new_set(S) set_new(S, hash_set, equal_set, copy_set, destroy_set)
 
 void set_add(set s, const void *element);
 void set_add_move(set s, void *element);

@@ -71,6 +71,18 @@ enum TEST2 {
         destroy_item(&item);                                                   \
     } while (0)
 
+#define CHECK_STATE                                                            \
+    do {                                                                       \
+        size_t found = 0, i;                                                   \
+        for (i = 0; i < buffer_num(g.collection); ++i) {                       \
+            if (equal_set(buffer_get(g.collection, i, set), &s)) {             \
+                found = 1;                                                     \
+                break;                                                         \
+            }                                                                  \
+        }                                                                      \
+        assert(found);                                                         \
+    } while (0)
+
 void test_lalr(void) {
     Grammar g; /* recycled */
     set s;     /* recycled */
@@ -275,8 +287,7 @@ void test_lalr(void) {
 
     /*
         I = {[S' -> ·S, $]}
-        I0:
-            S' -> ·S, $
+        I0: S' -> ·S, $
             S  -> ·CC, $
             C  -> ·cC, c/d
             C  -> ·d, c/d
@@ -302,8 +313,7 @@ void test_lalr(void) {
     /*
         A bit more tricky
         I = {[C -> c·C, c/d]}
-        I3:
-            C -> c·C, c/d
+        I3: C -> c·C, c/d
             C -> ·cC, c/d <- Tricky, must perform FIRST(epsilon c/d)
             C -> ·d, c/d
     */
@@ -350,8 +360,7 @@ void test_lalr(void) {
     /*
         Test GOTO again
         I8 = closure(goto(I3, C))
-        I8:
-            C -> cC·, c/d
+        I8: C -> cC·, c/d
     */
     s2 = s;
     s = Grammar_goto(&g, s2, TEST2_NT_C);
@@ -361,6 +370,145 @@ void test_lalr(void) {
     item = Item_new(
         1 /* C -> cC */, END_OF_PRODUCTION /* cC· */, 2, TEST2_T_c, TEST2_T_d);
     TEST_ITEM;
+    set_out(&s);
+
+    /*
+        Test canonical collection
+        Same grammar
+    */
+    Grammar_compute_collection(&g);
+    assert(buffer_num(g.collection) == 10);
+    /*
+        I0: S' -> ·S, $
+            S  -> ·CC, $
+            C  -> ·cC, c/d
+            C  -> ·d, c/d
+    */
+    set_new_Item(&s);
+    item = Item_new(3 /* S' -> S */, 0 /* ·S */, 1, TEST2_NSYM /* $ */);
+    set_add(s, &item);
+    destroy_item(&item);
+    item = Item_new(0 /* S -> CC */, 0 /* ·CC */, 1, TEST2_NSYM /* $ */);
+    set_add(s, &item);
+    destroy_item(&item);
+    item = Item_new(1 /* C -> cC */, 0 /* ·cC */, 2, TEST2_T_c, TEST2_T_d);
+    set_add(s, &item);
+    destroy_item(&item);
+    item = Item_new(2 /* C -> d */, 0 /* ·d */, 2, TEST2_T_c, TEST2_T_d);
+    set_add(s, &item);
+    destroy_item(&item);
+    CHECK_STATE;
+    set_out(&s);
+    /*
+        I1: S' -> S·, $
+    */
+    set_new_Item(&s);
+    item = Item_new(
+        3 /* S' -> S */, END_OF_PRODUCTION /* S· */, 1, TEST2_NSYM /* $ */);
+    set_add(s, &item);
+    destroy_item(&item);
+    CHECK_STATE;
+    set_out(&s);
+    /*
+        I2: S -> C·C, $
+            C -> ·cC, $
+            C -> ·d, $
+    */
+    set_new_Item(&s);
+    item = Item_new(0 /* S -> CC */, 1 /* C·C */, 1, TEST2_NSYM /* $ */);
+    set_add(s, &item);
+    destroy_item(&item);
+    item = Item_new(1 /* C -> cC */, 0 /* ·cC */, 1, TEST2_NSYM /* $ */);
+    set_add(s, &item);
+    destroy_item(&item);
+    item = Item_new(2 /* C -> d */, 0 /* ·d */, 1, TEST2_NSYM /* $ */);
+    set_add(s, &item);
+    destroy_item(&item);
+    CHECK_STATE;
+    set_out(&s);
+    /*
+        I3: C -> c·C, c/d
+            C -> ·cC, c/d
+            C -> ·d, c/d
+    */
+    set_new_Item(&s);
+    item = Item_new(1 /* C -> cC */, 1 /* c·C */, 2, TEST2_T_c, TEST2_T_d);
+    set_add(s, &item);
+    destroy_item(&item);
+    item = Item_new(1 /* C -> cC */, 0 /* ·cC */, 2, TEST2_T_c, TEST2_T_d);
+    set_add(s, &item);
+    destroy_item(&item);
+    item = Item_new(2 /* C -> d */, 0 /* ·d */, 2, TEST2_T_c, TEST2_T_d);
+    set_add(s, &item);
+    destroy_item(&item);
+    CHECK_STATE;
+    set_out(&s);
+    /*
+        I4: C -> d·, c/d
+    */
+    set_new_Item(&s);
+    item = Item_new(
+        2 /* C -> d */, END_OF_PRODUCTION /* d· */, 2, TEST2_T_c, TEST2_T_d);
+    set_add(s, &item);
+    destroy_item(&item);
+    CHECK_STATE;
+    set_out(&s);
+    /*
+        I5: S -> CC·, $
+    */
+    set_new_Item(&s);
+    item = Item_new(
+        0 /* S -> CC */, END_OF_PRODUCTION /* CC· */, 1, TEST2_NSYM /* $ */);
+    set_add(s, &item);
+    destroy_item(&item);
+    CHECK_STATE;
+    set_out(&s);
+    /*
+        I6: C -> c·C, $
+            C -> ·cC, $
+            C -> ·d, $
+    */
+    set_new_Item(&s);
+    item = Item_new(1 /* C -> cC */, 1 /* c·C */, 1, TEST2_NSYM /* $ */);
+    set_add(s, &item);
+    destroy_item(&item);
+    item = Item_new(1 /* C -> cC */, 0 /* ·cC */, 1, TEST2_NSYM /* $ */);
+    set_add(s, &item);
+    destroy_item(&item);
+    item = Item_new(2 /* C -> d */, 0 /* ·d */, 1, TEST2_NSYM /* $ */);
+    set_add(s, &item);
+    destroy_item(&item);
+    CHECK_STATE;
+    set_out(&s);
+    /*
+        I7: C -> d·, $
+    */
+    set_new_Item(&s);
+    item = Item_new(
+        2 /* C -> d */, END_OF_PRODUCTION /* d· */, 1, TEST2_NSYM /* $ */);
+    set_add(s, &item);
+    destroy_item(&item);
+    CHECK_STATE;
+    set_out(&s);
+    /*
+        I8: C -> cC·, c/d
+    */
+    set_new_Item(&s);
+    item = Item_new(
+        1 /* C -> cC */, END_OF_PRODUCTION /* cC· */, 2, TEST2_T_c, TEST2_T_d);
+    set_add(s, &item);
+    destroy_item(&item);
+    CHECK_STATE;
+    set_out(&s);
+    /*
+        I9: C -> cC·, $
+    */
+    set_new_Item(&s);
+    item = Item_new(
+        1 /* C -> cC */, END_OF_PRODUCTION /* cC· */, 1, TEST2_NSYM /* $ */);
+    set_add(s, &item);
+    destroy_item(&item);
+    CHECK_STATE;
     set_out(&s);
     Grammar_out(&g);
 
