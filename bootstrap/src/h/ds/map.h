@@ -50,9 +50,13 @@ void map_new(map *m, hash_function hash, equal_function eq, copy_function copy,
 /* These do deep copy of key and value */
 void map_add(map m, const void *k, const void *v);
 void map_add_if_not_there(map m, const void *k, const void *v);
+/* For movement, pointers must be already on the heap! */
+/* These do shallow copy of the key (move) */
+void map_add_movek(map m, void *k, const void *v);
+void map_add_movek_if_not_there(map m, void *k, const void *v);
 /* These do shallow copy of value (move) */
-void map_add_move(map m, const void *k, void *v);
-void map_add_move_if_not_there(map m, const void *k, void *v);
+void map_add_movev(map m, const void *k, void *v);
+void map_add_movev_if_not_there(map m, const void *k, void *v);
 
 void map_remove(map m, const void *k);
 void map_remove_if_there(map m, const void *k);

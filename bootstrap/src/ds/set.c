@@ -1,5 +1,6 @@
 #include <common.h>
 #include <ds/set.h>
+#include <string.h>
 
 void set_new(set *s, hash_function hash, equal_function eq, copy_function copy,
     destroy_function destroy) {
@@ -20,6 +21,11 @@ void set_add(set s, const void *element) {
     map_add_if_not_there(s->x, element, NULL);
 }
 
+void set_add_move(set s, void *element) {
+    set_assert(s);
+    map_add_movek_if_not_there(s->x, element, NULL);
+}
+
 void set_join(set s, const set other) {
     set_iterator it;
     assert(s->x->hash == other->x->hash);
@@ -31,6 +37,23 @@ void set_join(set s, const set other) {
         set_add(s, set_it_get(&it, void));
         set_it_next(&it);
     }
+}
+
+void set_join_move(set s, set other) {
+    set_iterator it;
+    assert(s->x->hash == other->x->hash);
+    assert(s->x->copy == other->x->copy);
+    assert(s->x->eq == other->x->eq);
+
+    it = set_it_begin(other);
+    while (!set_it_finished(&it)) {
+        set_add_move(s, set_it_get(&it, void));
+        set_it_next(&it);
+    }
+
+    /* Shallow out for other */
+    memset(other->x->buf, 0, other->x->alloc * sizeof(struct _map_t_bucket));
+    set_out(&other);
 }
 
 void set_remove(set s, const void *element) {

@@ -104,7 +104,7 @@ static size_t map_find_slot(map m, const void *k, size_t *h) {
     }
 }
 
-static size_t _map_add(map m, const void *k, const void *v, size_t trivial) {
+static size_t _map_add(map m, const void *k, const void *v) {
     size_t h, idx;
     idx = map_find_slot(m, k, &h);
     if (idx == NOT_FOUND)
@@ -115,7 +115,7 @@ static size_t _map_add(map m, const void *k, const void *v, size_t trivial) {
     m->buf[idx].k = m->copy(k);
     if (m->vsize == 0) {
         m->buf[idx].v = NULL;
-    } else if (m->vcopy == NULL || trivial) {
+    } else if (m->vcopy == NULL) {
         /* Trivial copy */
         m->buf[idx].v = malloc(m->vsize);
         memcpy(m->buf[idx].v, v, m->vsize);
@@ -126,25 +126,79 @@ static size_t _map_add(map m, const void *k, const void *v, size_t trivial) {
 }
 
 void map_add(map m, const void *k, const void *v) {
-    if (!_map_add(m, k, v, 0))
+    if (!_map_add(m, k, v))
         throw("map_add with already existing key");
 }
 
 void map_add_if_not_there(map m, const void *k, const void *v) {
-    _map_add(m, k, v, 0);
+    _map_add(m, k, v);
 }
 
-void map_add_move(map m, const void *k, void *v) {
-    if (!_map_add(m, k, v, 1))
-        throw("map_add_move with already existing key");
+static size_t _map_add_movek(map m, void *k, const void *v) {
+    size_t h, idx;
+    idx = map_find_slot(m, k, &h);
+    if (idx == NOT_FOUND)
+        return 0;
+
+    m->buf[idx].h = h;
+    m->buf[idx].erased = 0;
+    m->buf[idx].k = k;
+    if (m->vsize == 0) {
+        m->buf[idx].v = NULL;
+    } else if (m->vcopy == NULL) {
+        /* Trivial copy */
+        m->buf[idx].v = malloc(m->vsize);
+        memcpy(m->buf[idx].v, v, m->vsize);
+    } else {
+        m->buf[idx].v = m->vcopy(v);
+    }
+    return 1;
 }
 
-void map_add_move_if_not_there(map m, const void *k, void *v) {
-    if (!_map_add(m, k, v, 1)) {
+void map_add_movek(map m, void *k, const void *v) {
+    if (!_map_add_movek(m, k, v))
+        throw("map_add_movek with already existing key");
+}
+
+void map_add_movek_if_not_there(map m, void *k, const void *v) {
+    if (!_map_add_movek(m, k, v)) {
+        /*
+            Insertion failed (key already exists)
+            But this is a move and the programmer expects to
+            not care anymore about key. Free it now
+        */
+        m->destroy(k);
+        free(k);
+    }
+}
+
+static size_t _map_add_movev(map m, const void *k, void *v) {
+    size_t h, idx;
+    idx = map_find_slot(m, k, &h);
+    if (idx == NOT_FOUND)
+        return 0;
+
+    m->buf[idx].h = h;
+    m->buf[idx].erased = 0;
+    m->buf[idx].k = m->copy(k);
+    if (m->vsize == 0)
+        m->buf[idx].v = NULL;
+    else
+        m->buf[idx].v = v;
+    return 1;
+}
+
+void map_add_movev(map m, const void *k, void *v) {
+    if (!_map_add_movev(m, k, v))
+        throw("map_add_movev with already existing key");
+}
+
+void map_add_movev_if_not_there(map m, const void *k, void *v) {
+    if (!_map_add_movev(m, k, v)) {
         /*
             Addition failed (key already exists)
             But this is a move and the programmer expects to
-            not to care anymore about value. Free it now
+            not care anymore about value. Free it now
         */
         if (m->vdestroy)
             m->vdestroy(v);

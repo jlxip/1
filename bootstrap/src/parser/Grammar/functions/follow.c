@@ -35,17 +35,18 @@ static void compute_derives_to_epsilon(Grammar *g, size_t sym) {
 
 static void rec_compute_follow(Grammar *g, size_t sym, map cache, set stack) {
     size_t iprod;
-    set ret = NULL; /* set<size_t> */
+    set *ret = NULL; /* set<size_t> */
 
     if (map_has(cache, &sym) || set_has(stack, &sym))
         return;
 
     set_add(stack, &sym);
-    set_new_size_t(&ret);
+    ret = calloc(1, sizeof(set));
+    set_new_size_t(ret);
 
     /* Start symbol includes $ */
     if (sym == g->start)
-        set_add(ret, &g->nsym); /* Remember, NSYM = $ */
+        set_add(*ret, &g->nsym); /* Remember, NSYM = $ */
 
     /* Check productions */
     for (iprod = 0; iprod < buffer_num(g->g); ++iprod) {
@@ -76,7 +77,7 @@ static void rec_compute_follow(Grammar *g, size_t sym, map cache, set stack) {
             rec_compute_follow(g, x->lhs, cache, stack);
             parent = map_get(cache, &x->lhs, set);
             if (parent)
-                set_join(ret, *parent);
+                set_join(*ret, *parent);
         } else {
             /* There is! */
             size_t follow = *buffer_get(x->rhs, irhs + 1, size_t);
@@ -84,8 +85,8 @@ static void rec_compute_follow(Grammar *g, size_t sym, map cache, set stack) {
                 There's something to the right: A -> B X
                 FOLLOW(B) must include FIRST(X) - { epsilon }
             */
-            set_join(ret, *map_get(g->firsts, &follow, set));
-            set_remove_if_there(ret, &EEPSILON);
+            set_join(*ret, *map_get(g->firsts, &follow, set));
+            set_remove_if_there(*ret, &EEPSILON);
 
             /*
                 Additionally, if X -*> epsilon, then
@@ -97,7 +98,7 @@ static void rec_compute_follow(Grammar *g, size_t sym, map cache, set stack) {
                 rec_compute_follow(g, follow, cache, stack);
                 followx = map_get(cache, &follow, set);
                 if (followx) {
-                    set_join(ret, *followx);
+                    set_join(*ret, *followx);
                 } else {
                     /*
                         Called to rec_compute_follow but got nothing.
@@ -111,7 +112,7 @@ static void rec_compute_follow(Grammar *g, size_t sym, map cache, set stack) {
     }
 
     /* Save this result */
-    map_add_move(cache, &sym, &ret);
+    map_add_movev(cache, &sym, ret);
     set_remove(stack, &sym);
 }
 

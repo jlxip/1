@@ -33,28 +33,28 @@ static set Grammar_closure_once(const Grammar *g, const Item *item) {
 
     /* It's a non-terminal, expand */
     for (i = 0; i < buffer_num(g->g); ++i) {
-        Item new;
+        Item *new;
         const Production *p = buffer_get(g->g, i, Production);
         if (p->lhs != sym)
             continue; /* not interested */
 
-        new.prod = i;
-        new.dot = 0;
+        new = malloc(sizeof(Item));
+        new->prod = i;
+        new->dot = 0;
 
         /* Now compute second component, FIRST(beta a) */
-        new.look = Grammar_first_many(g, beta);
+        new->look = Grammar_first_many(g, beta);
 
-        if (set_empty(new.look)) {
+        if (set_empty(new->look)) {
             /* No firsts; so, epsilon. Add a */
-            set_join(new.look, item->look);
-        } else if (set_has(new.look, &EEPSILON)) {
+            set_join(new->look, item->look);
+        } else if (set_has(new->look, &EEPSILON)) {
             /* Epsilon in ret: remove it and add a */
-            set_remove(new.look, &EEPSILON);
-            set_join(new.look, item->look);
+            set_remove(new->look, &EEPSILON);
+            set_join(new->look, item->look);
         }
 
-        set_add(ret, &new);
-        destroy_item(&new);
+        set_add_move(ret, new);
     }
 
     buffer_out(&beta);
@@ -99,19 +99,12 @@ set Grammar_closure(const Grammar *g, const Item *item) {
             }
 
             /* Save the new ones */
-            set_join(to_add, aux);
-            set_out(&aux);
+            set_join_move(to_add, aux);
             set_it_next(&it);
         }
 
         /* Now that we're done iterating, add the new ones */
-        it = set_it_begin(to_add);
-        while (!set_it_finished(&it)) {
-            set_add(ret, set_it_get(&it, void));
-            set_it_next(&it);
-        }
-
-        set_out(&to_add);
+        set_join_move(ret, to_add);
         prev = now;
         now = set_num(ret);
     }

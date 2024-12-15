@@ -21,7 +21,7 @@ set Grammar_goto(const Grammar *g, const set items, size_t sym) {
     it = set_it_begin(items);
     while (!set_it_finished(&it)) {
         const Item *parent = set_it_get(&it, Item);
-        Item child;
+        Item *child;
         const Production *prod;
         size_t x;
 
@@ -40,9 +40,9 @@ set Grammar_goto(const Grammar *g, const set items, size_t sym) {
             continue;
         }
 
-        child = advance(prod, parent);
-        set_add(gotos, &child);
-        destroy_item(&child);
+        child = malloc(sizeof(Item));
+        *child = advance(prod, parent);
+        set_add_move(gotos, child);
         set_it_next(&it);
     }
 
@@ -53,10 +53,8 @@ set Grammar_goto(const Grammar *g, const set items, size_t sym) {
         const Item *item = set_it_get(&it, Item);
         set aux = NULL;
         aux = Grammar_closure(g, item);
-        if (aux) {
-            set_join(ret, aux);
-            set_out(&aux);
-        }
+        if (aux)
+            set_join_move(ret, aux);
         set_it_next(&it);
     }
 

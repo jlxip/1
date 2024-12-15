@@ -6,7 +6,7 @@ static const size_t EEPSILON = EPSILON;
 
 static void rec_compute_first(Grammar *g, size_t sym, map cache, set stack) {
     size_t iprod;
-    set ret = NULL; /* set<size_t> */
+    set *ret = NULL; /* set<size_t> */
 
     if (map_has(cache, &sym) || set_has(stack, &sym))
         return;
@@ -14,7 +14,8 @@ static void rec_compute_first(Grammar *g, size_t sym, map cache, set stack) {
     set_add(stack, &sym);
 
     /* If not in cache, surely not terminal */
-    set_new_size_t(&ret);
+    ret = calloc(1, sizeof(set));
+    set_new_size_t(ret);
 
     /* Check productions */
     for (iprod = 0; iprod < buffer_num(g->g); ++iprod) {
@@ -38,22 +39,22 @@ static void rec_compute_first(Grammar *g, size_t sym, map cache, set stack) {
                 continue;
             } else if (set_has(*sub, &EEPSILON)) {
                 /* Remove epsilon from sub, join, and keep going */
-                set_join(ret, *sub);
-                set_remove(ret, &EEPSILON);
+                set_join(*ret, *sub);
+                set_remove(*ret, &EEPSILON);
             } else {
                 /* Join and we're done */
                 epsilon = 0;
-                set_join(ret, *sub);
+                set_join(*ret, *sub);
                 break;
             }
         }
 
         if (epsilon)
-            set_add(ret, &EEPSILON);
+            set_add(*ret, &EEPSILON);
     }
 
     /* Save this result */
-    map_add_move(cache, &sym, &ret);
+    map_add_movev(cache, &sym, ret);
     set_remove(stack, &sym);
 }
 
@@ -69,10 +70,10 @@ void Grammar_compute_firsts(Grammar *g) {
     set_new_size_t(&stack);
 
     for (i = 1; i < g->ntok; ++i) {
-        set s = NULL;
-        set_new_size_t(&s);
-        set_add(s, &i);
-        map_add_move(g->firsts, &i, &s);
+        set *s = calloc(1, sizeof(set));
+        set_new_size_t(s);
+        set_add(*s, &i);
+        map_add_movev(g->firsts, &i, s);
     }
 
     /* It's augmented so ntok is the start and is included */
