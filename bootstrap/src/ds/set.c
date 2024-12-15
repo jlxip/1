@@ -20,11 +20,6 @@ void set_add(set s, const void *element) {
     map_add_if_not_there(s->x, element, NULL);
 }
 
-void set_add_move(set s, void *element) {
-    set_assert(s);
-    map_add_move_if_not_there(s->x, element, NULL);
-}
-
 void set_join(set s, const set other) {
     set_iterator it;
     assert(s->x->hash == other->x->hash);

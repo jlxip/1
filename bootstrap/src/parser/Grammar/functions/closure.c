@@ -11,12 +11,12 @@ static set Grammar_closure_once(const Grammar *g, const Item *item) {
     size_t i;
     buffer beta = NULL;
 
-    /* If dot is at the end of item, no closure */
-    if (item->dot == END_OF_PRODUCTION)
-        return ret;
-
     set_new_Item(&ret);
     set_add(ret, item);
+
+    /* If dot is at the end of item, no additional closure */
+    if (item->dot == END_OF_PRODUCTION)
+        return ret;
 
     /* Get symbol next to the dot */
     prod = buffer_get(g->g, item->prod, Production);
@@ -40,7 +40,6 @@ static set Grammar_closure_once(const Grammar *g, const Item *item) {
 
         new.prod = i;
         new.dot = 0;
-        /*new.look = NULL;*/
 
         /* Now compute second component, FIRST(beta a) */
         new.look = Grammar_first_many(g, beta);

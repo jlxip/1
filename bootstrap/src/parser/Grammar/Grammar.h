@@ -69,5 +69,6 @@ void Grammar_compute_firsts(Grammar *g);
 set Grammar_first_many(const Grammar *g, const buffer syms);
 void Grammar_compute_follows(Grammar *g);
 set Grammar_closure(const Grammar *g, const Item *item);
+set Grammar_goto(const Grammar *g, const set items, size_t sym);
 
 #endif

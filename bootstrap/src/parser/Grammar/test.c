@@ -74,6 +74,7 @@ enum TEST2 {
 void test_lalr(void) {
     Grammar g; /* recycled */
     set s;     /* recycled */
+    set s2;    /* recycled */
     size_t x;  /* recycled */
     Item item; /* recycled */
 
@@ -317,6 +318,48 @@ void test_lalr(void) {
     TEST_ITEM;
     /* C -> ·d, c/d */
     item = Item_new(2 /* C -> d */, 0 /* ·d */, 2, TEST2_T_c, TEST2_T_d);
+    TEST_ITEM;
+    set_out(&s);
+
+    /*
+        Test GOTO
+        Same grammar as above
+
+        I0 = closure(I)
+        I3 = closure(goto(I0, c))
+    */
+    item = Item_new(3 /* S' -> S */, 0 /* ·S */, 1, TEST2_NSYM /* $ */);
+    s = Grammar_closure(&g, &item);
+    destroy_item(&item);
+    s2 = Grammar_goto(&g, s, TEST2_T_c);
+    set_out(&s);
+    s = s2;
+    s2 = NULL;
+
+    TEST_NUM(3);
+    /* C -> c·C, c/d */
+    item = Item_new(1 /* C -> cC */, 1 /* c·C */, 2, TEST2_T_c, TEST2_T_d);
+    TEST_ITEM;
+    /* C -> ·cC, c/d */
+    item = Item_new(1 /* C -> cC */, 0 /* ·cC */, 2, TEST2_T_c, TEST2_T_d);
+    TEST_ITEM;
+    /* C -> ·d, c/d */
+    item = Item_new(2 /* C -> d */, 0 /* ·d */, 2, TEST2_T_c, TEST2_T_d);
+    TEST_ITEM;
+
+    /*
+        Test GOTO again
+        I8 = closure(goto(I3, C))
+        I8:
+            C -> cC·, c/d
+    */
+    s2 = s;
+    s = Grammar_goto(&g, s2, TEST2_NT_C);
+    set_out(&s2);
+    TEST_NUM(1);
+    /* C -> cC·, c/d */
+    item = Item_new(
+        1 /* C -> cC */, END_OF_PRODUCTION /* cC· */, 2, TEST2_T_c, TEST2_T_d);
     TEST_ITEM;
     set_out(&s);
     Grammar_out(&g);
