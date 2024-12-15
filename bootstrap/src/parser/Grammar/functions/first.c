@@ -38,10 +38,8 @@ static void rec_compute_first(Grammar *g, size_t sym, map cache, set stack) {
                 continue;
             } else if (set_has(*sub, &EEPSILON)) {
                 /* Remove epsilon from sub, join, and keep going */
-                set copy = set_copy(*sub);
-                set_remove(copy, &EEPSILON);
-                set_join(ret, copy);
-                set_out(&copy);
+                set_join(ret, *sub);
+                set_remove(ret, &EEPSILON);
             } else {
                 /* Join and we're done */
                 epsilon = 0;
@@ -55,8 +53,7 @@ static void rec_compute_first(Grammar *g, size_t sym, map cache, set stack) {
     }
 
     /* Save this result */
-    map_add(cache, &sym, &ret);
-    set_out(&ret);
+    map_add_move(cache, &sym, &ret);
     set_remove(stack, &sym);
 }
 
@@ -75,8 +72,7 @@ void Grammar_compute_firsts(Grammar *g) {
         set s = NULL;
         set_new_size_t(&s);
         set_add(s, &i);
-        map_add(g->firsts, &i, &s);
-        set_out(&s);
+        map_add_move(g->firsts, &i, &s);
     }
 
     /* It's augmented so ntok is the start and is included */

@@ -18,12 +18,12 @@ void set_new(set *s, hash_function hash, equal_function eq, copy_function copy,
     set_new(S, hash_size_t, equal_size_t, copy_size_t, destroy_size_t)
 
 void set_add(set s, const void *element);
+void set_add_move(set s, void *element);
 void set_join(set s, const set other);
 void set_remove(set s, const void *element);
 void set_remove_if_there(set s, const void *element);
 set set_copy(const set s);
 void set_out(set *s);
-/* set_shrink? */
 
 /* Getters */
 size_t set_num(set s);

@@ -80,15 +80,12 @@ static void rec_compute_follow(Grammar *g, size_t sym, map cache, set stack) {
         } else {
             /* There is! */
             size_t follow = *buffer_get(x->rhs, irhs + 1, size_t);
-            set copy;
             /*
                 There's something to the right: A -> B X
                 FOLLOW(B) must include FIRST(X) - { epsilon }
             */
-            copy = set_copy(*map_get(g->firsts, &follow, set));
-            set_remove_if_there(copy, &EEPSILON);
-            set_join(ret, copy);
-            set_out(&copy);
+            set_join(ret, *map_get(g->firsts, &follow, set));
+            set_remove_if_there(ret, &EEPSILON);
 
             /*
                 Additionally, if X -*> epsilon, then
@@ -114,8 +111,7 @@ static void rec_compute_follow(Grammar *g, size_t sym, map cache, set stack) {
     }
 
     /* Save this result */
-    map_add(cache, &sym, &ret);
-    set_out(&ret);
+    map_add_move(cache, &sym, &ret);
     set_remove(stack, &sym);
 }
 

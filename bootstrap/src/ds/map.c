@@ -104,9 +104,8 @@ static size_t map_find_slot(map m, const void *k, size_t *h) {
     }
 }
 
-static size_t _map_add(map m, const void *k, const void *v) {
-    size_t h;
-    size_t idx;
+static size_t _map_add(map m, const void *k, const void *v, size_t trivial) {
+    size_t h, idx;
     idx = map_find_slot(m, k, &h);
     if (idx == NOT_FOUND)
         return 0;
@@ -116,7 +115,7 @@ static size_t _map_add(map m, const void *k, const void *v) {
     m->buf[idx].k = m->copy(k);
     if (m->vsize == 0) {
         m->buf[idx].v = NULL;
-    } else if (m->vcopy == NULL) {
+    } else if (m->vcopy == NULL || trivial) {
         /* Trivial copy */
         m->buf[idx].v = malloc(m->vsize);
         memcpy(m->buf[idx].v, v, m->vsize);
@@ -127,12 +126,29 @@ static size_t _map_add(map m, const void *k, const void *v) {
 }
 
 void map_add(map m, const void *k, const void *v) {
-    if (!_map_add(m, k, v))
+    if (!_map_add(m, k, v, 0))
         throw("map_add with already existing key");
 }
 
 void map_add_if_not_there(map m, const void *k, const void *v) {
-    _map_add(m, k, v);
+    _map_add(m, k, v, 0);
+}
+
+void map_add_move(map m, const void *k, void *v) {
+    if (!_map_add(m, k, v, 1))
+        throw("map_add_move with already existing key");
+}
+
+void map_add_move_if_not_there(map m, const void *k, void *v) {
+    if (!_map_add(m, k, v, 1)) {
+        /*
+            Addition failed (key already exists)
+            But this is a move and the programmer expects to
+            not to care anymore about value. Free it now
+        */
+        if (m->vdestroy)
+            m->vdestroy(v);
+    }
 }
 
 static void _map_remove_idx(map m, size_t idx) {
