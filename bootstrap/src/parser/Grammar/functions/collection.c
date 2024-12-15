@@ -45,7 +45,6 @@ static void recursive_goto(Grammar *g) {
             /* Got a new state */
             buffer_push(g->collection, &child);
             set_add(seen, &child);
-            /* destroy child? */
         }
     }
 

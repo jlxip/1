@@ -108,7 +108,8 @@ set Grammar_first_many(const Grammar *g, const buffer syms) {
         if (!set_has(ret, &EEPSILON))
             break;
 
-        set_remove(ret, &EEPSILON);
+        if (i != buffer_num(syms) - 1)
+            set_remove(ret, &EEPSILON);
     }
 
     return ret;
