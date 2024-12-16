@@ -52,11 +52,15 @@ typedef struct {
 #define END_OF_PRODUCTION (~0ul)
 Item Item_new(size_t prod, size_t dot, size_t nlook, ...);
 size_t hash_item(const void *ptr);
+size_t hash_item_core(const void *ptr);
 size_t equal_item(const void *a, const void *b);
+size_t equal_item_core(const void *a, const void *b);
 void *copy_item(const void *a);
 void destroy_item(void *a);
 #define set_new_Item(S)                                                        \
     set_new(S, hash_item, equal_item, copy_item, destroy_item)
+#define set_new_Item_core(S)                                                   \
+    set_new(S, hash_item_core, equal_item_core, copy_item, destroy_item)
 
 /* Grammar.c */
 void Grammar_new(Grammar *g, size_t ntok, size_t nsym, size_t start);
@@ -69,8 +73,8 @@ void Grammar_out(Grammar *g);
 void Grammar_compute_firsts(Grammar *g);
 set Grammar_first_many(const Grammar *g, const buffer syms);
 void Grammar_compute_follows(Grammar *g);
-set Grammar_closure(const Grammar *g, const Item *item);
-set Grammar_goto(const Grammar *g, const set items, size_t sym);
+set Grammar_closure(const Grammar *g, const Item *item, size_t core);
+set Grammar_goto(const Grammar *g, const set items, size_t sym, size_t core);
 void Grammar_compute_collection(Grammar *g);
 
 #endif

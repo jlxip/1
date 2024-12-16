@@ -30,6 +30,14 @@ size_t hash_item(const void *ptr) {
     return ret;
 }
 
+size_t hash_item_core(const void *ptr) {
+    size_t ret;
+    const Item *item = (const Item *)ptr;
+    ret = hash_size_t(&item->prod);
+    ret = combine_hashes(ret, hash_size_t(&item->dot));
+    return ret;
+}
+
 size_t equal_item(const void *ptra, const void *ptrb) {
     const Item *a = (const Item *)ptra;
     const Item *b = (const Item *)ptrb;
@@ -38,6 +46,14 @@ size_t equal_item(const void *ptra, const void *ptrb) {
     if (a->dot != b->dot)
         return 0;
     return equal_set(&a->look, &b->look);
+}
+
+size_t equal_item_core(const void *ptra, const void *ptrb) {
+    const Item *a = (const Item *)ptra;
+    const Item *b = (const Item *)ptrb;
+    if (a->prod != b->prod)
+        return 0;
+    return a->dot == b->dot;
 }
 
 void *copy_item(const void *ptr) {

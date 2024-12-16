@@ -40,12 +40,7 @@ void set_join(set s, const set other) {
 }
 
 void set_join_move(set s, set other) {
-    set_iterator it;
-    assert(s->x->hash == other->x->hash);
-    assert(s->x->copy == other->x->copy);
-    assert(s->x->eq == other->x->eq);
-
-    it = set_it_begin(other);
+    set_iterator it = set_it_begin(other);
     while (!set_it_finished(&it)) {
         set_add_move(s, set_it_get(&it, void));
         set_it_next(&it);
@@ -89,6 +84,11 @@ size_t set_empty(set s) { return set_num(s) == 0; }
 size_t set_has(set s, const void *element) {
     set_assert(s);
     return map_has(s->x, element);
+}
+
+void *_set_get(set s, const void *element) {
+    set_assert(s);
+    return map_get_key(s->x, element, void);
 }
 
 /* --- Iterator --- */

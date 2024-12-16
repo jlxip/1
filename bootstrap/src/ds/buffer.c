@@ -37,6 +37,15 @@ void buffer_push(buffer buf, const void *element) {
     memcpy(target, element, buf->datasize);
 }
 
+void buffer_set(buffer buf, size_t idx, const void *element) {
+    char *target = NULL;
+    buffer_assert(buf);
+    if (idx >= buf->used)
+        throw("buffer_set with invalid index");
+    target = (char *)buf->a + idx * buf->datasize;
+    memcpy(target, element, buf->datasize);
+}
+
 void buffer_pop(buffer buf) {
     buffer_assert(buf);
     if (buf->used == 0)

@@ -293,7 +293,7 @@ void test_lalr(void) {
             C  -> ·d, c/d
     */
     item = Item_new(3 /* S' -> S */, 0 /* ·S */, 1, TEST2_NSYM /* $ */);
-    s = Grammar_closure(&g, &item);
+    s = Grammar_closure(&g, &item, 0);
     TEST_NUM(4);
     /* Hardcoded prod index due to order in Grammar_add above */
     /* S' -> ·S, $ */
@@ -318,7 +318,7 @@ void test_lalr(void) {
             C -> ·d, c/d
     */
     item = Item_new(1 /* C -> cC */, 1 /* c·C */, 2, TEST2_T_c, TEST2_T_d);
-    s = Grammar_closure(&g, &item);
+    s = Grammar_closure(&g, &item, 0);
     TEST_NUM(3);
     /* C -> c·C, c/d */
     /* Item already set */
@@ -339,9 +339,9 @@ void test_lalr(void) {
         I3 = closure(goto(I0, c))
     */
     item = Item_new(3 /* S' -> S */, 0 /* ·S */, 1, TEST2_NSYM /* $ */);
-    s = Grammar_closure(&g, &item);
+    s = Grammar_closure(&g, &item, 0);
     destroy_item(&item);
-    s2 = Grammar_goto(&g, s, TEST2_T_c);
+    s2 = Grammar_goto(&g, s, TEST2_T_c, 0);
     set_out(&s);
     s = s2;
     s2 = NULL;
@@ -363,7 +363,7 @@ void test_lalr(void) {
         I8: C -> cC·, c/d
     */
     s2 = s;
-    s = Grammar_goto(&g, s2, TEST2_NT_C);
+    s = Grammar_goto(&g, s2, TEST2_NT_C, 0);
     set_out(&s2);
     TEST_NUM(1);
     /* C -> cC·, c/d */
@@ -373,11 +373,11 @@ void test_lalr(void) {
     set_out(&s);
 
     /*
-        Test canonical collection
+        Test LALR collection
         Same grammar
     */
     Grammar_compute_collection(&g);
-    assert(buffer_num(g.collection) == 10);
+    assert(buffer_num(g.collection) == 7);
     /*
         I0: S' -> ·S, $
             S  -> ·CC, $
@@ -427,28 +427,31 @@ void test_lalr(void) {
     CHECK_STATE;
     set_out(&s);
     /*
-        I3: C -> c·C, c/d
-            C -> ·cC, c/d
-            C -> ·d, c/d
+        I36: C -> c·C, c/d/$
+             C -> ·cC, c/d/$
+             C -> ·d, c/d/$
     */
     set_new_Item(&s);
-    item = Item_new(1 /* C -> cC */, 1 /* c·C */, 2, TEST2_T_c, TEST2_T_d);
+    item = Item_new(1 /* C -> cC */, 1 /* c·C */, 3, TEST2_T_c, TEST2_T_d,
+        TEST2_NSYM /* $ */);
     set_add(s, &item);
     destroy_item(&item);
-    item = Item_new(1 /* C -> cC */, 0 /* ·cC */, 2, TEST2_T_c, TEST2_T_d);
+    item = Item_new(1 /* C -> cC */, 0 /* ·cC */, 3, TEST2_T_c, TEST2_T_d,
+        TEST2_NSYM /* $ */);
     set_add(s, &item);
     destroy_item(&item);
-    item = Item_new(2 /* C -> d */, 0 /* ·d */, 2, TEST2_T_c, TEST2_T_d);
+    item = Item_new(2 /* C -> d */, 0 /* ·d */, 3, TEST2_T_c, TEST2_T_d,
+        TEST2_NSYM /* $ */);
     set_add(s, &item);
     destroy_item(&item);
     CHECK_STATE;
     set_out(&s);
     /*
-        I4: C -> d·, c/d
+        I47: C -> d·, c/d/$
     */
     set_new_Item(&s);
-    item = Item_new(
-        2 /* C -> d */, END_OF_PRODUCTION /* d· */, 2, TEST2_T_c, TEST2_T_d);
+    item = Item_new(2 /* C -> d */, END_OF_PRODUCTION /* d· */, 3, TEST2_T_c,
+        TEST2_T_d, TEST2_NSYM /* $ */);
     set_add(s, &item);
     destroy_item(&item);
     CHECK_STATE;
@@ -464,48 +467,11 @@ void test_lalr(void) {
     CHECK_STATE;
     set_out(&s);
     /*
-        I6: C -> c·C, $
-            C -> ·cC, $
-            C -> ·d, $
+        I89: C -> cC·, c/d/$
     */
     set_new_Item(&s);
-    item = Item_new(1 /* C -> cC */, 1 /* c·C */, 1, TEST2_NSYM /* $ */);
-    set_add(s, &item);
-    destroy_item(&item);
-    item = Item_new(1 /* C -> cC */, 0 /* ·cC */, 1, TEST2_NSYM /* $ */);
-    set_add(s, &item);
-    destroy_item(&item);
-    item = Item_new(2 /* C -> d */, 0 /* ·d */, 1, TEST2_NSYM /* $ */);
-    set_add(s, &item);
-    destroy_item(&item);
-    CHECK_STATE;
-    set_out(&s);
-    /*
-        I7: C -> d·, $
-    */
-    set_new_Item(&s);
-    item = Item_new(
-        2 /* C -> d */, END_OF_PRODUCTION /* d· */, 1, TEST2_NSYM /* $ */);
-    set_add(s, &item);
-    destroy_item(&item);
-    CHECK_STATE;
-    set_out(&s);
-    /*
-        I8: C -> cC·, c/d
-    */
-    set_new_Item(&s);
-    item = Item_new(
-        1 /* C -> cC */, END_OF_PRODUCTION /* cC· */, 2, TEST2_T_c, TEST2_T_d);
-    set_add(s, &item);
-    destroy_item(&item);
-    CHECK_STATE;
-    set_out(&s);
-    /*
-        I9: C -> cC·, $
-    */
-    set_new_Item(&s);
-    item = Item_new(
-        1 /* C -> cC */, END_OF_PRODUCTION /* cC· */, 1, TEST2_NSYM /* $ */);
+    item = Item_new(1 /* C -> cC */, END_OF_PRODUCTION /* cC· */, 3, TEST2_T_c,
+        TEST2_T_d, TEST2_NSYM /* $ */);
     set_add(s, &item);
     destroy_item(&item);
     CHECK_STATE;

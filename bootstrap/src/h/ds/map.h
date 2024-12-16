@@ -69,6 +69,9 @@ size_t map_empty(map m);
 size_t map_has(map m, const void *k);
 void *_map_get(map m, const void *k);
 #define map_get(M, K, T) ((T *)_map_get(M, K))
+/* "eq" might not take into account all fields, this is for those cases */
+void *_map_get_key(map m, const void *k);
+#define map_get_key(M, K, T) ((T *)_map_get_key(M, K))
 
 /* Iterator */
 typedef struct {

@@ -343,6 +343,13 @@ void *_map_get(map m, const void *k) {
     return m->buf[idx].v;
 }
 
+void *_map_get_key(map m, const void *k) {
+    size_t idx = map_find(m, k);
+    if (idx == NOT_FOUND)
+        return NULL;
+    return m->buf[idx].k;
+}
+
 /* --- Iterator --- */
 map_iterator map_it_begin(map m) {
     map_iterator ret;

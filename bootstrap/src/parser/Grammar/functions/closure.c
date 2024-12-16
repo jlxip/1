@@ -4,14 +4,18 @@ static const size_t EEPSILON = EPSILON;
 
 /* LR(1) item closure: [A -> alpha · B beta, a] */
 /* This expands only once */
-static set Grammar_closure_once(const Grammar *g, const Item *item) {
+static set Grammar_closure_once(
+    const Grammar *g, const Item *item, size_t core) {
     set ret = NULL; /* set<Item> */
     const Production *prod;
     size_t sym;
     size_t i;
     buffer beta = NULL;
 
-    set_new_Item(&ret);
+    if (!core)
+        set_new_Item(&ret);
+    else
+        set_new_Item_core(&ret);
     set_add(ret, item);
 
     /* If dot is at the end of item, no additional closure */
@@ -62,13 +66,13 @@ static set Grammar_closure_once(const Grammar *g, const Item *item) {
 }
 
 /* Acutal iterative LR(1) item closure */
-set Grammar_closure(const Grammar *g, const Item *item) {
+set Grammar_closure(const Grammar *g, const Item *item, size_t core) {
     set ret = NULL;
     size_t prev = 0;
     size_t now;
 
     /* Expand for the first time */
-    ret = Grammar_closure_once(g, item);
+    ret = Grammar_closure_once(g, item, core);
     if (!ret)
         return NULL;
     if (set_num(ret) == 1)
@@ -81,11 +85,14 @@ set Grammar_closure(const Grammar *g, const Item *item) {
         set to_add = NULL; /* set<Item> */
         set_iterator it;
 
-        set_new_Item(&to_add);
+        if (!core)
+            set_new_Item(&to_add);
+        else
+            set_new_Item_core(&to_add);
         it = set_it_begin(ret);
         while (!set_it_finished(&it)) {
             const Item *this = set_it_get(&it, Item);
-            set aux = Grammar_closure_once(g, this); /* set<Item> */
+            set aux = Grammar_closure_once(g, this, core); /* set<Item> */
             if (!aux) {
                 /* Nothing to do here */
                 set_it_next(&it);

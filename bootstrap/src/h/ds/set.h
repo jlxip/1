@@ -31,6 +31,9 @@ void set_out(set *s);
 size_t set_num(set s);
 size_t set_empty(set s);
 size_t set_has(set s, const void *element);
+/* "eq" might not take into account all fields, this is for those cases */
+void *_set_get(set s, const void *element);
+#define set_get(S, E, T) ((T *)_set_get(S, E))
 
 /* Iterator */
 typedef struct {
