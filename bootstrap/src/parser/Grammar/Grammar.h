@@ -48,6 +48,8 @@ typedef struct {
     map epsilons;      /* map<symbol, bool> */
     map follows;       /* map<symbol, set<symbol>> */
     buffer collection; /* buffer<set<Item>> */
+    buffer gotos;      /* buffer<map<symbol, state>> */
+    buffer table;      /* buffer<map<symbol, Entry>> */
 } Grammar;
 
 /* LR(1) item */
@@ -70,6 +72,17 @@ void destroy_item(void *a);
 #define set_new_Item_core(S)                                                   \
     set_new(S, hash_item_core, equal_item_core, copy_item, destroy_item)
 
+/* LR parsing table field */
+enum EntryType { ENTRY_ACCEPT, ENTRY_REDUCE, ENTRY_SHIFT, ENTRY_GOTO };
+typedef struct {
+    size_t type; /* One of the above */
+    size_t info; /* Additional information (state or production) */
+} Entry;
+size_t hash_entry(const void *ptr);
+size_t equal_entry(const void *a, const void *b);
+void *copy_entry(const void *a);
+void destroy_entry(void *a);
+
 /* Grammar.c */
 void Grammar_new(Grammar *g, size_t ntok, size_t nsym, symbol start);
 void Grammar_add(Grammar *g, symbol lhs, size_t n, ...);
@@ -84,5 +97,6 @@ void Grammar_compute_follows(Grammar *g);
 set Grammar_closure(const Grammar *g, const Item *item, bool core);
 set Grammar_goto(const Grammar *g, const set items, symbol sym, bool core);
 void Grammar_compute_collection(Grammar *g);
+void Grammar_compute_table(Grammar *g);
 
 #endif

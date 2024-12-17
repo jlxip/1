@@ -70,6 +70,33 @@ void destroy_item(void *ptr) {
     set_out(&item->look);
 }
 
+/* --- Entry --- */
+size_t hash_entry(const void *ptr) {
+    size_t ret;
+    const Entry *entry = (const Entry *)ptr;
+    ret = hash_size_t(&entry->type);
+    ret = combine_hashes(ret, hash_size_t(&entry->info));
+    return ret;
+}
+
+size_t equal_entry(const void *ptra, const void *ptrb) {
+    const Entry *a = (const Entry *)ptra;
+    const Entry *b = (const Entry *)ptrb;
+    if (a->type != b->type)
+        return 0;
+    return a->info == b->info;
+}
+
+void *copy_entry(const void *ptr) {
+    const Entry *entry = (const Entry *)ptr;
+    Entry *ret = malloc(sizeof(Entry));
+    ret->type = entry->type;
+    ret->info = entry->info;
+    return ret;
+}
+
+void destroy_entry(void *ptr) { (void)ptr; }
+
 /* --- Grammar --- */
 
 void Grammar_new(Grammar *g, size_t ntok, size_t nsym, symbol start) {
@@ -83,6 +110,8 @@ void Grammar_new(Grammar *g, size_t ntok, size_t nsym, symbol start) {
     g->epsilons = NULL;
     g->follows = NULL;
     g->collection = NULL;
+    g->gotos = NULL;
+    g->table = NULL;
 }
 
 void Grammar_add(Grammar *g, symbol lhs, size_t n, ...) {
@@ -152,5 +181,23 @@ void Grammar_out(Grammar *g) {
             set_out(s);
         }
         buffer_out(&g->collection);
+    }
+
+    /* Free gotos: buffer<map<symbol, state>> */
+    if (g->gotos) {
+        for (i = 0; i < buffer_num(g->gotos); ++i) {
+            map *m = buffer_get(g->gotos, i, map);
+            map_out(m);
+        }
+        buffer_out(&g->gotos);
+    }
+
+    /* Free table: buffer<map<symbol, Entry>> */
+    if (g->table) {
+        for (i = 0; i < buffer_num(g->table); ++i) {
+            map *m = buffer_get(g->table, i, map);
+            map_out(m);
+        }
+        buffer_out(&g->table);
     }
 }

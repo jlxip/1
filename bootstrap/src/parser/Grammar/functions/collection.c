@@ -6,6 +6,7 @@ static void build_I0(Grammar *g, map seen) {
     /* Everything starts with the augmented start */
     Item start;
     set I0;
+    map emptymap = NULL; /* map<symbol, state> */
 
     start = Item_new(g->ntok /* Augmented start symbol */,
         0 /* Beginning of production */, 1, g->nsym /* $ */);
@@ -14,6 +15,10 @@ static void build_I0(Grammar *g, map seen) {
     destroy_item(&start);
     map_add(seen, &I0, &ZERO);
     buffer_push(g->collection, &I0);
+
+    map_new_symbol(&emptymap, sizeof(state), hash_state, equal_state,
+        copy_state, destroy_state);
+    buffer_push(g->gotos, &emptymap);
 }
 
 static bool join_looks(set a, set b) {
@@ -71,11 +76,24 @@ static void recursive_goto(Grammar *g, map seen) {
                         changed = true;
                     }
                     set_out(&child);
+
+                    /* Register the GOTO */
+                    map_add_if_not_there(
+                        *buffer_get(g->gotos, idx, map), &sym, &prev);
                 } else {
                     /* No, new state */
-                    state prev = buffer_num(g->collection);
-                    map_add(seen, &child, &prev);
+                    state new = buffer_num(g->collection);
+                    map emptymap = NULL; /* map<symbol, state> */
+
+                    /* Add this new state everywhere */
+                    map_add(seen, &child, &new);
                     buffer_push(g->collection, &child);
+                    map_new_symbol(&emptymap, sizeof(state), hash_state,
+                        equal_state, copy_state, destroy_state);
+                    buffer_push(g->gotos, &emptymap);
+
+                    /* Register the GOTO */
+                    map_add(*buffer_get(g->gotos, idx, map), &sym, &new);
                 }
             }
         }
@@ -103,7 +121,8 @@ void Grammar_compute_collection(Grammar *g) {
 
     map_new(&seen, hash_set, equal_set, copy_set, destroy_set, sizeof(state),
         hash_state, equal_state, copy_state, destroy_state);
-    buffer_new(&g->collection, sizeof(buffer));
+    buffer_new(&g->collection, sizeof(set));
+    buffer_new(&g->gotos, sizeof(map));
 
     /* Get the first state */
     build_I0(g, seen);

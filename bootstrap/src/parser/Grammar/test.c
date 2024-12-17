@@ -476,6 +476,36 @@ void test_lalr(void) {
     destroy_item(&item);
     CHECK_STATE;
     set_out(&s);
+
+    /*
+        Test syntax analysis table
+        Same grammar
+    */
+    Grammar_compute_table(&g);
+    for (x = 0; x < buffer_num(g.table); ++x) {
+        map m = *buffer_get(g.table, x, map);
+        size_t i;
+        printf("%lu -> ", x);
+        for (i = 1; i <= g.nsym; ++i) {
+            if (map_has(m, &i)) {
+                Entry entry = *map_get(m, &i, Entry);
+                if (entry.type == ENTRY_SHIFT)
+                    printf("s%lu", entry.info);
+                else if (entry.type == ENTRY_GOTO)
+                    printf("%lu ", entry.info);
+                else if (entry.type == ENTRY_REDUCE)
+                    printf("r%lu", entry.info);
+                else if (entry.type == ENTRY_ACCEPT)
+                    printf("ac");
+            } else {
+                printf("  ");
+            }
+
+            if (i != g.nsym)
+                printf(" ");
+        }
+        printf("\n");
+    }
     Grammar_out(&g);
 
     printf("NICE!\n");
