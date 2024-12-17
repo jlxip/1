@@ -1,14 +1,14 @@
 #include "../Grammar.h"
 
-static const size_t EZERO = 0;
-static const size_t EONE = 1;
-static const size_t EEPSILON = EPSILON;
+static const bool EFALSE = false;
+static const bool ETRUE = true;
+static const symbol EEPSILON = EPSILON;
 
 /* --- FOLLOW --- */
 
 /* Checks if sym -*> epsilon, saves the result */
-static void compute_derives_to_epsilon(Grammar *g, size_t sym) {
-    size_t result = 0;
+static void compute_derives_to_epsilon(Grammar *g, symbol sym) {
+    bool result = false;
     size_t iprod;
 
     if (map_has(g->epsilons, &sym))
@@ -25,7 +25,7 @@ static void compute_derives_to_epsilon(Grammar *g, size_t sym) {
         /* rhs is empty if sym -*> epsilon */
         if (buffer_empty(x->rhs)) {
             /* Nice */
-            result = 1;
+            result = true;
             break;
         }
     }
@@ -33,16 +33,16 @@ static void compute_derives_to_epsilon(Grammar *g, size_t sym) {
     map_add(g->epsilons, &sym, &result);
 }
 
-static void rec_compute_follow(Grammar *g, size_t sym, map cache, set stack) {
+static void rec_compute_follow(Grammar *g, symbol sym, map cache, set stack) {
     size_t iprod;
-    set *ret = NULL; /* set<size_t> */
+    set *ret = NULL; /* set<symbol> */
 
     if (map_has(cache, &sym) || set_has(stack, &sym))
         return;
 
     set_add(stack, &sym);
     ret = calloc(1, sizeof(set));
-    set_new_size_t(ret);
+    set_new_symbol(ret);
 
     /* Start symbol includes $ */
     if (sym == g->start)
@@ -51,14 +51,14 @@ static void rec_compute_follow(Grammar *g, size_t sym, map cache, set stack) {
     /* Check productions */
     for (iprod = 0; iprod < buffer_num(g->g); ++iprod) {
         const Production *x = buffer_get(g->g, iprod, Production);
-        size_t found = 0;
+        bool found = false;
         size_t irhs;
 
         /* Find sym in rhs */
         for (irhs = 0; irhs < buffer_num(x->rhs); ++irhs) {
-            size_t *e = buffer_get(x->rhs, irhs, size_t);
+            symbol *e = buffer_get(x->rhs, irhs, symbol);
             if (!found && *e == sym) {
-                found = 1;
+                found = true;
                 break;
             }
         }
@@ -80,7 +80,7 @@ static void rec_compute_follow(Grammar *g, size_t sym, map cache, set stack) {
                 set_join(*ret, *parent);
         } else {
             /* There is! */
-            size_t follow = *buffer_get(x->rhs, irhs + 1, size_t);
+            symbol follow = *buffer_get(x->rhs, irhs + 1, symbol);
             /*
                 There's something to the right: A -> B X
                 FOLLOW(B) must include FIRST(X) - { epsilon }
@@ -92,7 +92,7 @@ static void rec_compute_follow(Grammar *g, size_t sym, map cache, set stack) {
                 Additionally, if X -*> epsilon, then
                 FOLLOW(B) must include FOLLOW(X)
             */
-            if (*map_get(g->epsilons, &follow, size_t)) {
+            if (*map_get(g->epsilons, &follow, bool)) {
                 /* FOLLOW(B) += FOLLOW(X) */
                 const set *followx;
                 rec_compute_follow(g, follow, cache, stack);
@@ -117,22 +117,22 @@ static void rec_compute_follow(Grammar *g, size_t sym, map cache, set stack) {
 }
 
 void Grammar_compute_follows(Grammar *g) {
-    set stack = NULL; /* set<size_t> */
+    set stack = NULL; /* set<symbol> */
     size_t i;
 
     if (map_empty(g->firsts))
         throw("tried to call compute_follows() without firsts");
 
-    map_new_size_t(
+    map_new_symbol(
         &g->follows, sizeof(set), hash_set, equal_set, copy_set, destroy_set);
-    set_new_size_t(&stack);
+    set_new_symbol(&stack);
 
     /* First compute, for all NTs, if X -*> epsilon */
-    map_new_size_t(&g->epsilons, sizeof(size_t), hash_size_t, equal_size_t,
-        copy_size_t, destroy_size_t);
-    map_add(g->epsilons, &EZERO, &EONE); /* epsilon -*> epsilon */
+    map_new_symbol(&g->epsilons, sizeof(bool), hash_bool, equal_bool, copy_bool,
+        destroy_bool);
+    map_add(g->epsilons, &EEPSILON, &ETRUE); /* epsilon -*> epsilon */
     for (i = 1; i < g->ntok; ++i)
-        map_add(g->epsilons, &i, &EZERO); /* token !-*> epsilon */
+        map_add(g->epsilons, &i, &EFALSE); /* token !-*> epsilon */
     for (i = g->ntok + 1; i < g->nsym; ++i)
         compute_derives_to_epsilon(g, i); /* compute the rest */
 

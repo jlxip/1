@@ -10,14 +10,14 @@ static void build_I0(Grammar *g, map seen) {
     start = Item_new(g->ntok /* Augmented start symbol */,
         0 /* Beginning of production */, 1, g->nsym /* $ */);
 
-    I0 = Grammar_closure(g, &start, 1);
+    I0 = Grammar_closure(g, &start, true);
     destroy_item(&start);
     map_add(seen, &I0, &ZERO);
     buffer_push(g->collection, &I0);
 }
 
-static size_t join_looks(set a, set b) {
-    size_t changed = 0;
+static bool join_looks(set a, set b) {
+    bool changed = false;
 
     set_iterator it = set_it_begin(b);
     while (!set_it_finished(&it)) {
@@ -35,21 +35,21 @@ static size_t join_looks(set a, set b) {
 }
 
 static void recursive_goto(Grammar *g, map seen) {
-    size_t changed = 0;
+    bool changed;
     do {
         size_t idx;
-        changed = 0;
+        changed = false;
         for (idx = 0; idx < buffer_num(g->collection); ++idx) {
             /* Note that collection may increase with each iteration */
             set parent; /* Parent state: set<Item> */
-            size_t sym;
+            symbol sym;
 
             parent = *buffer_get(g->collection, idx, set);
 
             /* Try all symbols and see what sticks */
             for (sym = 1; sym < g->nsym; ++sym) {
                 set child; /* Child state: set<Item> */
-                child = Grammar_goto(g, parent, sym, 1);
+                child = Grammar_goto(g, parent, sym, true);
                 if (set_empty(child)) {
                     /* Nothing to do with this symbol */
                     set_out(&child);
@@ -59,7 +59,7 @@ static void recursive_goto(Grammar *g, map seen) {
                 /* Already seen? */
                 if (map_has(seen, &child)) {
                     /* Yes, join lookahead symbols */
-                    size_t prev = *map_get(seen, &child, size_t);
+                    state prev = *map_get(seen, &child, state);
                     set previous;
 
                     previous = *buffer_get(g->collection, prev, set);
@@ -68,12 +68,12 @@ static void recursive_goto(Grammar *g, map seen) {
                             The idea here is that we only have to iterate again
                             if some previous state has changed
                         */
-                        changed = 1;
+                        changed = true;
                     }
                     set_out(&child);
                 } else {
                     /* No, new state */
-                    size_t prev = buffer_num(g->collection);
+                    state prev = buffer_num(g->collection);
                     map_add(seen, &child, &prev);
                     buffer_push(g->collection, &child);
                 }
@@ -96,17 +96,14 @@ static void fix_collection(Grammar *g) {
 }
 
 void Grammar_compute_collection(Grammar *g) {
-    map seen = NULL; /* map<set<Item (core)>, size_t (index in collection)> */
+    map seen = NULL; /* map<set<Item (core)>, state> */
 
     if (!g->firsts)
         throw("tried to call compute_collection() without computing firsts");
 
-    map_new(&seen, hash_set, equal_set, copy_set, destroy_set, sizeof(size_t),
-        hash_size_t, equal_size_t, copy_size_t, destroy_size_t);
+    map_new(&seen, hash_set, equal_set, copy_set, destroy_set, sizeof(state),
+        hash_state, equal_state, copy_state, destroy_state);
     buffer_new(&g->collection, sizeof(buffer));
-    /*buffer_new(&g->gotos_forwards, sizeof(set));
-    buffer_new(&g->gotos_backwards, sizeof(Goto));
-    buffer_push(g->gotos_backwards, &nullgoto);*/ /* Nothing goes to I0 */
 
     /* Get the first state */
     build_I0(g, seen);

@@ -23,4 +23,9 @@ size_t equal_size_t(const void *a, const void *b);
 void *copy_size_t(const void *a);
 void destroy_size_t(void *a);
 
+#define hash_bool hash_size_t
+#define equal_bool equal_size_t
+#define copy_bool copy_size_t
+#define destroy_bool destroy_size_t
+
 #endif

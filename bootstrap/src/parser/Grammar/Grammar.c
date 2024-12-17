@@ -10,11 +10,11 @@ Item Item_new(size_t prod, size_t dot, size_t nlook, ...) {
     ret.prod = prod;
     ret.dot = dot;
     ret.look = NULL;
-    set_new_size_t(&ret.look);
+    set_new_symbol(&ret.look);
 
     va_start(args, nlook);
     while (nlook--) {
-        size_t x = va_arg(args, size_t);
+        symbol x = va_arg(args, symbol);
         set_add(ret.look, &x);
     }
     va_end(args);
@@ -72,30 +72,30 @@ void destroy_item(void *ptr) {
 
 /* --- Grammar --- */
 
-void Grammar_new(Grammar *g, size_t ntok, size_t nsym, size_t start) {
+void Grammar_new(Grammar *g, size_t ntok, size_t nsym, symbol start) {
     g->g = NULL;
     buffer_new(&g->g, sizeof(Production));
     g->ntok = ntok;
     g->nsym = nsym;
     g->start = start;
-    g->augmented = 0;
+    g->augmented = false;
     g->firsts = NULL;
     g->epsilons = NULL;
     g->follows = NULL;
     g->collection = NULL;
 }
 
-void Grammar_add(Grammar *g, size_t lhs, size_t n, ...) {
+void Grammar_add(Grammar *g, symbol lhs, size_t n, ...) {
     va_list args;
     Production prod;
 
     prod.lhs = lhs;
     prod.rhs = NULL;
-    buffer_new(&prod.rhs, sizeof(size_t));
+    buffer_new(&prod.rhs, sizeof(symbol));
 
     va_start(args, n);
     while (n--) {
-        size_t x = va_arg(args, size_t);
+        symbol x = va_arg(args, symbol);
         buffer_push(prod.rhs, &x);
     }
     buffer_shrink(prod.rhs);
@@ -115,12 +115,12 @@ void Grammar_augment(Grammar *g) {
     /* Trick: use g->ntok as start symbol, keep 0 as epsilon */
     prod.lhs = g->ntok;
     prod.rhs = NULL;
-    buffer_new(&prod.rhs, sizeof(size_t));
+    buffer_new(&prod.rhs, sizeof(symbol));
     buffer_push(prod.rhs, &g->start);
 
     buffer_push(g->g, &prod);
     g->start = g->ntok;
-    g->augmented = 1;
+    g->augmented = true;
 }
 
 void Grammar_out(Grammar *g) {
@@ -133,15 +133,15 @@ void Grammar_out(Grammar *g) {
     }
     buffer_out(&g->g);
 
-    /* Free firsts: map<size_t, set<size_t>> */
+    /* Free firsts: map<symbol, set<symbol>> */
     if (g->firsts)
         map_out(&g->firsts);
 
-    /* Free epsilons: map<size_t, size_t> */
+    /* Free epsilons: map<symbol, bool> */
     if (g->epsilons)
         map_out(&g->epsilons);
 
-    /* Free follows: map<size_t, set<size_t>> */
+    /* Free follows: map<symbol, set<symbol>> */
     if (g->follows)
         map_out(&g->follows);
 

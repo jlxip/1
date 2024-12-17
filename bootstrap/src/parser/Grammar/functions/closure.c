@@ -1,16 +1,15 @@
 #include "../Grammar.h"
 
-static const size_t EEPSILON = EPSILON;
+static const symbol EEPSILON = EPSILON;
 
 /* LR(1) item closure: [A -> alpha · B beta, a] */
 /* This expands only once */
-static set Grammar_closure_once(
-    const Grammar *g, const Item *item, size_t core) {
+static set Grammar_closure_once(const Grammar *g, const Item *item, bool core) {
     set ret = NULL; /* set<Item> */
     const Production *prod;
-    size_t sym;
+    symbol sym;
     size_t i;
-    buffer beta = NULL;
+    buffer beta = NULL; /* buffer<symbol> */
 
     if (!core)
         set_new_Item(&ret);
@@ -24,14 +23,14 @@ static set Grammar_closure_once(
 
     /* Get symbol next to the dot */
     prod = buffer_get(g->g, item->prod, Production);
-    sym = *buffer_get(prod->rhs, item->dot, size_t);
+    sym = *buffer_get(prod->rhs, item->dot, symbol);
 
     /* If it's a terminal, we're done, return item */
     if (IS_TERMINAL(g, sym))
         return ret;
 
     /* beta = prod[dot+1:] */
-    buffer_new(&beta, sizeof(size_t));
+    buffer_new(&beta, sizeof(symbol));
     for (i = item->dot + 1; i < buffer_num(prod->rhs); ++i)
         buffer_push(beta, buffer_get(prod->rhs, i, void));
 
@@ -66,8 +65,8 @@ static set Grammar_closure_once(
 }
 
 /* Acutal iterative LR(1) item closure */
-set Grammar_closure(const Grammar *g, const Item *item, size_t core) {
-    set ret = NULL;
+set Grammar_closure(const Grammar *g, const Item *item, bool core) {
+    set ret = NULL; /* set<Item> */
     size_t prev = 0;
     size_t now;
 

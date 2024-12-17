@@ -1,12 +1,12 @@
 #include "../Grammar.h"
 
-static const size_t EEPSILON = EPSILON;
+static const symbol EEPSILON = EPSILON;
 
 /* --- FIRST --- */
 
-static void rec_compute_first(Grammar *g, size_t sym, map cache, set stack) {
+static void rec_compute_first(Grammar *g, symbol sym, map cache, set stack) {
     size_t iprod;
-    set *ret = NULL; /* set<size_t> */
+    set *ret = NULL; /* set<symbol> */
 
     if (map_has(cache, &sym) || set_has(stack, &sym))
         return;
@@ -15,12 +15,12 @@ static void rec_compute_first(Grammar *g, size_t sym, map cache, set stack) {
 
     /* If not in cache, surely not terminal */
     ret = calloc(1, sizeof(set));
-    set_new_size_t(ret);
+    set_new_symbol(ret);
 
     /* Check productions */
     for (iprod = 0; iprod < buffer_num(g->g); ++iprod) {
         const Production *x = buffer_get(g->g, iprod, Production);
-        size_t epsilon = 1;
+        bool epsilon = true;
         size_t irhs;
 
         /* Find sym in lhs */
@@ -29,7 +29,7 @@ static void rec_compute_first(Grammar *g, size_t sym, map cache, set stack) {
 
         /* Go through rhs */
         for (irhs = 0; irhs < buffer_num(x->rhs); ++irhs) {
-            size_t *e = buffer_get(x->rhs, irhs, size_t);
+            symbol *e = buffer_get(x->rhs, irhs, symbol);
             const set *sub;
             rec_compute_first(g, *e, cache, stack);
             sub = map_get(cache, e, set);
@@ -43,7 +43,7 @@ static void rec_compute_first(Grammar *g, size_t sym, map cache, set stack) {
                 set_remove(*ret, &EEPSILON);
             } else {
                 /* Join and we're done */
-                epsilon = 0;
+                epsilon = false;
                 set_join(*ret, *sub);
                 break;
             }
@@ -59,19 +59,19 @@ static void rec_compute_first(Grammar *g, size_t sym, map cache, set stack) {
 }
 
 void Grammar_compute_firsts(Grammar *g) {
-    set stack = NULL; /* set<size_t> */
+    set stack = NULL; /* set<symbol> */
     size_t i;
 
     if (!g->augmented)
         throw("tried to call compute_first() on non-augmented grammar");
 
-    map_new_size_t(
+    map_new_symbol(
         &g->firsts, sizeof(set), hash_set, equal_set, copy_set, destroy_set);
-    set_new_size_t(&stack);
+    set_new_symbol(&stack);
 
     for (i = 1; i < g->ntok; ++i) {
         set *s = calloc(1, sizeof(set));
-        set_new_size_t(s);
+        set_new_symbol(s);
         set_add(*s, &i);
         map_add_movev(g->firsts, &i, s);
     }
@@ -87,7 +87,7 @@ void Grammar_compute_firsts(Grammar *g) {
 
 /* Computes FIRST(alpha), such as FIRST(A B C) */
 set Grammar_first_many(const Grammar *g, const buffer syms) {
-    set ret = NULL; /* set<size_t> */
+    set ret = NULL; /* set<symbol> */
     size_t i;
 
     if (!g->firsts)
@@ -99,9 +99,9 @@ set Grammar_first_many(const Grammar *g, const buffer syms) {
             FIRST(A) - { epsilon } + FIRST(B), otherwise
     */
 
-    set_new_size_t(&ret);
+    set_new_symbol(&ret);
     for (i = 0; i < buffer_num(syms); ++i) {
-        size_t sym = *buffer_get(syms, i, size_t);
+        symbol sym = *buffer_get(syms, i, symbol);
         const set *other = map_get(g->firsts, &sym, set);
         set_join(ret, *other);
 

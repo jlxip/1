@@ -7,6 +7,8 @@
 /* Incredibly common stuff */
 
 typedef unsigned char uint8_t;
+typedef size_t bool;
+enum _bool_values { false, true };
 
 #define _throw_show(X)                                                         \
     printf("--------------------\n"                                            \

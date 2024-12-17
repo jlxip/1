@@ -11,7 +11,7 @@ static Item advance(const Production *prod, const Item *parent) {
     return ret;
 }
 
-set Grammar_goto(const Grammar *g, const set items, size_t sym, size_t core) {
+set Grammar_goto(const Grammar *g, const set items, symbol sym, bool core) {
     set ret = NULL;   /* set<Item> */
     set gotos = NULL; /* set<Item> */
     set_iterator it;
@@ -26,7 +26,7 @@ set Grammar_goto(const Grammar *g, const set items, size_t sym, size_t core) {
         const Item *parent = set_it_get(&it, Item);
         Item *child;
         const Production *prod;
-        size_t x;
+        symbol x;
 
         /* Is there something at the right of the dot? */
         if (parent->dot == END_OF_PRODUCTION) {
@@ -36,7 +36,7 @@ set Grammar_goto(const Grammar *g, const set items, size_t sym, size_t core) {
         }
 
         prod = buffer_get(g->g, parent->prod, Production);
-        x = *buffer_get(prod->rhs, parent->dot, size_t);
+        x = *buffer_get(prod->rhs, parent->dot, symbol);
         if (x != sym) {
             /* not interested */
             set_it_next(&it);
