@@ -45,13 +45,15 @@ void Grammar_compute_table(Grammar *g) {
                     Entry entry;
 
                     if (map_has(entries, &sym))
-                        throw("shift/reduce conflict"); /* where? */
+                        throw("grammar conflict"); /* where? */
 
-                    if (item->prod == g->ntok /* augmented start */)
+                    if (item->prod == g->ntok /* augmented start */) {
                         entry.type = ENTRY_ACCEPT;
-                    else
+                        entry.info = 0;
+                    } else {
                         entry.type = ENTRY_REDUCE;
-                    entry.info = item->prod;
+                        entry.info = item->prod;
+                    }
                     map_add(entries, &sym, &entry);
 
                     set_it_next(&lit);

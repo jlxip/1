@@ -16,6 +16,7 @@ typedef size_t symbol; /* As defined in the big comment below */
 typedef size_t state;  /* Index for Grammar.collection */
 #define map_new_symbol map_new_size_t
 #define set_new_symbol set_new_size_t
+#define map_new_state map_new_size_t
 #define hash_state hash_size_t
 #define equal_state equal_size_t
 #define copy_state copy_size_t

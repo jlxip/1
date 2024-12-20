@@ -39,6 +39,16 @@ static bool join_looks(set a, set b) {
     return changed;
 }
 
+static void register_goto(Grammar *g, size_t from, symbol sym, size_t to) {
+    map m = *buffer_get(g->gotos, from, map);
+    if (map_has(m, &sym)) {
+        if (*map_get(m, &sym, size_t) != to)
+            throw("maybe grammar conflict?"); /* not sure what this is */
+    } else {
+        map_add(m, &sym, &to);
+    }
+}
+
 static void recursive_goto(Grammar *g, map seen) {
     bool changed;
     do {
@@ -76,10 +86,7 @@ static void recursive_goto(Grammar *g, map seen) {
                         changed = true;
                     }
                     set_out(&child);
-
-                    /* Register the GOTO */
-                    map_add_if_not_there(
-                        *buffer_get(g->gotos, idx, map), &sym, &prev);
+                    register_goto(g, idx, sym, prev);
                 } else {
                     /* No, new state */
                     state new = buffer_num(g->collection);
@@ -91,9 +98,7 @@ static void recursive_goto(Grammar *g, map seen) {
                     map_new_symbol(&emptymap, sizeof(state), hash_state,
                         equal_state, copy_state, destroy_state);
                     buffer_push(g->gotos, &emptymap);
-
-                    /* Register the GOTO */
-                    map_add(*buffer_get(g->gotos, idx, map), &sym, &new);
+                    register_goto(g, idx, sym, new);
                 }
             }
         }
