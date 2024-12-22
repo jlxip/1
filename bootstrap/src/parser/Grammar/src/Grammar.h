@@ -4,7 +4,7 @@
 /*
     This folder, Grammar, implements a neat LALR parser generator from scratch.
     I can't use yacc since this project needs to be 100% portable, and yacc
-    has runtime libraries. Special thanks to Dragon Book.
+    has runtime libraries. Special thanks to the Dragon Book.
 */
 
 #include <common.h>
@@ -21,6 +21,10 @@ typedef size_t state;  /* Index for Grammar.collection */
 #define equal_state equal_size_t
 #define copy_state copy_size_t
 #define destroy_state destroy_size_t
+#define hash_symbol hash_size_t
+#define equal_symbol equal_size_t
+#define copy_symbol copy_size_t
+#define destroy_symbol destroy_size_t
 
 typedef struct {
     symbol lhs;
@@ -47,7 +51,6 @@ typedef struct {
     bool augmented;
     map firsts;        /* map<symbol, set<symbol>> */
     map epsilons;      /* map<symbol, bool> */
-    map follows;       /* map<symbol, set<symbol>> */
     buffer collection; /* buffer<set<Item>> */
     buffer gotos;      /* buffer<map<symbol, state>> */
     buffer table;      /* buffer<map<symbol, Entry>> */
@@ -86,7 +89,8 @@ void destroy_entry(void *a);
 
 /* Grammar.c */
 void Grammar_new(Grammar *g, size_t ntok, size_t nsym, symbol start);
-void Grammar_add(Grammar *g, symbol lhs, size_t n, ...);
+void Grammar_add(Grammar *g, symbol lhs, buffer rhs);
+/*void Grammar_add_imm(Grammar *g, symbol lhs, size_t n, ...);*/
 void Grammar_shrink(Grammar *g);
 void Grammar_augment(Grammar *g);
 void Grammar_out(Grammar *g);
@@ -94,7 +98,6 @@ void Grammar_out(Grammar *g);
 /* functions */
 void Grammar_compute_firsts(Grammar *g);
 set Grammar_first_many(const Grammar *g, const buffer syms);
-void Grammar_compute_follows(Grammar *g);
 set Grammar_closure(const Grammar *g, const Item *item, bool core);
 set Grammar_goto(const Grammar *g, const set items, symbol sym, bool core);
 void Grammar_compute_collection(Grammar *g);

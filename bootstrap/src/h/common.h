@@ -10,26 +10,46 @@ typedef unsigned char uint8_t;
 typedef size_t bool;
 enum _bool_values { false, true };
 
-#define _throw_show(X)                                                         \
+#define _throw_show_header                                                     \
     printf("--------------------\n"                                            \
            "Internal error thrown!\n"                                          \
            "File: %s\n"                                                        \
-           "Line: %d\n"                                                        \
-           "%s\n"                                                              \
-           "--------------------\n",                                           \
-        __FILE__, __LINE__, X)
+           "Line: %d\n",                                                       \
+        __FILE__, __LINE__)
+
+#define _throw_show_footer                                                     \
+    printf("\n"                                                                \
+           "--------------------\n")
 
 #ifdef DEBUG
 /* Use valgrind to print the stack trace */
 #define throw(X)                                                               \
     do {                                                                       \
-        _throw_show(X);                                                        \
+        _throw_show_header;                                                    \
+        printf("%s", X);                                                       \
+        _throw_show_footer;                                                    \
+        *(short *)0 = 0;                                                       \
+    } while (0)
+#define throwe(X, Y)                                                           \
+    do {                                                                       \
+        _throw_show_header;                                                    \
+        printf(X, Y);                                                          \
+        _throw_show_footer;                                                    \
         *(short *)0 = 0;                                                       \
     } while (0)
 #else
 #define throw(X)                                                               \
     do {                                                                       \
-        _throw_show(X);                                                        \
+        _throw_show_header;                                                    \
+        printf("%s", X);                                                       \
+        _throw_show_footer;                                                    \
+        exit(99);                                                              \
+    } while (0)
+#define throwe(X, Y)                                                           \
+    do {                                                                       \
+        _throw_show_header;                                                    \
+        printf(X, Y);                                                          \
+        _throw_show_footer;                                                    \
         exit(99);                                                              \
     } while (0)
 #endif

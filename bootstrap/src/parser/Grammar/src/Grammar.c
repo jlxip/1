@@ -108,13 +108,19 @@ void Grammar_new(Grammar *g, size_t ntok, size_t nsym, symbol start) {
     g->augmented = false;
     g->firsts = NULL;
     g->epsilons = NULL;
-    g->follows = NULL;
     g->collection = NULL;
     g->gotos = NULL;
     g->table = NULL;
 }
 
-void Grammar_add(Grammar *g, symbol lhs, size_t n, ...) {
+void Grammar_add(Grammar *g, symbol lhs, buffer rhs) {
+    Production prod;
+    prod.lhs = lhs;
+    prod.rhs = rhs;
+    buffer_push(g->g, &prod);
+}
+
+/*static void Grammar_add_imm(Grammar *g, symbol lhs, size_t n, ...) {
     va_list args;
     Production prod;
 
@@ -131,7 +137,7 @@ void Grammar_add(Grammar *g, symbol lhs, size_t n, ...) {
 
     va_end(args);
     buffer_push(g->g, &prod);
-}
+}*/
 
 void Grammar_shrink(Grammar *g) { buffer_shrink(g->g); }
 
@@ -169,10 +175,6 @@ void Grammar_out(Grammar *g) {
     /* Free epsilons: map<symbol, bool> */
     if (g->epsilons)
         map_out(&g->epsilons);
-
-    /* Free follows: map<symbol, set<symbol>> */
-    if (g->follows)
-        map_out(&g->follows);
 
     /* Free collection: buffer<set<Item>> */
     if (g->collection) {
