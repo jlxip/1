@@ -8,7 +8,7 @@ you probably want to disable warnings when using an old compiler, in case of bug
 ## Status
 - [x] Data structures
 - [x] Lexer
-- [ ] LALR parser generator [*IN PROGRESS*](src/parser/Grammar/README.md).
+- [ ] LALR parser generator [*IN PROGRESS*](src/parser/easy/README.md).
 - [ ] Lexer (second thought)
 - [ ] Parser
 - [ ] Productions (semantic analysis)
