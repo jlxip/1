@@ -1,5 +1,5 @@
 #include "../easy.h"
-#include "../src/Grammar.h"
+#include "../src/internal.h"
 #include <common.h>
 
 #define TEST_NUM(N) assert(set_num(s) == (N))
@@ -28,8 +28,6 @@ void test_lalr_closure(void) {
     Item item;
 
     g = grammar(tokens, nts, test, "S");
-    Grammar_augment(g);
-    Grammar_compute_firsts(g);
 
     /*
         I = {[S' -> ·S, $]}
@@ -38,20 +36,20 @@ void test_lalr_closure(void) {
             C  -> ·cC, c/d
             C  -> ·d, c/d
     */
-    item = Item_new(3 /* S' -> S */, 0 /* ·S */, 1, 6 /* $ */);
-    s = Grammar_closure(g, &item, 0);
+    item = Item_new(0 /* S' -> S */, 0 /* ·S */, 1, 6 /* $ */);
+    s = CLOSURE(g, &item, 0);
     TEST_NUM(4);
     /* S' -> ·S, $ */
     /* Item already set */
     TEST_ITEM;
     /* S -> ·CC, $ */
-    item = Item_new(0 /* S -> CC */, 0 /* ·CC */, 1, 6 /* $ */);
+    item = Item_new(1 /* S -> CC */, 0 /* ·CC */, 1, 6 /* $ */);
     TEST_ITEM;
     /* C -> ·cC, c/d */
-    item = Item_new(1 /* C -> cC */, 0 /* ·cC */, 2, 1, 2);
+    item = Item_new(2 /* C -> cC */, 0 /* ·cC */, 2, 1, 2);
     TEST_ITEM;
     /* C -> ·d, c/d */
-    item = Item_new(2 /* C -> d */, 0 /* ·d */, 2, 1, 2);
+    item = Item_new(3 /* C -> d */, 0 /* ·d */, 2, 1, 2);
     TEST_ITEM;
     set_out(&s);
 
@@ -62,17 +60,17 @@ void test_lalr_closure(void) {
             C -> ·cC, c/d <- Tricky, must perform FIRST(epsilon c/d)
             C -> ·d, c/d
     */
-    item = Item_new(1 /* C -> cC */, 1 /* c·C */, 2, 1, 2);
-    s = Grammar_closure(g, &item, 0);
+    item = Item_new(2 /* C -> cC */, 1 /* c·C */, 2, 1, 2);
+    s = CLOSURE(g, &item, 0);
     TEST_NUM(3);
     /* C -> c·C, c/d */
     /* Item already set */
     TEST_ITEM;
     /* C -> ·cC, c/d */
-    item = Item_new(1 /* C -> cC */, 0 /* ·cC */, 2, 1, 2);
+    item = Item_new(2 /* C -> cC */, 0 /* ·cC */, 2, 1, 2);
     TEST_ITEM;
     /* C -> ·d, c/d */
-    item = Item_new(2 /* C -> d */, 0 /* ·d */, 2, 1, 2);
+    item = Item_new(3 /* C -> d */, 0 /* ·d */, 2, 1, 2);
     TEST_ITEM;
     set_out(&s);
 

@@ -1,5 +1,5 @@
 #include "../easy.h"
-#include "../src/Grammar.h"
+#include "../src/internal.h"
 #include <common.h>
 
 #define CHECK_STATE                                                            \
@@ -33,8 +33,6 @@ void test_lalr_collection(void) {
     Item item;
 
     g = grammar(tokens, nts, test, "S");
-    Grammar_augment(g);
-    Grammar_compute_firsts(g);
     Grammar_compute_collection(g);
 
     /*
@@ -44,16 +42,16 @@ void test_lalr_collection(void) {
             C  -> ·d, c/d
     */
     set_new_Item(&s);
-    item = Item_new(3 /* S' -> S */, 0 /* ·S */, 1, 6 /* $ */);
+    item = Item_new(0 /* S' -> S */, 0 /* ·S */, 1, 6 /* $ */);
     set_add(s, &item);
     destroy_item(&item);
-    item = Item_new(0 /* S -> CC */, 0 /* ·CC */, 1, 6 /* $ */);
+    item = Item_new(1 /* S -> CC */, 0 /* ·CC */, 1, 6 /* $ */);
     set_add(s, &item);
     destroy_item(&item);
-    item = Item_new(1 /* C -> cC */, 0 /* ·cC */, 2, 1, 2);
+    item = Item_new(2 /* C -> cC */, 0 /* ·cC */, 2, 1, 2);
     set_add(s, &item);
     destroy_item(&item);
-    item = Item_new(2 /* C -> d */, 0 /* ·d */, 2, 1, 2);
+    item = Item_new(3 /* C -> d */, 0 /* ·d */, 2, 1, 2);
     set_add(s, &item);
     destroy_item(&item);
     CHECK_STATE;
@@ -63,7 +61,7 @@ void test_lalr_collection(void) {
         I1: S' -> S·, $
     */
     set_new_Item(&s);
-    item = Item_new(3 /* S' -> S */, END_OF_PRODUCTION /* S· */, 1, 6 /* $ */);
+    item = Item_new(0 /* S' -> S */, END_OF_PRODUCTION /* S· */, 1, 6 /* $ */);
     set_add(s, &item);
     destroy_item(&item);
     CHECK_STATE;
@@ -75,13 +73,13 @@ void test_lalr_collection(void) {
             C -> ·d, $
     */
     set_new_Item(&s);
-    item = Item_new(0 /* S -> CC */, 1 /* C·C */, 1, 6 /* $ */);
+    item = Item_new(1 /* S -> CC */, 1 /* C·C */, 1, 6 /* $ */);
     set_add(s, &item);
     destroy_item(&item);
-    item = Item_new(1 /* C -> cC */, 0 /* ·cC */, 1, 6 /* $ */);
+    item = Item_new(2 /* C -> cC */, 0 /* ·cC */, 1, 6 /* $ */);
     set_add(s, &item);
     destroy_item(&item);
-    item = Item_new(2 /* C -> d */, 0 /* ·d */, 1, 6 /* $ */);
+    item = Item_new(3 /* C -> d */, 0 /* ·d */, 1, 6 /* $ */);
     set_add(s, &item);
     destroy_item(&item);
     CHECK_STATE;
@@ -93,13 +91,13 @@ void test_lalr_collection(void) {
              C -> ·d, c/d/$
     */
     set_new_Item(&s);
-    item = Item_new(1 /* C -> cC */, 1 /* c·C */, 3, 1, 2, 6 /* $ */);
+    item = Item_new(2 /* C -> cC */, 1 /* c·C */, 3, 1, 2, 6 /* $ */);
     set_add(s, &item);
     destroy_item(&item);
-    item = Item_new(1 /* C -> cC */, 0 /* ·cC */, 3, 1, 2, 6 /* $ */);
+    item = Item_new(2 /* C -> cC */, 0 /* ·cC */, 3, 1, 2, 6 /* $ */);
     set_add(s, &item);
     destroy_item(&item);
-    item = Item_new(2 /* C -> d */, 0 /* ·d */, 3, 1, 2, 6 /* $ */);
+    item = Item_new(3 /* C -> d */, 0 /* ·d */, 3, 1, 2, 6 /* $ */);
     set_add(s, &item);
     destroy_item(&item);
     CHECK_STATE;
@@ -120,7 +118,7 @@ void test_lalr_collection(void) {
         I5: S -> CC·, $
     */
     set_new_Item(&s);
-    item = Item_new(0 /* S -> CC */, END_OF_PRODUCTION /* CC· */, 1, 6 /* $ */);
+    item = Item_new(1 /* S -> CC */, END_OF_PRODUCTION /* CC· */, 1, 6 /* $ */);
     set_add(s, &item);
     destroy_item(&item);
     CHECK_STATE;
@@ -131,7 +129,7 @@ void test_lalr_collection(void) {
     */
     set_new_Item(&s);
     item = Item_new(
-        1 /* C -> cC */, END_OF_PRODUCTION /* cC· */, 3, 1, 2, 6 /* $ */);
+        2 /* C -> cC */, END_OF_PRODUCTION /* cC· */, 3, 1, 2, 6 /* $ */);
     set_add(s, &item);
     destroy_item(&item);
     CHECK_STATE;

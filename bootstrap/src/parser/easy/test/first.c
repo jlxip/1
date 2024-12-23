@@ -1,16 +1,6 @@
 #include "../easy.h"
-#include "../src/Grammar.h"
+#include "../src/internal.h"
 #include <common.h>
-
-#define GET_FIRST(X)                                                           \
-    do {                                                                       \
-        set *ptr;                                                              \
-        x = (X);                                                               \
-        ptr = map_get(g->firsts, &x, set);                                     \
-        if (!ptr)                                                              \
-            throw("Not a thing: " #X);                                         \
-        s = *ptr;                                                              \
-    } while (0)
 
 #define TEST_NUM(N) assert(set_num(s) == (N))
 #define TEST_HAS(X)                                                            \
@@ -48,31 +38,29 @@ static void test1(void) {
     set s;
 
     g = grammar(tokens1, nts1, grammar1, "E");
-    Grammar_augment(g);
-    Grammar_compute_firsts(g);
 
-    /* FIRST(E) = { (, id } */
-    GET_FIRST(7);
+    /* FIRST(g, E) = { (, id } */
+    s = FIRST(g, 7);
     TEST_NUM(2);
     TEST_HAS(3);
     TEST_HAS(5);
-    /* FIRST(E') = { +, epsilon } */
-    GET_FIRST(8);
+    /* FIRST(g, E') = { +, epsilon } */
+    s = FIRST(g, 8);
     TEST_NUM(2);
     TEST_HAS(1);
     TEST_HAS(0);
-    /* FIRST(T) = { (, id } */
-    GET_FIRST(9);
+    /* FIRST(g, T) = { (, id } */
+    s = FIRST(g, 9);
     TEST_NUM(2);
     TEST_HAS(3);
     TEST_HAS(5);
-    /* FIRST(T') = { *, epsilon } */
-    GET_FIRST(10);
+    /* FIRST(g, T') = { *, epsilon } */
+    s = FIRST(g, 10);
     TEST_NUM(2);
     TEST_HAS(2);
     TEST_HAS(0);
-    /* FIRST(F) = { (, id } */
-    GET_FIRST(11);
+    /* FIRST(g, F) = { (, id } */
+    s = FIRST(g, 11);
     TEST_NUM(2);
     TEST_HAS(3);
     TEST_HAS(5);
@@ -102,22 +90,20 @@ static void test2(void) {
     set s;
 
     g = grammar(tokens2, nts2, grammar2, "E");
-    Grammar_augment(g);
-    Grammar_compute_firsts(g);
 
-    /* FIRST(E) = { a, b } <- Tricky: no epsilon! */
-    GET_FIRST(4);
+    /* FIRST(g, E) = { a, b } <- Tricky: no epsilon! */
+    s = FIRST(g, 4);
     TEST_NUM(2);
     TEST_HAS(1);
     TEST_HAS(2);
     TEST_NOT(0);
-    /* FIRST(A) = { a, epsilon } */
-    GET_FIRST(5);
+    /* FIRST(g, A) = { a, epsilon } */
+    s = FIRST(g, 5);
     TEST_NUM(2);
     TEST_HAS(1);
     TEST_HAS(0);
-    /* FIRST(B) = { b } */
-    GET_FIRST(6);
+    /* FIRST(g, B) = { b } */
+    s = FIRST(g, 6);
     TEST_NUM(1);
     TEST_HAS(2);
     TEST_NOT(0);
@@ -146,22 +132,20 @@ static void test3(void) {
     set s;
 
     g = grammar(tokens2, nts2, grammar3, "E");
-    Grammar_augment(g);
-    Grammar_compute_firsts(g);
 
-    /* FIRST(E) = { a, b, epsilon } */
-    GET_FIRST(4);
+    /* FIRST(g, E) = { a, b, epsilon } */
+    s = FIRST(g, 4);
     TEST_NUM(3);
     TEST_HAS(1);
     TEST_HAS(2);
     TEST_HAS(EPSILON);
-    /* FIRST(A) = { a, epsilon } */
-    GET_FIRST(5);
+    /* FIRST(g, A) = { a, epsilon } */
+    s = FIRST(g, 5);
     TEST_NUM(2);
     TEST_HAS(1);
     TEST_HAS(0);
-    /* FIRST(B) = { b, epsilon } */
-    GET_FIRST(6);
+    /* FIRST(g, B) = { b, epsilon } */
+    s = FIRST(g, 6);
     TEST_NUM(2);
     TEST_HAS(2);
     TEST_HAS(0);

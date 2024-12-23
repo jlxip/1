@@ -1,4 +1,4 @@
-#include "../Grammar.h"
+#include "../internal.h"
 
 static Item advance(const Production *prod, const Item *parent) {
     /* Just advance the dot */
@@ -11,7 +11,7 @@ static Item advance(const Production *prod, const Item *parent) {
     return ret;
 }
 
-set Grammar_goto(const Grammar *g, const set items, symbol sym, bool core) {
+set GOTO(Grammar *g, const set items, symbol sym, bool core) {
     set ret = NULL;   /* set<Item> */
     set gotos = NULL; /* set<Item> */
     set_iterator it;
@@ -58,7 +58,7 @@ set Grammar_goto(const Grammar *g, const set items, symbol sym, bool core) {
     while (!set_it_finished(&it)) {
         const Item *item = set_it_get(&it, Item);
         set aux = NULL;
-        aux = Grammar_closure(g, item, core);
+        aux = CLOSURE(g, item, core);
         if (aux)
             set_join_move(ret, aux);
         set_it_next(&it);

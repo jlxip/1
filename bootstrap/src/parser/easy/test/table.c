@@ -1,5 +1,5 @@
 #include "../easy.h"
-#include "../src/Grammar.h"
+#include "../src/internal.h"
 #include <common.h>
 
 static state rec_rerun(
@@ -96,6 +96,35 @@ out:
     return ret;
 }
 
+/*static void print_table(buffer table, size_t nsym) {
+    size_t x;
+    for (x = 0; x < buffer_num(table); ++x) {
+        map m = *buffer_get(table, x, map);
+        size_t i;
+        printf("%lu -> ", x);
+        for (i = 1; i <= nsym; ++i) {
+            if (map_has(m, &i)) {
+                Entry entry = *map_get(m, &i, Entry);
+                if (entry.type == ENTRY_SHIFT)
+                    printf("s%lu", entry.info);
+                else if (entry.type == ENTRY_GOTO)
+                    printf("%lu ", entry.info);
+                else if (entry.type == ENTRY_REDUCE)
+                    printf("r%lu", entry.info);
+                else if (entry.type == ENTRY_ACCEPT)
+                    printf("ac");
+            } else {
+                printf("  ");
+            }
+
+            if (i != nsym)
+                printf(" ");
+        }
+        printf("\n");
+    }
+    printf("\n");
+}*/
+
 #define ADD_ENTRY(S, T, I)                                                     \
     do {                                                                       \
         Entry e = {T, I};                                                      \
@@ -116,7 +145,7 @@ static const char *nts[] = {"S", "C", NULL};
 static const char test[] = "S -> C C\n"
                            "C -> c C | d\n";
 
-void test_lalr_table(void) {
+static void test_lalr_table0(void) {
     buffer b = NULL;
     map m = NULL;
     size_t x;
@@ -159,31 +188,29 @@ void test_lalr_table(void) {
     m = NULL;
     map_new_symbol(
         &m, sizeof(Entry), hash_entry, equal_entry, copy_entry, destroy_entry);
-    ADD_ENTRY(1, ENTRY_REDUCE, 2 /* 3 in book */);
-    ADD_ENTRY(2, ENTRY_REDUCE, 2 /* 3 in book */);
-    ADD_ENTRY(6 /* $ */, ENTRY_REDUCE, 2 /* 3 in book */);
+    ADD_ENTRY(1, ENTRY_REDUCE, 3);
+    ADD_ENTRY(2, ENTRY_REDUCE, 3);
+    ADD_ENTRY(6 /* $ */, ENTRY_REDUCE, 3);
     buffer_push(b, &m);
     /* State 5 */
     m = NULL;
     map_new_symbol(
         &m, sizeof(Entry), hash_entry, equal_entry, copy_entry, destroy_entry);
-    ADD_ENTRY(6 /* $ */, ENTRY_REDUCE, 0 /* 1 in book */);
+    ADD_ENTRY(6 /* $ */, ENTRY_REDUCE, 1);
     buffer_push(b, &m);
     /* State 6 (89 in book) */
     m = NULL;
     map_new_symbol(
         &m, sizeof(Entry), hash_entry, equal_entry, copy_entry, destroy_entry);
-    ADD_ENTRY(1, ENTRY_REDUCE, 1 /* 2 in book */);
-    ADD_ENTRY(2, ENTRY_REDUCE, 1 /* 2 in book */);
-    ADD_ENTRY(6 /* $ */, ENTRY_REDUCE, 1 /* 2 in book */);
+    ADD_ENTRY(1, ENTRY_REDUCE, 2);
+    ADD_ENTRY(2, ENTRY_REDUCE, 2);
+    ADD_ENTRY(6 /* $ */, ENTRY_REDUCE, 2);
     buffer_push(b, &m);
 
     /* Compute table myself */
     g = grammar(tokens, nts, test, "S");
-    Grammar_augment(g);
-    Grammar_compute_firsts(g);
     Grammar_compute_collection(g);
-    Grammar_compute_table(g);
+    Grammar_compile(g);
 
     /* Compare */
     assert(isomorphic(g, g->table, b));
@@ -193,4 +220,111 @@ void test_lalr_table(void) {
     buffer_out(&b);
     Grammar_out(g);
     free(g);
+}
+
+/*
+    Source: random internet finding
+        https://slideplayer.com/slide/13686742 - slides 21 and 22
+
+    (S' -> S)
+    S -> L=R | R
+    L -> *R | id
+    R -> L
+*/
+
+static const char *tokens1[] = {"=", "*", "id", NULL};
+static const char *nts1[] = {"S", "L", "R", NULL};
+static const char test1[] = "S -> L = R | R\n"
+                            "L -> * R | id\n"
+                            "R -> L\n";
+
+#define BEGIN_STATE                                                            \
+    do {                                                                       \
+        m = NULL;                                                              \
+        map_new_symbol(&m, sizeof(Entry), hash_entry, equal_entry, copy_entry, \
+            destroy_entry);                                                    \
+    } while (0)
+#define END_STATE buffer_push(b, &m);
+
+static void test_lalr_table1(void) {
+    buffer b = NULL;
+    map m = NULL;
+    size_t x;
+    Grammar *g;
+
+    b = NULL;
+    buffer_new(&b, sizeof(map));
+    /* State 0 */
+    BEGIN_STATE;
+    ADD_ENTRY(3, ENTRY_SHIFT, 5 /* 512 in slide */);
+    ADD_ENTRY(2, ENTRY_SHIFT, 4 /* 411 in slide */);
+    ADD_ENTRY(5, ENTRY_GOTO, 1);
+    ADD_ENTRY(6, ENTRY_GOTO, 2);
+    ADD_ENTRY(7, ENTRY_GOTO, 3);
+    END_STATE;
+    /* State 1 */
+    BEGIN_STATE;
+    ADD_ENTRY(8 /* $ */, ENTRY_ACCEPT, 0);
+    END_STATE;
+    /* State 2 */
+    BEGIN_STATE;
+    ADD_ENTRY(1, ENTRY_SHIFT, 6);
+    ADD_ENTRY(8 /* $ */, ENTRY_REDUCE, 5);
+    END_STATE;
+    /* State 3 */
+    BEGIN_STATE;
+    ADD_ENTRY(8 /* $ */, ENTRY_REDUCE, 2);
+    END_STATE;
+    /* State 4 (411 in slide) */
+    BEGIN_STATE;
+    ADD_ENTRY(3, ENTRY_SHIFT, 5 /* 512 in slide */);
+    ADD_ENTRY(2, ENTRY_SHIFT, 4 /* 411 in slide */);
+    ADD_ENTRY(6, ENTRY_GOTO, 8 /* 810 in slide */);
+    ADD_ENTRY(7, ENTRY_GOTO, 7 /* 713 in slide */);
+    END_STATE;
+    /* State 5 (512 in slide) */
+    BEGIN_STATE;
+    ADD_ENTRY(1, ENTRY_REDUCE, 4);
+    ADD_ENTRY(8 /* $ */, ENTRY_REDUCE, 4);
+    END_STATE;
+    /* State 6 */
+    BEGIN_STATE;
+    ADD_ENTRY(3, ENTRY_SHIFT, 5 /* 512 in slide */);
+    ADD_ENTRY(2, ENTRY_SHIFT, 4 /* 411 in slide */);
+    ADD_ENTRY(6, ENTRY_GOTO, 8 /* 810 in slide */);
+    ADD_ENTRY(7, ENTRY_GOTO, 9);
+    END_STATE;
+    /* State 7 (713 in slide) */
+    BEGIN_STATE;
+    ADD_ENTRY(1, ENTRY_REDUCE, 3);
+    ADD_ENTRY(8 /* $ */, ENTRY_REDUCE, 3);
+    END_STATE;
+    /* State 8 (810 in slide) */
+    BEGIN_STATE;
+    ADD_ENTRY(1, ENTRY_REDUCE, 5);
+    ADD_ENTRY(8 /* $ */, ENTRY_REDUCE, 5);
+    END_STATE;
+    /* State 9 */
+    BEGIN_STATE;
+    ADD_ENTRY(8 /* $ */, ENTRY_REDUCE, 1);
+    END_STATE;
+
+    /* Compute table myself */
+    g = grammar(tokens1, nts1, test1, "S");
+    Grammar_compute_collection(g);
+    Grammar_compile(g);
+
+    /* Compare */
+    assert(isomorphic(g, g->table, b));
+
+    for (x = 0; x < buffer_num(b); ++x)
+        map_out(buffer_get(b, x, map));
+    buffer_out(&b);
+    Grammar_out(g);
+    free(g);
+}
+
+void test_lalr_table(void) {
+    test_lalr_table0();
+    test_lalr_table1();
 }

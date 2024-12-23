@@ -120,25 +120,6 @@ void Grammar_add(Grammar *g, symbol lhs, buffer rhs) {
     buffer_push(g->g, &prod);
 }
 
-/*static void Grammar_add_imm(Grammar *g, symbol lhs, size_t n, ...) {
-    va_list args;
-    Production prod;
-
-    prod.lhs = lhs;
-    prod.rhs = NULL;
-    buffer_new(&prod.rhs, sizeof(symbol));
-
-    va_start(args, n);
-    while (n--) {
-        symbol x = va_arg(args, symbol);
-        buffer_push(prod.rhs, &x);
-    }
-    buffer_shrink(prod.rhs);
-
-    va_end(args);
-    buffer_push(g->g, &prod);
-}*/
-
 void Grammar_shrink(Grammar *g) { buffer_shrink(g->g); }
 
 void Grammar_augment(Grammar *g) {
@@ -153,7 +134,11 @@ void Grammar_augment(Grammar *g) {
     buffer_new(&prod.rhs, sizeof(symbol));
     buffer_push(prod.rhs, &g->start);
 
-    buffer_push(g->g, &prod);
+    /*
+        Everything is clearer if we insert augmented start at the beginning,
+        even though it's slower. Putting it at the end is much more confusing.
+    */
+    buffer_push_front(g->g, &prod);
     g->start = g->ntok;
     g->augmented = true;
 }

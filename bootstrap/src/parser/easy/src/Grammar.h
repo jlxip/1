@@ -90,17 +90,10 @@ void destroy_entry(void *a);
 /* Grammar.c */
 void Grammar_new(Grammar *g, size_t ntok, size_t nsym, symbol start);
 void Grammar_add(Grammar *g, symbol lhs, buffer rhs);
-/*void Grammar_add_imm(Grammar *g, symbol lhs, size_t n, ...);*/
 void Grammar_shrink(Grammar *g);
-void Grammar_augment(Grammar *g);
 void Grammar_out(Grammar *g);
 
 /* functions */
-void Grammar_compute_firsts(Grammar *g);
-set Grammar_first_many(const Grammar *g, const buffer syms);
-set Grammar_closure(const Grammar *g, const Item *item, bool core);
-set Grammar_goto(const Grammar *g, const set items, symbol sym, bool core);
-void Grammar_compute_collection(Grammar *g);
-void Grammar_compute_table(Grammar *g);
+void Grammar_compile(Grammar *g);
 
 #endif

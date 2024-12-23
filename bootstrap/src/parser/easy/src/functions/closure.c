@@ -1,10 +1,10 @@
-#include "../Grammar.h"
+#include "../internal.h"
 
 static const symbol EEPSILON = EPSILON;
 
 /* LR(1) item closure: [A -> alpha · B beta, a] */
 /* This expands only once */
-static set Grammar_closure_once(const Grammar *g, const Item *item, bool core) {
+static set Grammar_closure_once(Grammar *g, const Item *item, bool core) {
     set ret = NULL; /* set<Item> */
     const Production *prod;
     symbol sym;
@@ -46,7 +46,7 @@ static set Grammar_closure_once(const Grammar *g, const Item *item, bool core) {
         new->dot = 0;
 
         /* Now compute second component, FIRST(beta a) */
-        new->look = Grammar_first_many(g, beta);
+        new->look = FIRST_MANY(g, beta);
 
         if (set_empty(new->look)) {
             /* No firsts; so, epsilon. Add a */
@@ -65,10 +65,13 @@ static set Grammar_closure_once(const Grammar *g, const Item *item, bool core) {
 }
 
 /* Acutal iterative LR(1) item closure */
-set Grammar_closure(const Grammar *g, const Item *item, bool core) {
+set CLOSURE(Grammar *g, const Item *item, bool core) {
     set ret = NULL; /* set<Item> */
     size_t prev = 0;
     size_t now;
+
+    if (!g->augmented)
+        Grammar_augment(g);
 
     /* Expand for the first time */
     ret = Grammar_closure_once(g, item, core);

@@ -1,6 +1,6 @@
 #include "../Grammar.h"
 
-void Grammar_compute_table(Grammar *g) {
+void Grammar_compile(Grammar *g) {
     size_t idx;
 
     if (!g->collection)
@@ -47,7 +47,7 @@ void Grammar_compute_table(Grammar *g) {
                     if (map_has(entries, &sym))
                         throw("grammar conflict"); /* where? */
 
-                    if (item->prod == g->ntok /* augmented start */) {
+                    if (item->prod == 0 /* augmented start */) {
                         entry.type = ENTRY_ACCEPT;
                         entry.info = 0;
                     } else {

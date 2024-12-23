@@ -28,22 +28,32 @@ static void buffer_2x(buffer buf) {
     if ((X) == NULL || (X)->signature != BUFFER_SIGNATURE)                     \
         throw("called on uninitialized buffer");
 
-void buffer_push(buffer buf, const void *element) {
-    char *target = NULL;
-    buffer_assert(buf);
-    if (buf->used == buf->alloc)
-        buffer_2x(buf);
-    target = (char *)buf->a + buf->used++ * buf->datasize;
+static void buffer_set_nocheck(buffer buf, size_t idx, const void *element) {
+    char *target = (char *)buf->a + idx * buf->datasize;
     memcpy(target, element, buf->datasize);
 }
 
+void buffer_push(buffer buf, const void *element) {
+    buffer_assert(buf);
+    if (buf->used == buf->alloc)
+        buffer_2x(buf);
+    buffer_set_nocheck(buf, buf->used++, element);
+}
+
+void buffer_push_front(buffer buf, const void *element) {
+    buffer_assert(buf);
+    if (buf->used == buf->alloc)
+        buffer_2x(buf);
+    memmove((char *)buf->a + buf->datasize, buf->a, buf->used * buf->datasize);
+    buffer_set_nocheck(buf, 0, element);
+    buf->used++;
+}
+
 void buffer_set(buffer buf, size_t idx, const void *element) {
-    char *target = NULL;
     buffer_assert(buf);
     if (idx >= buf->used)
         throw("buffer_set with invalid index");
-    target = (char *)buf->a + idx * buf->datasize;
-    memcpy(target, element, buf->datasize);
+    buffer_set_nocheck(buf, idx, element);
 }
 
 void buffer_pop(buffer buf) {

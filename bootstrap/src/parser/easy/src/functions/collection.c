@@ -1,4 +1,4 @@
-#include "../Grammar.h"
+#include "../internal.h"
 
 const size_t ZERO = 0;
 
@@ -8,10 +8,10 @@ static void build_I0(Grammar *g, map seen) {
     set I0;
     map emptymap = NULL; /* map<symbol, state> */
 
-    start = Item_new(g->ntok /* Augmented start symbol */,
-        0 /* Beginning of production */, 1, g->nsym /* $ */);
+    start = Item_new(0 /* Augmented start */, 0 /* Beginning of production */,
+        1, g->nsym /* $ */);
 
-    I0 = Grammar_closure(g, &start, true);
+    I0 = CLOSURE(g, &start, true);
     destroy_item(&start);
     map_add(seen, &I0, &ZERO);
     buffer_push(g->collection, &I0);
@@ -64,7 +64,7 @@ static void recursive_goto(Grammar *g, map seen) {
             /* Try all symbols and see what sticks */
             for (sym = 1; sym < g->nsym; ++sym) {
                 set child; /* Child state: set<Item> */
-                child = Grammar_goto(g, parent, sym, true);
+                child = GOTO(g, parent, sym, true);
                 if (set_empty(child)) {
                     /* Nothing to do with this symbol */
                     set_out(&child);
@@ -121,8 +121,8 @@ static void fix_collection(Grammar *g) {
 void Grammar_compute_collection(Grammar *g) {
     map seen = NULL; /* map<set<Item (core)>, state> */
 
-    if (!g->firsts)
-        throw("tried to call compute_collection() without computing firsts");
+    if (!g->augmented)
+        Grammar_augment(g);
 
     map_new(&seen, hash_set, equal_set, copy_set, destroy_set, sizeof(state),
         hash_state, equal_state, copy_state, destroy_state);
