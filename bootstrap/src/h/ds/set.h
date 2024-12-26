@@ -25,6 +25,7 @@ void set_join_move(set s, set other);
 void set_remove(set s, const void *element);
 void set_remove_if_there(set s, const void *element);
 set set_copy(const set s);
+#define set_migrate set_join_move
 void set_out(set *s);
 
 /* Getters */

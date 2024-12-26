@@ -39,8 +39,9 @@ static void rec_compute_first(Grammar *g, symbol sym, map cache, set stack) {
             sub = map_get(cache, e, set);
 
             if (sub == NULL) {
-                /* Called myself, skip */
-                continue;
+                /* Called myself, skip this production */
+                epsilon = false;
+                break;
             }
 
             set_join(*ret, *sub);

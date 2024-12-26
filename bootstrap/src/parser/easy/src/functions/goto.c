@@ -11,16 +11,13 @@ static Item advance(const Production *prod, const Item *parent) {
     return ret;
 }
 
-set GOTO(Grammar *g, const set items, symbol sym, bool core) {
+set GOTO(Grammar *g, const set items, symbol sym) {
     set ret = NULL;   /* set<Item> */
     set gotos = NULL; /* set<Item> */
     set_iterator it;
 
     /* advance() everything that can be advanced with sym */
-    if (!core)
-        set_new_Item(&gotos);
-    else
-        set_new_Item_core(&gotos);
+    set_new_Item(&gotos);
     it = set_it_begin(items);
     while (!set_it_finished(&it)) {
         const Item *parent = set_it_get(&it, Item);
@@ -50,15 +47,12 @@ set GOTO(Grammar *g, const set items, symbol sym, bool core) {
     }
 
     /* Perform closure of all of them */
-    if (!core)
-        set_new_Item(&ret);
-    else
-        set_new_Item_core(&ret);
+    set_new_Item(&ret);
     it = set_it_begin(gotos);
     while (!set_it_finished(&it)) {
         const Item *item = set_it_get(&it, Item);
         set aux = NULL;
-        aux = CLOSURE(g, item, core);
+        aux = CLOSURE(g, item);
         if (aux)
             set_join_move(ret, aux);
         set_it_next(&it);

@@ -324,7 +324,124 @@ static void test_lalr_table1(void) {
     free(g);
 }
 
+/*
+    Source: random internet finding + random LALR(1) Parser Generator
+        https://jsmachines.sourceforge.net/machines/lalr1.html
+
+    (S' -> S)
+    S -> S + T | T
+    T -> TF | F
+    F -> F* | a | b
+*/
+
+static const char *tokens2[] = {"+", "*", "a", "b", NULL};
+static const char *nts2[] = {"S", "T", "F", NULL};
+static const char test2[] = "S -> S + T | T\n"
+                            "T -> T F | F\n"
+                            "F -> F * | a | b\n";
+
+static void test_lalr_table2(void) {
+    buffer b = NULL;
+    map m = NULL;
+    size_t x;
+    Grammar *g;
+
+    b = NULL;
+    buffer_new(&b, sizeof(map));
+    /* State 0 */
+    BEGIN_STATE;
+    ADD_ENTRY(3, ENTRY_SHIFT, 4);
+    ADD_ENTRY(4, ENTRY_SHIFT, 5);
+    ADD_ENTRY(6, ENTRY_GOTO, 1);
+    ADD_ENTRY(7, ENTRY_GOTO, 2);
+    ADD_ENTRY(8, ENTRY_GOTO, 3);
+    END_STATE;
+    /* State 1 */
+    BEGIN_STATE;
+    ADD_ENTRY(1, ENTRY_SHIFT, 6);
+    ADD_ENTRY(9 /* $ */, ENTRY_ACCEPT, 0);
+    END_STATE;
+    /* State 2 */
+    BEGIN_STATE;
+    ADD_ENTRY(1, ENTRY_REDUCE, 2);
+    ADD_ENTRY(3, ENTRY_SHIFT, 4);
+    ADD_ENTRY(4, ENTRY_SHIFT, 5);
+    ADD_ENTRY(9 /* $ */, ENTRY_REDUCE, 2);
+    ADD_ENTRY(8, ENTRY_GOTO, 7);
+    END_STATE;
+    /* State 3 */
+    BEGIN_STATE;
+    ADD_ENTRY(1, ENTRY_REDUCE, 4);
+    ADD_ENTRY(2, ENTRY_SHIFT, 8);
+    ADD_ENTRY(3, ENTRY_REDUCE, 4);
+    ADD_ENTRY(4, ENTRY_REDUCE, 4);
+    ADD_ENTRY(9 /* $ */, ENTRY_REDUCE, 4);
+    END_STATE;
+    /* State 4 */
+    BEGIN_STATE;
+    ADD_ENTRY(1, ENTRY_REDUCE, 6);
+    ADD_ENTRY(2, ENTRY_REDUCE, 6);
+    ADD_ENTRY(3, ENTRY_REDUCE, 6);
+    ADD_ENTRY(4, ENTRY_REDUCE, 6);
+    ADD_ENTRY(9 /* $ */, ENTRY_REDUCE, 6);
+    END_STATE;
+    /* State 5 */
+    BEGIN_STATE;
+    ADD_ENTRY(1, ENTRY_REDUCE, 7);
+    ADD_ENTRY(2, ENTRY_REDUCE, 7);
+    ADD_ENTRY(3, ENTRY_REDUCE, 7);
+    ADD_ENTRY(4, ENTRY_REDUCE, 7);
+    ADD_ENTRY(9 /* $ */, ENTRY_REDUCE, 7);
+    END_STATE;
+    /* State 6 */
+    BEGIN_STATE;
+    ADD_ENTRY(3, ENTRY_SHIFT, 4);
+    ADD_ENTRY(4, ENTRY_SHIFT, 5);
+    ADD_ENTRY(7, ENTRY_GOTO, 9);
+    ADD_ENTRY(8, ENTRY_GOTO, 3);
+    END_STATE;
+    /* State 7 */
+    BEGIN_STATE;
+    ADD_ENTRY(1, ENTRY_REDUCE, 3);
+    ADD_ENTRY(2, ENTRY_SHIFT, 8);
+    ADD_ENTRY(3, ENTRY_REDUCE, 3);
+    ADD_ENTRY(4, ENTRY_REDUCE, 3);
+    ADD_ENTRY(9 /* $ */, ENTRY_REDUCE, 3);
+    END_STATE;
+    /* State 8 */
+    BEGIN_STATE;
+    ADD_ENTRY(1, ENTRY_REDUCE, 5);
+    ADD_ENTRY(2, ENTRY_REDUCE, 5);
+    ADD_ENTRY(3, ENTRY_REDUCE, 5);
+    ADD_ENTRY(4, ENTRY_REDUCE, 5);
+    ADD_ENTRY(9 /* $ */, ENTRY_REDUCE, 5);
+    END_STATE;
+    /* State 9 */
+    BEGIN_STATE;
+    ADD_ENTRY(1, ENTRY_REDUCE, 1);
+    ADD_ENTRY(3, ENTRY_SHIFT, 4);
+    ADD_ENTRY(4, ENTRY_SHIFT, 5);
+    ADD_ENTRY(9 /* $ */, ENTRY_REDUCE, 1);
+    ADD_ENTRY(8, ENTRY_GOTO, 7);
+    END_STATE;
+
+    /* Compute table myself */
+    g = grammar(tokens2, nts2, test2, "S");
+    Grammar_compute_collection(g);
+    Grammar_compile(g);
+
+    /* Compare */
+    assert(isomorphic(g, g->table, b));
+
+    for (x = 0; x < buffer_num(b); ++x)
+        map_out(buffer_get(b, x, map));
+    buffer_out(&b);
+    Grammar_out(g);
+    free(g);
+}
+
 void test_lalr_table(void) {
     test_lalr_table0();
     test_lalr_table1();
+    test_lalr_table2();
 }

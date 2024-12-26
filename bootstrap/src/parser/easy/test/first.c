@@ -39,27 +39,27 @@ static void test1(void) {
 
     g = grammar(tokens1, nts1, grammar1, "E");
 
-    /* FIRST(g, E) = { (, id } */
+    /* FIRST(E) = { (, id } */
     s = FIRST(g, 7);
     TEST_NUM(2);
     TEST_HAS(3);
     TEST_HAS(5);
-    /* FIRST(g, E') = { +, epsilon } */
+    /* FIRST(E') = { +, epsilon } */
     s = FIRST(g, 8);
     TEST_NUM(2);
     TEST_HAS(1);
     TEST_HAS(0);
-    /* FIRST(g, T) = { (, id } */
+    /* FIRST(T) = { (, id } */
     s = FIRST(g, 9);
     TEST_NUM(2);
     TEST_HAS(3);
     TEST_HAS(5);
-    /* FIRST(g, T') = { *, epsilon } */
+    /* FIRST(T') = { *, epsilon } */
     s = FIRST(g, 10);
     TEST_NUM(2);
     TEST_HAS(2);
     TEST_HAS(0);
-    /* FIRST(g, F) = { (, id } */
+    /* FIRST(F) = { (, id } */
     s = FIRST(g, 11);
     TEST_NUM(2);
     TEST_HAS(3);
@@ -91,18 +91,18 @@ static void test2(void) {
 
     g = grammar(tokens2, nts2, grammar2, "E");
 
-    /* FIRST(g, E) = { a, b } <- Tricky: no epsilon! */
+    /* FIRST(E) = { a, b } <- Tricky: no epsilon! */
     s = FIRST(g, 4);
     TEST_NUM(2);
     TEST_HAS(1);
     TEST_HAS(2);
     TEST_NOT(0);
-    /* FIRST(g, A) = { a, epsilon } */
+    /* FIRST(A) = { a, epsilon } */
     s = FIRST(g, 5);
     TEST_NUM(2);
     TEST_HAS(1);
     TEST_HAS(0);
-    /* FIRST(g, B) = { b } */
+    /* FIRST(B) = { b } */
     s = FIRST(g, 6);
     TEST_NUM(1);
     TEST_HAS(2);
@@ -133,18 +133,18 @@ static void test3(void) {
 
     g = grammar(tokens2, nts2, grammar3, "E");
 
-    /* FIRST(g, E) = { a, b, epsilon } */
+    /* FIRST(E) = { a, b, epsilon } */
     s = FIRST(g, 4);
     TEST_NUM(3);
     TEST_HAS(1);
     TEST_HAS(2);
     TEST_HAS(EPSILON);
-    /* FIRST(g, A) = { a, epsilon } */
+    /* FIRST(A) = { a, epsilon } */
     s = FIRST(g, 5);
     TEST_NUM(2);
     TEST_HAS(1);
     TEST_HAS(0);
-    /* FIRST(g, B) = { b, epsilon } */
+    /* FIRST(B) = { b, epsilon } */
     s = FIRST(g, 6);
     TEST_NUM(2);
     TEST_HAS(2);
@@ -156,8 +156,51 @@ static void test3(void) {
 
 /* -------------------------------------------------------------------------- */
 
+/*
+    Another one
+
+    (S' -> S)
+    S -> S + T | T
+    T -> TF | F
+    F -> F* | a | b
+*/
+
+static const char *tokens4[] = {"+", "*", "a", "b", NULL};
+static const char *nts4[] = {"S", "T", "F", NULL};
+static const char grammar4[] = "S -> S + T | T\n"
+                               "T -> T F | F\n"
+                               "F -> F * | a | b\n";
+
+static void test4(void) {
+    Grammar *g;
+    size_t x;
+    set s;
+
+    g = grammar(tokens4, nts4, grammar4, "S");
+
+    /* FIRST(S) = { a, b } */
+    s = FIRST(g, 6);
+    TEST_NUM(2);
+    TEST_HAS(3);
+    TEST_HAS(4);
+    /* FIRST(T) = { a, b } */
+    s = FIRST(g, 7);
+    TEST_NUM(2);
+    TEST_HAS(3);
+    TEST_HAS(4);
+    /* FIRST(F) = { a, b } */
+    s = FIRST(g, 8);
+    TEST_NUM(2);
+    TEST_HAS(3);
+    TEST_HAS(4);
+
+    Grammar_out(g);
+    free(g);
+}
+
 void test_lalr_first(void) {
     test1();
     test2();
     test3();
+    test4();
 }

@@ -9,6 +9,7 @@ int main(int argc, const char *argv[]) {
     long sz = 0;
     char *code = NULL;
 
+    printf("Testing LALR implementation\n");
     test_lalr();
 
     if (argc < 2) {

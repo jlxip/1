@@ -5,13 +5,13 @@ const size_t ZERO = 0;
 static void build_I0(Grammar *g, map seen) {
     /* Everything starts with the augmented start */
     Item start;
-    set I0;
+    set I0;              /* set<Item> */
     map emptymap = NULL; /* map<symbol, state> */
 
     start = Item_new(0 /* Augmented start */, 0 /* Beginning of production */,
         1, g->nsym /* $ */);
 
-    I0 = CLOSURE(g, &start, true);
+    I0 = CLOSURE(g, &start);
     destroy_item(&start);
     map_add(seen, &I0, &ZERO);
     buffer_push(g->collection, &I0);
@@ -63,13 +63,19 @@ static void recursive_goto(Grammar *g, map seen) {
 
             /* Try all symbols and see what sticks */
             for (sym = 1; sym < g->nsym; ++sym) {
-                set child; /* Child state: set<Item> */
-                child = GOTO(g, parent, sym, true);
+                set child;            /* Child state: set<Item> */
+                set childcore = NULL; /* Child state: set<Item (core)> */
+                child = GOTO(g, parent, sym);
                 if (set_empty(child)) {
                     /* Nothing to do with this symbol */
                     set_out(&child);
                     continue;
                 }
+
+                set_new_Item_core(&childcore);
+                set_migrate(childcore, child);
+                child = childcore;
+                childcore = NULL;
 
                 /* Already seen? */
                 if (map_has(seen, &child)) {

@@ -4,17 +4,14 @@ static const symbol EEPSILON = EPSILON;
 
 /* LR(1) item closure: [A -> alpha · B beta, a] */
 /* This expands only once */
-static set Grammar_closure_once(Grammar *g, const Item *item, bool core) {
+static set Grammar_closure_once(Grammar *g, const Item *item) {
     set ret = NULL; /* set<Item> */
     const Production *prod;
     symbol sym;
     size_t i;
     buffer beta = NULL; /* buffer<symbol> */
 
-    if (!core)
-        set_new_Item(&ret);
-    else
-        set_new_Item_core(&ret);
+    set_new_Item(&ret);
     set_add(ret, item);
 
     /* If dot is at the end of item, no additional closure */
@@ -47,12 +44,11 @@ static set Grammar_closure_once(Grammar *g, const Item *item, bool core) {
 
         /* Now compute second component, FIRST(beta a) */
         new->look = FIRST_MANY(g, beta);
-
         if (set_empty(new->look)) {
             /* No firsts; so, epsilon. Add a */
             set_join(new->look, item->look);
         } else if (set_has(new->look, &EEPSILON)) {
-            /* Epsilon in ret: remove it and add a */
+            /* Epsilon in new: remove it and add a */
             set_remove(new->look, &EEPSILON);
             set_join(new->look, item->look);
         }
@@ -64,9 +60,36 @@ static set Grammar_closure_once(Grammar *g, const Item *item, bool core) {
     return ret;
 }
 
+static set join_items(set s) {
+    set ret = NULL; /* set<Item (core)> */
+    set_iterator it;
+    set ret2 = NULL; /* set<Item> */
+
+    set_new_Item_core(&ret);
+    it = set_it_begin(s);
+    while (!set_it_finished(&it)) {
+        Item *item = set_it_get(&it, Item);
+        if (set_has(ret, item)) {
+            /* Already there, join lookahead symbols */
+            set_join(set_get(ret, item, Item)->look, item->look);
+        } else {
+            /* Just add */
+            set_add(ret, item);
+        }
+        set_it_next(&it);
+    }
+
+    set_out(&s);
+
+    /* Return set<Item> instead of set<Item (core)> */
+    set_new_Item(&ret2);
+    set_migrate(ret2, ret);
+    return ret2;
+}
+
 /* Acutal iterative LR(1) item closure */
-set CLOSURE(Grammar *g, const Item *item, bool core) {
-    set ret = NULL; /* set<Item> */
+set CLOSURE(Grammar *g, const Item *item) {
+    set result = NULL; /* set<Item> */
     size_t prev = 0;
     size_t now;
 
@@ -74,27 +97,24 @@ set CLOSURE(Grammar *g, const Item *item, bool core) {
         Grammar_augment(g);
 
     /* Expand for the first time */
-    ret = Grammar_closure_once(g, item, core);
-    if (!ret)
+    result = Grammar_closure_once(g, item);
+    if (!result)
         return NULL;
-    if (set_num(ret) == 1)
-        return ret; /* If there were something to expand it would've already
-                       happened */
+    if (set_num(result) == 1)
+        goto finish; /* If there were something to expand it would've already
+                        happened */
 
     /* Just keep expanding until there's no changes */
-    now = set_num(ret);
+    now = set_num(result);
     while (now > prev) {
         set to_add = NULL; /* set<Item> */
         set_iterator it;
 
-        if (!core)
-            set_new_Item(&to_add);
-        else
-            set_new_Item_core(&to_add);
-        it = set_it_begin(ret);
+        set_new_Item(&to_add);
+        it = set_it_begin(result);
         while (!set_it_finished(&it)) {
             const Item *this = set_it_get(&it, Item);
-            set aux = Grammar_closure_once(g, this, core); /* set<Item> */
+            set aux = Grammar_closure_once(g, this); /* set<Item> */
             if (!aux) {
                 /* Nothing to do here */
                 set_it_next(&it);
@@ -113,10 +133,12 @@ set CLOSURE(Grammar *g, const Item *item, bool core) {
         }
 
         /* Now that we're done iterating, add the new ones */
-        set_join_move(ret, to_add);
+        set_join_move(result, to_add);
         prev = now;
-        now = set_num(ret);
+        now = set_num(result);
     }
 
-    return ret;
+finish:
+    result = join_items(result);
+    return result;
 }
