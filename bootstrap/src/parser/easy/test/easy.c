@@ -1,30 +1,12 @@
 #include "../easy.h"
 #include "../src/Grammar.h"
+#include "grammars.h"
 #include <common.h>
 
-static const char *tokens[] = {"c", "d", NULL};
-static const char *nts[] = {"S", "C", NULL};
-
-/* A regular one */
-static const char test1[] = "S -> C C\n"
-                            "C -> c C | d\n";
-
 /* As weirdly written as possible to test grammar() */
-static const char test2[] = "    \n"
-                            "  S  ->  C C  \n"
-                            "C->c C| d\n \n\n";
-
-/* Epsilon */
-static const char *tokens3[] = {NULL};
-static const char *nts3[] = {"S", NULL};
-static const char test3[] = "S -> EPSILON\n";
-
-/* One more complex */
-static const char *tokens4[] = {"=", "*", "id", NULL};
-static const char *nts4[] = {"S", "L", "R", NULL};
-static const char test4[] = "S -> L = R | R\n"
-                            "L -> * R | id\n"
-                            "R -> L\n";
+static const char grammar_basic_weird[] = "    \n"
+                                          "  S  ->  C C  \n"
+                                          "C->c C| d\n \n\n";
 
 /* Check G is the grammar defined in test1 (and test2) */
 static void check(Grammar *g) {
@@ -56,17 +38,17 @@ void test_lalr_easy(void) {
     Grammar *g;
     const Production *prod;
 
-    g = (Grammar *)grammar(tokens, nts, test1, "S");
+    g = (Grammar *)grammar(tokens_basic, nts_basic, grammar_basic, "S");
     check(g);
     Grammar_out(g);
     free(g);
 
-    g = (Grammar *)grammar(tokens, nts, test2, "S");
+    g = (Grammar *)grammar(tokens_basic, nts_basic, grammar_basic_weird, "S");
     check(g);
     Grammar_out(g);
     free(g);
 
-    g = (Grammar *)grammar(tokens3, nts3, test3, "S");
+    g = (Grammar *)grammar(tokens_epsilon, nts_epsilon, grammar_epsilon, "S");
     assert(g->ntok == 1);
     assert(g->nsym == 3);
     assert(buffer_num(g->g) == 1);
@@ -77,7 +59,7 @@ void test_lalr_easy(void) {
     Grammar_out(g);
     free(g);
 
-    g = (Grammar *)grammar(tokens4, nts4, test4, "S");
+    g = (Grammar *)grammar(tokens_lr, nts_lr, grammar_lr, "S");
     assert(g->ntok == 4);
     assert(g->nsym == 8);
     assert(buffer_num(g->g) == 5);

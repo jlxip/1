@@ -1,5 +1,6 @@
 #include "../easy.h"
 #include "../src/internal.h"
+#include "grammars.h"
 #include <common.h>
 
 static state rec_rerun(
@@ -132,19 +133,6 @@ out:
         map_add(m, &x, &e);                                                    \
     } while (0)
 
-/*
-    Source: Dragon Book, hardcoded table is Figure 4.41
-
-    (S' -> S)
-    S -> CC
-    C -> cC | d
-*/
-
-static const char *tokens[] = {"c", "d", NULL};
-static const char *nts[] = {"S", "C", NULL};
-static const char test[] = "S -> C C\n"
-                           "C -> c C | d\n";
-
 static void test_lalr_table0(void) {
     buffer b = NULL;
     map m = NULL;
@@ -208,7 +196,7 @@ static void test_lalr_table0(void) {
     buffer_push(b, &m);
 
     /* Compute table myself */
-    g = grammar(tokens, nts, test, "S");
+    g = grammar(tokens_basic, nts_basic, grammar_basic, "S");
     Grammar_compute_collection(g);
     Grammar_compile(g);
 
@@ -221,22 +209,6 @@ static void test_lalr_table0(void) {
     Grammar_out(g);
     free(g);
 }
-
-/*
-    Source: random internet finding
-        https://slideplayer.com/slide/13686742 - slides 21 and 22
-
-    (S' -> S)
-    S -> L=R | R
-    L -> *R | id
-    R -> L
-*/
-
-static const char *tokens1[] = {"=", "*", "id", NULL};
-static const char *nts1[] = {"S", "L", "R", NULL};
-static const char test1[] = "S -> L = R | R\n"
-                            "L -> * R | id\n"
-                            "R -> L\n";
 
 #define BEGIN_STATE                                                            \
     do {                                                                       \
@@ -310,7 +282,7 @@ static void test_lalr_table1(void) {
     END_STATE;
 
     /* Compute table myself */
-    g = grammar(tokens1, nts1, test1, "S");
+    g = grammar(tokens_lr, nts_lr, grammar_lr, "S");
     Grammar_compute_collection(g);
     Grammar_compile(g);
 
@@ -323,22 +295,6 @@ static void test_lalr_table1(void) {
     Grammar_out(g);
     free(g);
 }
-
-/*
-    Source: random internet finding + random LALR(1) Parser Generator
-        https://jsmachines.sourceforge.net/machines/lalr1.html
-
-    (S' -> S)
-    S -> S + T | T
-    T -> TF | F
-    F -> F* | a | b
-*/
-
-static const char *tokens2[] = {"+", "*", "a", "b", NULL};
-static const char *nts2[] = {"S", "T", "F", NULL};
-static const char test2[] = "S -> S + T | T\n"
-                            "T -> T F | F\n"
-                            "F -> F * | a | b\n";
 
 static void test_lalr_table2(void) {
     buffer b = NULL;
@@ -426,7 +382,7 @@ static void test_lalr_table2(void) {
     END_STATE;
 
     /* Compute table myself */
-    g = grammar(tokens2, nts2, test2, "S");
+    g = grammar(tokens_random, nts_random, grammar_random, "S");
     Grammar_compute_collection(g);
     Grammar_compile(g);
 

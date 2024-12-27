@@ -1,3 +1,4 @@
+#include "grammars.h"
 #include <stdio.h>
 
 void test_lalr_easy(void);

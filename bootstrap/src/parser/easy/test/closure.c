@@ -1,5 +1,6 @@
 #include "../easy.h"
 #include "../src/internal.h"
+#include "grammars.h"
 #include <common.h>
 
 #define TEST_NUM(N) assert(set_num(s) == (N))
@@ -9,41 +10,13 @@
         destroy_item(&item);                                                   \
     } while (0)
 
-/*
-    Source: Dragon Book, Example 4.42
-
-    (S' -> S)
-    S -> CC
-    C -> cC | d
-*/
-
-static const char *tokens[] = {"c", "d", NULL};
-static const char *nts[] = {"S", "C", NULL};
-static const char test[] = "S -> C C\n"
-                           "C -> c C | d\n";
-
-/*
-    Source: random internet finding + random LALR(1) Parser Generator
-        https://jsmachines.sourceforge.net/machines/lalr1.html
-
-    (S' -> S)
-    S -> S + T | T
-    T -> TF | F
-    F -> F* | a | b
-*/
-static const char *tokens2[] = {"+", "*", "a", "b", NULL};
-static const char *nts2[] = {"S", "T", "F", NULL};
-static const char test2[] = "S -> S + T | T\n"
-                            "T -> T F | F\n"
-                            "F -> F * | a | b\n";
-
 void test_lalr_closure(void) {
     Grammar *g;
     set s;
     set s2 = NULL;
     Item item;
 
-    g = grammar(tokens, nts, test, "S");
+    g = grammar(tokens_basic, nts_basic, grammar_basic, "S");
 
     /*
         I = {[S' -> ·S, $]}
@@ -112,7 +85,7 @@ void test_lalr_closure(void) {
             F  -> ·a, $/+/a/b/ *
             F  -> ·b, $/+/a/b/ *
     */
-    g = grammar(tokens2, nts2, test2, "S");
+    g = grammar(tokens_random, nts_random, grammar_random, "S");
     item = Item_new(0 /* S' -> S */, 0 /* ·S */, 1, 9 /* $ */);
     s = CLOSURE(g, &item);
     set_new_Item(&s2);

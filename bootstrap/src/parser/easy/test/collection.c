@@ -1,5 +1,6 @@
 #include "../easy.h"
 #include "../src/internal.h"
+#include "grammars.h"
 #include <common.h>
 
 #define CHECK_STATE                                                            \
@@ -14,25 +15,12 @@
         assert(found);                                                         \
     } while (0)
 
-/*
-    Source: Dragon Book, Example 4.42
-
-    (S' -> S)
-    S -> CC
-    C -> cC | d
-*/
-
-static const char *tokens[] = {"c", "d", NULL};
-static const char *nts[] = {"S", "C", NULL};
-static const char test[] = "S -> C C\n"
-                           "C -> c C | d\n";
-
 void test_lalr_collection(void) {
     Grammar *g;
     set s = NULL;
     Item item;
 
-    g = grammar(tokens, nts, test, "S");
+    g = grammar(tokens_basic, nts_basic, grammar_basic, "S");
     Grammar_compute_collection(g);
 
     /*

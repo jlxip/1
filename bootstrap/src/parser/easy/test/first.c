@@ -1,5 +1,6 @@
 #include "../easy.h"
 #include "../src/internal.h"
+#include "grammars.h"
 #include <common.h>
 
 #define TEST_NUM(N) assert(set_num(s) == (N))
@@ -14,30 +15,12 @@
         assert(!set_has(s, &x));                                               \
     } while (0)
 
-/*
-    Non-tricky grammar
-    Source: Dragon Book, Example 4.17 (Grammar 4.11)
-
-    E  -> T E'
-    E' -> + T E' | epsilon
-    T  -> F T'
-    T' -> * F T' | epsilon
-    F  -> ( E ) | id
-*/
-static const char *tokens1[] = {"+", "*", "(", ")", "id", NULL};
-static const char *nts1[] = {"E", "Ep", "T", "Tp", "F", NULL};
-static const char grammar1[] = "E  -> T Ep\n"
-                               "Ep -> + T Ep | EPSILON\n"
-                               "T  -> F Tp\n"
-                               "Tp -> * F Tp | EPSILON\n"
-                               "F  -> ( E ) | id\n";
-
-static void test1(void) {
+static void test_forfirst(void) {
     Grammar *g;
     size_t x;
     set s;
 
-    g = grammar(tokens1, nts1, grammar1, "E");
+    g = grammar(tokens_forfirst, nts_forfirst, grammar_forfirst, "E");
 
     /* FIRST(E) = { (, id } */
     s = FIRST(g, 7);
@@ -71,25 +54,12 @@ static void test1(void) {
 
 /* -------------------------------------------------------------------------- */
 
-/*
-    Special case with epsilon #1
-
-    E -> A B
-    A -> a | epsilon
-    B -> b
-*/
-static const char *tokens2[] = {"a", "b", NULL};
-static const char *nts2[] = {"E", "A", "B", NULL};
-static const char *grammar2 = "E -> A B\n"
-                              "A -> a | EPSILON\n"
-                              "B -> b\n";
-
-static void test2(void) {
+static void test_forfirst2(void) {
     Grammar *g;
     size_t x;
     set s;
 
-    g = grammar(tokens2, nts2, grammar2, "E");
+    g = grammar(tokens_forfirst2, nts_forfirst2, grammar_forfirst2, "E");
 
     /* FIRST(E) = { a, b } <- Tricky: no epsilon! */
     s = FIRST(g, 4);
@@ -114,24 +84,12 @@ static void test2(void) {
 
 /* -------------------------------------------------------------------------- */
 
-/*
-    Special case with epsilon #2
-
-    E -> A B
-    A -> a | epsilon
-    B -> b | epsilon
-*/
-
-static const char *grammar3 = "E -> A B\n"
-                              "A -> a | EPSILON\n"
-                              "B -> b | EPSILON\n";
-
-static void test3(void) {
+static void test_forfirst3(void) {
     Grammar *g;
     size_t x;
     set s;
 
-    g = grammar(tokens2, nts2, grammar3, "E");
+    g = grammar(tokens_forfirst3, nts_forfirst3, grammar_forfirst3, "E");
 
     /* FIRST(E) = { a, b, epsilon } */
     s = FIRST(g, 4);
@@ -156,27 +114,12 @@ static void test3(void) {
 
 /* -------------------------------------------------------------------------- */
 
-/*
-    Another one
-
-    (S' -> S)
-    S -> S + T | T
-    T -> TF | F
-    F -> F* | a | b
-*/
-
-static const char *tokens4[] = {"+", "*", "a", "b", NULL};
-static const char *nts4[] = {"S", "T", "F", NULL};
-static const char grammar4[] = "S -> S + T | T\n"
-                               "T -> T F | F\n"
-                               "F -> F * | a | b\n";
-
-static void test4(void) {
+static void test_random(void) {
     Grammar *g;
     size_t x;
     set s;
 
-    g = grammar(tokens4, nts4, grammar4, "S");
+    g = grammar(tokens_random, nts_random, grammar_random, "S");
 
     /* FIRST(S) = { a, b } */
     s = FIRST(g, 6);
@@ -199,8 +142,8 @@ static void test4(void) {
 }
 
 void test_lalr_first(void) {
-    test1();
-    test2();
-    test3();
-    test4();
+    test_forfirst();
+    test_forfirst2();
+    test_forfirst3();
+    test_random();
 }
