@@ -13,5 +13,6 @@ ADDG(basic, 3, 3);
 ADDG(lr, 4, 4);
 ADDG(random, 5, 4);
 ADDG(epsilon, 1, 2);
+ADDG(wtf, 7, 5);
 
 #endif

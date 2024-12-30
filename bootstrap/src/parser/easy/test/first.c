@@ -141,9 +141,47 @@ static void test_random(void) {
     free(g);
 }
 
+/* -------------------------------------------------------------------------- */
+
+static void test_wtf(void) {
+    Grammar *g;
+    size_t x;
+    set s;
+
+    g = grammar(tokens_wtf, nts_wtf, grammar_wtf, "S");
+
+    /* FIRST(S) = { a, c, e, x } */
+    s = FIRST(g, 8);
+    TEST_NUM(4);
+    TEST_HAS(1);
+    TEST_HAS(3);
+    TEST_HAS(5);
+    TEST_HAS(6);
+    /* FIRST(A) = { a, EPSILON } */
+    s = FIRST(g, 9);
+    TEST_NUM(2);
+    TEST_HAS(1);
+    TEST_HAS(0);
+    /* FIRST(B) = { x } */
+    s = FIRST(g, 10);
+    TEST_NUM(1);
+    TEST_HAS(6);
+    /* FIRST(C) = { c, e } */
+    s = FIRST(g, 11);
+    TEST_NUM(2);
+    TEST_HAS(3);
+    TEST_HAS(5);
+
+    Grammar_out(g);
+    free(g);
+}
+
+/* -------------------------------------------------------------------------- */
+
 void test_lalr_first(void) {
     test_forfirst();
     test_forfirst2();
     test_forfirst3();
     test_random();
+    test_wtf();
 }

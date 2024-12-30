@@ -95,6 +95,24 @@ const char *grammar_random = "S -> S + T | T\n"
                              "F -> F * | a | b\n";
 
 /*
+    wtf: slightly difficult grammar
+    Source: came up with it
+    Used: alexpizarroj/lalr1-table-generator
+
+    (S' -> S)
+    S -> AB  | C
+    A -> aA  | EPSILON
+    B -> Bb  | x
+    C -> cCd | e
+*/
+const char *tokens_wtf[7] = {"a", "b", "c", "d", "e", "x", NULL};
+const char *nts_wtf[5] = {"S", "A", "B", "C", NULL};
+const char *grammar_wtf = "S -> A B | C\n"
+                          "A -> a A | EPSILON\n"
+                          "B -> B b | x\n"
+                          "C -> c C d | e\n";
+
+/*
     epsilon: a language based on silence
     Source: came up with it
 

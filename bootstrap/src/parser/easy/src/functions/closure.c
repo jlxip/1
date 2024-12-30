@@ -42,6 +42,10 @@ static set Grammar_closure_once(Grammar *g, const Item *item) {
         new->prod = i;
         new->dot = 0;
 
+        /* Epsilon has no symbols so the dot is at the end */
+        if (buffer_empty(p->rhs))
+            new->dot = END_OF_PRODUCTION;
+
         /* Now compute second component, FIRST(beta a) */
         new->look = FIRST_MANY(g, beta);
         if (set_empty(new->look)) {

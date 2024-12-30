@@ -1,4 +1,6 @@
-# 1 Bootstrap Compiler
+# The 1 System
+
+## 1 Bootstrap Compiler
 
 This is a compiler written in 100% portable C89. It translates 1 into C89.
 
@@ -8,8 +10,9 @@ you probably want to disable warnings when using an old compiler, in case of bug
 ## Status
 - [x] Data structures
 - [x] Lexer
-- [ ] LALR parser generator [*IN PROGRESS*](src/parser/easy/README.md).
-- [ ] Lexer (second thought)
+- [x] LALR parser generator
+- [ ] Lexer (second thought) *IN PROGRESS*
 - [ ] Parser
 - [ ] Productions (semantic analysis)
 - [ ] Code generation
+- [ ] Try to [compile in Windows 95](https://www.vogons.org/viewtopic.php?t=17324)
