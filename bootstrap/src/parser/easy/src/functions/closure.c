@@ -91,58 +91,64 @@ static set join_items(set s) {
     return ret2;
 }
 
+static void push_copy(buffer x, const Item *y) {
+    Item *copy = copy_item(y);
+    buffer_push(x, copy);
+    free(copy); /* shallow free */
+}
+
 /* Acutal iterative LR(1) item closure */
 set CLOSURE(Grammar *g, const Item *item) {
     set result = NULL; /* set<Item> */
-    size_t prev = 0;
-    size_t now;
+    buffer new = NULL; /* buffer<Item> (stack-like) */
 
     if (!g->augmented)
         Grammar_augment(g);
 
-    /* Expand for the first time */
-    result = Grammar_closure_once(g, item);
-    if (!result)
-        return NULL;
-    if (set_num(result) == 1)
-        goto finish; /* If there were something to expand it would've already
-                        happened */
+    if (g->closure_cache == NULL) {
+        map_new(&g->closure_cache, hash_item, equal_item, copy_item,
+            destroy_item, sizeof(set), hash_set, equal_set, copy_set,
+            destroy_set);
+    } else if (map_has(g->closure_cache, item)) {
+        return set_copy(*map_get(g->closure_cache, item, set));
+    }
 
-    /* Just keep expanding until there's no changes */
-    now = set_num(result);
-    while (now > prev) {
-        set to_add = NULL; /* set<Item> */
+    set_new_Item(&result);
+    buffer_new(&new, sizeof(Item));
+    push_copy(new, item);
+
+    /* Keep expanding every new item */
+    while (!buffer_empty(new)) {
+        Item this;
+        set expansion; /* set<Item> */
         set_iterator it;
 
-        set_new_Item(&to_add);
-        it = set_it_begin(result);
-        while (!set_it_finished(&it)) {
-            const Item *this = set_it_get(&it, Item);
-            set aux = Grammar_closure_once(g, this); /* set<Item> */
-            if (!aux) {
-                /* Nothing to do here */
-                set_it_next(&it);
-                continue;
-            }
-            if (set_num(aux) == 1) {
-                /* No new expansions */
-                set_out(&aux);
-                set_it_next(&it);
-                continue;
-            }
+        /* Get an item from new */
+        this = *buffer_back(new, Item);
+        buffer_pop(new);
+        if (set_has(result, &this)) {
+            /* Already seen */
+            destroy_item(&this);
+            continue;
+        }
 
-            /* Save the new ones */
-            set_join_move(to_add, aux);
+        /* Expand it */
+        set_add(result, &this);
+        expansion = Grammar_closure_once(g, &this);
+        destroy_item(&this);
+
+        /* Check everything not seen */
+        it = set_it_begin(expansion);
+        while (!set_it_finished(&it)) {
+            push_copy(new, set_it_get(&it, void));
             set_it_next(&it);
         }
 
-        /* Now that we're done iterating, add the new ones */
-        set_join_move(result, to_add);
-        prev = now;
-        now = set_num(result);
+        set_out(&expansion);
     }
 
-finish:
+    buffer_out(&new);
     result = join_items(result);
+    map_add(g->closure_cache, item, &result);
     return result;
 }

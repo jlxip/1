@@ -59,6 +59,7 @@ buffer split(char *str, const char *del) {
 void *grammar(const char **tokens, const char **nts, const char *cstr,
     const char *start) {
 
+    const char **cur = NULL;
     map all_symbols = NULL; /* map<str, symbol> */
     size_t i;
     size_t ntok;
@@ -66,19 +67,22 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
     char *freethis, *str;
     buffer lines;
     size_t lineno;
+    size_t prio = 1;
 
     map_new_string(&all_symbols, sizeof(symbol), hash_symbol, equal_symbol,
         copy_symbol, destroy_symbol);
     i = 0;
     map_add(all_symbols, "EPSILON", &i);
     ++i;
-    while (*tokens) {
-        map_add(all_symbols, *tokens++, &i);
+    cur = tokens;
+    while (*cur) {
+        map_add(all_symbols, *cur++, &i);
         ++i;
     }
     ntok = i++; /* ntok, later used for augmented start non-terminal symbol */
-    while (*nts) {
-        map_add(all_symbols, *nts++, &i);
+    cur = nts;
+    while (*cur) {
+        map_add(all_symbols, *cur++, &i);
         ++i;
     }
 
@@ -102,13 +106,60 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
         size_t i;
 
         line = *buffer_get(lines, lineno, char *);
+        assert(line);
         line = strip(line);
+        assert(line);
         if (strlen(line) == 0)
             continue;
 
+        if (*line == '#')
+            continue; /* comment */
+
+        if (*line == '%') {
+            /* Precedence */
+            buffer spaces;
+            const char *strassoc;
+            size_t assoc;
+            Precedence prec;
+            size_t i;
+
+            /* Example: %left token token token */
+            ++line;
+            line = strip(line);
+            spaces = split(line, " ");
+            assert(buffer_num(spaces) >= 2);
+            strassoc = *buffer_get(spaces, 0, char *);
+            if (strcmp(strassoc, "prec") == 0)
+                assoc = UNDEFINED_ASSOC;
+            else if (strcmp(strassoc, "nonassoc") == 0)
+                assoc = NONASSOC;
+            else if (strcmp(strassoc, "left") == 0)
+                assoc = LEFT_ASSOC;
+            else if (strcmp(strassoc, "right") == 0)
+                assoc = RIGHT_ASSOC;
+            else
+                throwe("What's this? \"%%%s\"\n", strassoc);
+
+            prec.assoc = assoc;
+
+            /* Example: token token token */
+            for (i = 1; i < buffer_num(spaces); ++i) {
+                const char *strsym;
+                symbol sym;
+
+                strsym = *buffer_get(spaces, i, const char *);
+                sym = *map_get(all_symbols, strsym, symbol);
+
+                prec.prio = prio++;
+                map_add(ret->prec, &sym, &prec);
+            }
+
+            continue;
+        }
+
         sides = split(line, "->");
         if (buffer_num(sides) != 2)
-            throw("oops bad grammar, missed ->");
+            throwe("oops bad grammar, missed -> near line %lu", lineno + 1);
         strlhs = strip(*buffer_get(sides, 0, char *)); /* Example: C */
         rhs = *buffer_get(sides, 1, char *);           /* Example: c C */
         buffer_out(&sides);
@@ -163,4 +214,9 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
     buffer_out(&lines);
     free(freethis);
     return ret;
+}
+
+void grammar_compile(void *ptr) {
+    Grammar *g = (Grammar *)ptr;
+    Grammar_compile(g);
 }

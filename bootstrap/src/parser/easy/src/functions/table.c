@@ -1,10 +1,10 @@
-#include "../Grammar.h"
+#include "../internal.h"
 
 void Grammar_compile(Grammar *g) {
     size_t idx;
 
     if (!g->collection)
-        throw("compute_table() called without collection");
+        Grammar_compute_collection(g);
 
     buffer_new(&g->table, sizeof(map));
     for (idx = 0; idx < buffer_num(g->collection); ++idx) {
@@ -44,9 +44,6 @@ void Grammar_compile(Grammar *g) {
                     symbol sym = *set_it_get(&lit, symbol);
                     Entry entry;
 
-                    if (map_has(entries, &sym))
-                        throw("grammar conflict"); /* where? */
-
                     if (item->prod == 0 /* augmented start */) {
                         entry.type = ENTRY_ACCEPT;
                         entry.info = 0;
@@ -54,7 +51,11 @@ void Grammar_compile(Grammar *g) {
                         entry.type = ENTRY_REDUCE;
                         entry.info = item->prod;
                     }
-                    map_add(entries, &sym, &entry);
+
+                    if (map_has(entries, &sym))
+                        throw("grammar conflict");
+                    else
+                        map_add(entries, &sym, &entry);
 
                     set_it_next(&lit);
                 }

@@ -1,12 +1,11 @@
 #include <compiler.h>
+#include <files.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 void test_lalr(void);
 
 int main(int argc, const char *argv[]) {
-    FILE *file = NULL;
-    long sz = 0;
     char *code = NULL;
 
     printf("Testing LALR implementation\n");
@@ -18,20 +17,8 @@ int main(int argc, const char *argv[]) {
         exit(99);
     }
 
-    file = fopen(argv[1], "r");
-    if (!file) {
-        printf("Could not open file: %s\n", argv[1]);
-        exit(99);
-    }
-
-    fseek(file, 0, SEEK_END);
-    sz = ftell(file);
-    rewind(file);
-    code = (char *)malloc(sz);
-    fread(code, sz, 1, file);
-    fclose(file);
-
-    /*parse(code);*/
+    code = read_whole_file(argv[1]);
+    parse(code);
     free(code);
     return 0;
 }

@@ -54,6 +54,8 @@ enum _bool_values { false, true };
     } while (0)
 #endif
 
+#define UNREACHABLE throw("Reached the unreachable");
+
 /* I don't quite like C's standard assert() */
 #define assert(X)                                                              \
     do {                                                                       \

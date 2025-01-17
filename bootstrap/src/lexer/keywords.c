@@ -59,29 +59,11 @@ size_t match_keyword(Capture *ret, const char *cur) {
         /* b: break */
         MATCH_REST("reak", T_BREAK);
     case 'c':
-        /* c: continue, class */
-        switch (*cur++) {
-        case 'o':
-            /* co: continue */
-            MATCH_REST("ntinue", T_CONTINUE);
-        case 'l':
-            /* cl: class */
-            MATCH_REST("ass", T_CLASS);
-        }
+        /* c: continue */
+        MATCH_REST("ontinue", T_CONTINUE);
     case 'd':
-        /* d: def, del */
-        switch (*cur++) {
-        case 'e':
-            /* de: def, del */
-            switch (*cur++) {
-            case 'f':
-                /* def: def */
-                MAYBE_KEYWORD(T_DEF);
-            case 'l':
-                /* del: del */
-                MAYBE_KEYWORD(T_DEL);
-            }
-        }
+        /* d: del */
+        MATCH_REST("el", T_DEL);
     case 'e':
         /* e: elif, else */
         switch (*cur++) {
@@ -100,8 +82,11 @@ size_t match_keyword(Capture *ret, const char *cur) {
         /* F: False */
         MATCH_REST_INFO("alse", T_BOOL, 0);
     case 'f':
-        /* f: for, from */
+        /* f: fn, for, from */
         switch (*cur++) {
+        case 'n':
+            /* FN: fn */
+            MAYBE_KEYWORD(T_FN);
         case 'o':
             /* FO: for */
             MATCH_REST("r", T_FOR);
@@ -109,11 +94,8 @@ size_t match_keyword(Capture *ret, const char *cur) {
             /* FR: from */
             MATCH_REST("om", T_FROM);
         }
-    case 'g':
-        /* g: global */
-        MATCH_REST("lobal", T_GLOBAL);
     case 'i':
-        /* i: in, is, if, import */
+        /* i: in, is, if */
         switch (*cur++) {
         case 'n':
             MAYBE_KEYWORD(T_IN);
@@ -121,8 +103,6 @@ size_t match_keyword(Capture *ret, const char *cur) {
             MAYBE_KEYWORD(T_IS);
         case 'f':
             MAYBE_KEYWORD(T_IF);
-        case 'm':
-            MATCH_REST("port", T_IMPORT);
         }
     case 'l':
         /* l: lambda */
@@ -139,9 +119,15 @@ size_t match_keyword(Capture *ret, const char *cur) {
     case 'r':
         /* r: return */
         MATCH_REST("turn", T_RETURN);
+    case 's':
+        /* s: struct */
+        MATCH_REST("truct", T_STRUCT);
     case 'T':
         /* T: True */
         MATCH_REST_INFO("rue", T_BOOL, 1);
+    case 'u':
+        /* u: use */
+        MATCH_REST("se", T_USE);
     case 'w':
         /* w: while, with */
         switch (*cur++) {

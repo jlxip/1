@@ -26,6 +26,12 @@ typedef size_t state;  /* Index for Grammar.collection */
 #define copy_symbol copy_size_t
 #define destroy_symbol destroy_size_t
 
+enum AssociationType { UNDEFINED_ASSOC, NONASSOC, LEFT_ASSOC, RIGHT_ASSOC };
+typedef struct {
+    size_t prio;  /* Priority, a < b means a comes before b */
+    size_t assoc; /* One of the above */
+} Precedence;
+
 typedef struct {
     symbol lhs;
     buffer rhs; /* buffer<symbol> */
@@ -45,12 +51,14 @@ typedef struct {
 
 typedef struct {
     buffer g; /* buffer<Production> */
+    map prec; /* map<symbol, Precedence> */
     size_t ntok;
     size_t nsym;
     symbol start;
     bool augmented;
     map firsts;        /* map<symbol, set<symbol>> */
     map epsilons;      /* map<symbol, bool> */
+    map closure_cache; /* map<Item, set<Item>> */
     buffer collection; /* buffer<set<Item>> */
     buffer gotos;      /* buffer<map<symbol, state>> */
     buffer table;      /* buffer<map<symbol, Entry>> */

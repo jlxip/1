@@ -61,7 +61,7 @@ static void recursive_goto(Grammar *g, map seen) {
 
             parent = *buffer_get(g->collection, idx, set);
 
-            /* Try all symbols and see what sticks */
+            /* Throw all symbols at it and see what sticks */
             for (sym = 1; sym < g->nsym; ++sym) {
                 set child;            /* Child state: set<Item> */
                 set childcore = NULL; /* Child state: set<Item (core)> */

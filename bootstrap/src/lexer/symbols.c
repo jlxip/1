@@ -74,21 +74,11 @@ size_t match_symbol(Capture *ret, const char *cur) {
             OK_TOKEN(T_STAR);
         }
     case '/':
-        /* /: /, /=, //, //= */
+        /* /: /, /= */
         switch (*cur++) {
         case '=':
             /* /= */
             OK_TOKEN(T_SLASHEQ);
-        case '/':
-            /* //: //, //= */
-            switch (*cur++) {
-            case '=':
-                /* //= */
-                OK_TOKEN(T_DSLASHEQ);
-            default:
-                /* // */
-                OK_TOKEN(T_DSLASH);
-            }
         default:
             /* / */
             OK_TOKEN(T_SLASH);
@@ -112,6 +102,16 @@ size_t match_symbol(Capture *ret, const char *cur) {
         default:
             /* & */
             OK_TOKEN(T_AMP);
+        }
+    case '|':
+        /* |: |, |= */
+        switch (*cur++) {
+        case '=':
+            /* |= */
+            OK_TOKEN(T_BAREQ);
+        default:
+            /* | */
+            OK_TOKEN(T_BAR);
         }
     case '<':
         /* <: <, <= */

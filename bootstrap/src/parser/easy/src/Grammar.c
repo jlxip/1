@@ -2,6 +2,33 @@
 #include <stdarg.h>
 #include <stdlib.h>
 
+/* --- Precedence --- */
+static size_t hash_precedence(const void *ptr) {
+    size_t ret;
+    const Precedence *prec = (const Precedence *)ptr;
+    ret = hash_size_t(&prec->prio);
+    ret = combine_hashes(ret, hash_size_t(&prec->assoc));
+    return ret;
+}
+
+static size_t equal_precedence(const void *ptra, const void *ptrb) {
+    const Precedence *a = (const Precedence *)ptra;
+    const Precedence *b = (const Precedence *)ptrb;
+    if (a->prio != b->prio)
+        return 0;
+    return a->assoc == b->assoc;
+}
+
+static void *copy_precedence(const void *ptr) {
+    const Precedence *prec = (const Precedence *)ptr;
+    Precedence *ret = malloc(sizeof(Precedence));
+    ret->prio = prec->prio;
+    ret->assoc = prec->assoc;
+    return ret;
+}
+
+static void destroy_precedence(void *ptr) { (void)ptr; }
+
 /* --- Item --- */
 
 Item Item_new(size_t prod, size_t dot, size_t nlook, ...) {
@@ -102,12 +129,16 @@ void destroy_entry(void *ptr) { (void)ptr; }
 void Grammar_new(Grammar *g, size_t ntok, size_t nsym, symbol start) {
     g->g = NULL;
     buffer_new(&g->g, sizeof(Production));
+    g->prec = NULL;
+    map_new_symbol(&g->prec, sizeof(Precedence), hash_precedence,
+        equal_precedence, copy_precedence, destroy_precedence);
     g->ntok = ntok;
     g->nsym = nsym;
     g->start = start;
     g->augmented = false;
     g->firsts = NULL;
     g->epsilons = NULL;
+    g->closure_cache = NULL;
     g->collection = NULL;
     g->gotos = NULL;
     g->table = NULL;
@@ -160,6 +191,10 @@ void Grammar_out(Grammar *g) {
     /* Free epsilons: map<symbol, bool> */
     if (g->epsilons)
         map_out(&g->epsilons);
+
+    /* Free closure cache: map<Item, set<Item>> */
+    if (g->closure_cache)
+        map_out(&g->closure_cache);
 
     /* Free collection: buffer<set<Item>> */
     if (g->collection) {
