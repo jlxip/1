@@ -35,6 +35,7 @@ typedef struct {
 typedef struct {
     symbol lhs;
     buffer rhs; /* buffer<symbol> */
+    symbol hint;
 } Production;
 
 /*
@@ -62,6 +63,10 @@ typedef struct {
     buffer collection; /* buffer<set<Item>> */
     buffer gotos;      /* buffer<map<symbol, state>> */
     buffer table;      /* buffer<map<symbol, Entry>> */
+
+    /* Debugging (showing errors) */
+    const char **strtokens;
+    const char **strnts;
 } Grammar;
 
 /* LR(1) item */
@@ -97,7 +102,10 @@ void destroy_entry(void *a);
 
 /* Grammar.c */
 void Grammar_new(Grammar *g, size_t ntok, size_t nsym, symbol start);
+void Grammar_set_debugging(
+    Grammar *g, const char **strtokens, const char **strnts);
 void Grammar_add(Grammar *g, symbol lhs, buffer rhs);
+void Grammar_add_hint(Grammar *g, size_t prod, symbol hint);
 void Grammar_shrink(Grammar *g);
 void Grammar_out(Grammar *g);
 

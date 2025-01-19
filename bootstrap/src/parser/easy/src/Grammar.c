@@ -142,13 +142,27 @@ void Grammar_new(Grammar *g, size_t ntok, size_t nsym, symbol start) {
     g->collection = NULL;
     g->gotos = NULL;
     g->table = NULL;
+
+    g->strtokens = NULL;
+    g->strnts = NULL;
+}
+
+void Grammar_set_debugging(
+    Grammar *g, const char **strtokens, const char **strnts) {
+    g->strtokens = strtokens;
+    g->strnts = strnts;
 }
 
 void Grammar_add(Grammar *g, symbol lhs, buffer rhs) {
     Production prod;
     prod.lhs = lhs;
     prod.rhs = rhs;
+    prod.hint = 0;
     buffer_push(g->g, &prod);
+}
+
+void Grammar_add_hint(Grammar *g, size_t prod, symbol hint) {
+    buffer_get(g->g, prod, Production)->hint = hint;
 }
 
 void Grammar_shrink(Grammar *g) { buffer_shrink(g->g); }

@@ -52,10 +52,23 @@ void Grammar_compile(Grammar *g) {
                         entry.info = item->prod;
                     }
 
-                    if (map_has(entries, &sym))
-                        throw("grammar conflict");
-                    else
+                    if (map_has(entries, &sym)) {
+                        const Entry *old = map_get(entries, &sym, Entry);
+                        switch (handle_conflict(g, idx, sym, old)) {
+                        case 0:
+                            /* Prefer shift (keep old) */
+                            break;
+                        case 1:
+                            /* Prefer reduce (put new) */
+                            map_remove(entries, &sym);
+                            map_add(entries, &sym, &entry);
+                            break;
+                        default:
+                            UNREACHABLE;
+                        }
+                    } else {
                         map_add(entries, &sym, &entry);
+                    }
 
                     set_it_next(&lit);
                 }

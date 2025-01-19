@@ -68,6 +68,7 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
     buffer lines;
     size_t lineno;
     size_t prio = 1;
+    symbol hint = 0;
 
     map_new_string(&all_symbols, sizeof(symbol), hash_symbol, equal_symbol,
         copy_symbol, destroy_symbol);
@@ -91,6 +92,7 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
     if (!map_has(all_symbols, start))
         throw("invalid start symbol");
     Grammar_new(ret, ntok, i, *map_get(all_symbols, start, symbol));
+    Grammar_set_debugging(ret, tokens, nts);
 
     /* Parse input */
     freethis = str = malloc(strlen(cstr) + 1);
@@ -118,40 +120,51 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
         if (*line == '%') {
             /* Precedence */
             buffer spaces;
-            const char *strassoc;
-            size_t assoc;
-            Precedence prec;
-            size_t i;
+            const char *statement;
 
             /* Example: %left token token token */
             ++line;
             line = strip(line);
             spaces = split(line, " ");
             assert(buffer_num(spaces) >= 2);
-            strassoc = *buffer_get(spaces, 0, char *);
-            if (strcmp(strassoc, "prec") == 0)
-                assoc = UNDEFINED_ASSOC;
-            else if (strcmp(strassoc, "nonassoc") == 0)
-                assoc = NONASSOC;
-            else if (strcmp(strassoc, "left") == 0)
-                assoc = LEFT_ASSOC;
-            else if (strcmp(strassoc, "right") == 0)
-                assoc = RIGHT_ASSOC;
-            else
-                throwe("What's this? \"%%%s\"\n", strassoc);
+            statement = *buffer_get(spaces, 0, char *);
 
-            prec.assoc = assoc;
-
-            /* Example: token token token */
-            for (i = 1; i < buffer_num(spaces); ++i) {
+            if (strcmp(statement, "hint") == 0) {
+                /* Hint about next production */
                 const char *strsym;
-                symbol sym;
+                assert(buffer_num(spaces) == 2);
+                strsym = *buffer_get(spaces, 1, const char *);
+                hint = *map_get(all_symbols, strsym, symbol);
+            } else {
+                /* Must be precedence */
+                size_t assoc;
+                Precedence prec;
+                size_t i;
 
-                strsym = *buffer_get(spaces, i, const char *);
-                sym = *map_get(all_symbols, strsym, symbol);
+                if (strcmp(statement, "prec") == 0)
+                    assoc = UNDEFINED_ASSOC;
+                else if (strcmp(statement, "nonassoc") == 0)
+                    assoc = NONASSOC;
+                else if (strcmp(statement, "left") == 0)
+                    assoc = LEFT_ASSOC;
+                else if (strcmp(statement, "right") == 0)
+                    assoc = RIGHT_ASSOC;
+                else
+                    throwe("What's this? \"%%%s\"\n", statement);
 
-                prec.prio = prio++;
-                map_add(ret->prec, &sym, &prec);
+                prec.assoc = assoc;
+
+                /* Example: token token token */
+                for (i = 1; i < buffer_num(spaces); ++i) {
+                    const char *strsym;
+                    symbol sym;
+
+                    strsym = *buffer_get(spaces, i, const char *);
+                    sym = *map_get(all_symbols, strsym, symbol);
+
+                    prec.prio = prio++;
+                    map_add(ret->prec, &sym, &prec);
+                }
             }
 
             continue;
@@ -204,10 +217,13 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
             }
 
             Grammar_add(ret, *lhs, syms);
+            if (hint)
+                Grammar_add_hint(ret, buffer_num(ret->g) - 1, hint);
             buffer_out(&symbols);
         }
 
         buffer_out(&options);
+        hint = 0;
     }
 
     map_out(&all_symbols);
