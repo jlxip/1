@@ -18,6 +18,7 @@ void parse(buffer input) {
     gtext = read_whole_file("src/parser/grammar.txt");
     g = grammar(token_strings + 1, nts, gtext, "S");
     grammar_compile(g);
+    grammar_out(g);
 
     (void)g;
     (void)input;

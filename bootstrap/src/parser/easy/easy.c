@@ -167,6 +167,7 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
                 }
             }
 
+            buffer_out(&spaces);
             continue;
         }
 
@@ -235,4 +236,10 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
 void grammar_compile(void *ptr) {
     Grammar *g = (Grammar *)ptr;
     Grammar_compile(g);
+}
+
+void grammar_out(void *ptr) {
+    Grammar *g = (Grammar *)ptr;
+    Grammar_out(g);
+    free(ptr);
 }

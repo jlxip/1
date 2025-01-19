@@ -6,5 +6,6 @@
 void *grammar(
     const char **tokens, const char **nts, const char *cstr, const char *start);
 void grammar_compile(void *g);
+void grammar_out(void *g);
 
 #endif

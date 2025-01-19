@@ -198,6 +198,10 @@ void Grammar_out(Grammar *g) {
     }
     buffer_out(&g->g);
 
+    /* Free prec */
+    if (g->prec)
+        map_out(&g->prec);
+
     /* Free firsts: map<symbol, set<symbol>> */
     if (g->firsts)
         map_out(&g->firsts);
