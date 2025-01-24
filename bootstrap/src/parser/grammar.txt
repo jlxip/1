@@ -6,15 +6,9 @@ S -> USES GLOBALS
       MODULE -> id dot MODULE | id
 
   GLOBALS -> GLOBAL GLOBALS | GLOBAL
-  GLOBAL -> GLOBAL_DECLARATION | FUNCTION
-    # A global declaration is like a regular assignment,
-    # except always uses "=" and cannot be grouped.
-    GLOBAL_DECLARATION -> MAYBE_TYPED_ID eq EXPRESSION
-      MAYBE_TYPED_ID -> id colon TYPE | id
-        TYPE -> id lt TYPES gt | id
-        TYPES -> TYPE comma TYPES | TYPE
-    FUNCTION -> fn id opar TYPED_IDS cpar BLOCK
-      TYPED_IDS -> id colon TYPE comma TYPED_IDS | id colon TYPE
+  GLOBAL -> ASSIGNMENT semicolon | FUNCTION
+    FUNCTION -> fn id opar TYPED_IDS cpar BLOCK | fn id opar cpar BLOCK
+      TYPED_IDS -> TYPED_ID comma TYPED_IDS | TYPED_ID
       # Block is defined at the end
 
 
@@ -67,11 +61,22 @@ ASSIGNMENT -> LHS hateq RHS
 ASSIGNMENT -> LHS ampeq RHS
 ASSIGNMENT -> LHS bareq RHS
 
-LHS -> MAYBE_TYPED_ID comma LHS | MAYBE_TYPED_ID
+LHS -> TYPED_ID comma LHS
+LHS -> TYPED_ID
+LHS -> id comma LHS
+%hint comma
+LHS -> id
+TYPED_ID -> id colon TYPE
+TYPE -> id lt TYPES gt | id
+TYPES -> TYPE comma TYPES | TYPE
+
 %left comma
 RHS -> EXPRESSION comma RHS
 %hint eq
 RHS -> EXPRESSION
+
+EXPRESSION -> id
+EXPRESSION -> None | bool | int | float | string
 
 
 
@@ -91,6 +96,6 @@ RHS -> EXPRESSION
 
 
 # ---------- BLOCK ----------
-BLOCK -> obraces STATEMENTS obraces
+BLOCK -> obraces STATEMENTS cbraces
   STATEMENTS -> STATEMENT semicolon STATEMENTS | STATEMENT semicolon
   STATEMENT -> EXPRESSION

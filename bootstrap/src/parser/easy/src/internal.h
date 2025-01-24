@@ -8,3 +8,5 @@ set GOTO(Grammar *g, const set items, symbol sym);
 void Grammar_compute_collection(Grammar *g);
 size_t handle_conflict(
     const Grammar *g, state st, symbol sym, const Entry *old);
+
+void print_symbol(const Grammar *g, symbol sym);

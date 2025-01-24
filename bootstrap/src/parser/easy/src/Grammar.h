@@ -107,9 +107,11 @@ void Grammar_set_debugging(
 void Grammar_add(Grammar *g, symbol lhs, buffer rhs);
 void Grammar_add_hint(Grammar *g, size_t prod, symbol hint);
 void Grammar_shrink(Grammar *g);
+void Grammar_clean(Grammar *g); /* Free everything not needed for parsing */
 void Grammar_out(Grammar *g);
 
 /* functions */
 void Grammar_compile(Grammar *g);
+void Grammar_parse(Grammar *g, const symbol *stream, void *data);
 
 #endif

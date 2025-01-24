@@ -3,9 +3,8 @@
 
 #include <ds/buffer.h>
 
-typedef buffer Tokens;
+typedef buffer Tokens; /* buffer<Capture> */
 Tokens get_tokens(const char *code);
-
-void parse(const char *code);
+void parse(const size_t *tokens, void *data);
 
 #endif

@@ -6,7 +6,7 @@
 
 #define MAYBE_KEYWORD(X)                                                       \
     do {                                                                       \
-        if (!CAN_BE_KEYWORD(*cur++))                                           \
+        if (!CAN_BE_KEYWORD(*cur))                                             \
             OK_TOKEN(X);                                                       \
     } while (0)
 

@@ -243,3 +243,8 @@ void grammar_out(void *ptr) {
     Grammar_out(g);
     free(ptr);
 }
+
+void grammar_parse(void *ptr, const size_t *stream, void *data) {
+    Grammar *g = (Grammar *)ptr;
+    Grammar_parse(g, stream, data);
+}

@@ -188,15 +188,8 @@ void Grammar_augment(Grammar *g) {
     g->augmented = true;
 }
 
-void Grammar_out(Grammar *g) {
+void Grammar_clean(Grammar *g) {
     size_t i;
-
-    /* Free my G */
-    for (i = 0; i < buffer_num(g->g); ++i) {
-        Production *prod = buffer_get(g->g, i, Production);
-        buffer_out(&prod->rhs);
-    }
-    buffer_out(&g->g);
 
     /* Free prec */
     if (g->prec)
@@ -230,6 +223,21 @@ void Grammar_out(Grammar *g) {
             map_out(m);
         }
         buffer_out(&g->gotos);
+    }
+}
+
+void Grammar_out(Grammar *g) {
+    size_t i;
+
+    Grammar_clean(g);
+
+    /* Free my G */
+    if (g->g) {
+        for (i = 0; i < buffer_num(g->g); ++i) {
+            Production *prod = buffer_get(g->g, i, Production);
+            buffer_out(&prod->rhs);
+        }
+        buffer_out(&g->g);
     }
 
     /* Free table: buffer<map<symbol, Entry>> */

@@ -35,5 +35,6 @@ void *_buffer_get(buffer buf, size_t idx);
 #define buffer_get(B, I, T) ((T *)_buffer_get(B, I))
 #define buffer_front(B, T) buffer_get(B, 0, T)
 #define buffer_back(B, T) buffer_get(B, buffer_num(B) - 1, T)
+#define buffer_get_raw(B, T) buffer_get(B, 0, T)
 
 #endif
