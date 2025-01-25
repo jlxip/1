@@ -1,19 +1,9 @@
+#include "easy.h"
 #include "src/Grammar.h"
 #include <stdlib.h>
 #include <string.h>
 
-/* End of line */
-bool eol(const char *str) {
-    switch (*str) {
-    case '\0':
-    case '\n':
-        return true;
-    default:
-        return false;
-    }
-}
-
-char *strip(char *str) {
+static char *strip(char *str) {
     char *ret = str;
     size_t len;
 
@@ -44,7 +34,7 @@ char *strip(char *str) {
     return ret;
 }
 
-buffer split(char *str, const char *del) {
+static buffer split(char *str, const char *del) {
     buffer ret = NULL;
     buffer_new(&ret, sizeof(char *));
 
@@ -99,7 +89,7 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
     strcpy(str, cstr);
     lines = split(str, "\n");
     for (lineno = 0; lineno < buffer_num(lines); ++lineno) {
-        /* Example: C -> c C | d */
+        /* Example: C -> c C 'prod1 | d 'prod2 */
         char *line;
         buffer sides;
         char *strlhs, *rhs;
@@ -184,8 +174,10 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
 
         options = split(rhs, "|");
         for (i = 0; i < buffer_num(options); ++i) {
-            /* Example: c C */
+            /* Example: c C 'prod1 */
             char *option;
+            buffer namesep;
+            char *name;
             buffer symbols;
             buffer syms = NULL;
             size_t j;
@@ -194,6 +186,19 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
             option = strip(option);
             if (strlen(option) == 0)
                 throw("oops bad grammar, no option");
+
+            /* Get name for this production (right of quote) */
+            namesep = split(option, "'");
+            if (buffer_num(namesep) == 2) {
+                name = *buffer_get(namesep, 1, char *);
+                strip(name);
+            } else {
+                name = NULL;
+            }
+            option = *buffer_get(namesep, 0, char *);
+            buffer_out(&namesep);
+            strip(option);
+            /* Example: c C */
 
             symbols = split(option, " ");
 
@@ -220,6 +225,8 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
             Grammar_add(ret, *lhs, syms);
             if (hint)
                 Grammar_add_hint(ret, buffer_num(ret->g) - 1, hint);
+            if (name)
+                Grammar_add_name(ret, buffer_num(ret->g) - 1, name);
             buffer_out(&symbols);
         }
 
@@ -244,7 +251,10 @@ void grammar_out(void *ptr) {
     free(ptr);
 }
 
-void grammar_parse(void *ptr, const size_t *stream, void *data) {
+/* --- */
+
+void grammar_parse(void *ptr, const TokenData *stream) {
     Grammar *g = (Grammar *)ptr;
-    Grammar_parse(g, stream, data);
+    /* Note that TokenData = StreamElement */
+    Grammar_parse(g, (StreamElement *)stream);
 }

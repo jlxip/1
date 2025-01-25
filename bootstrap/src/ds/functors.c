@@ -83,3 +83,20 @@ void *copy_size_t(const void *ptra) {
 }
 
 void destroy_size_t(void *ptr) { (void)ptr; } /* Trivial */
+
+size_t hash_voidptr(const void *x) { return hash_buffer(x, sizeof(void *)); }
+
+size_t equal_voidptr(const void *ptra, const void *ptrb) {
+    const void **a = (const void **)ptra;
+    const void **b = (const void **)ptrb;
+    return *a == *b;
+}
+
+void *copy_voidptr(const void *ptra) {
+    void *const *a = (void *const *)ptra; /* welcome to C */
+    void **b = malloc(sizeof(void *));
+    *b = *a;
+    return b;
+}
+
+void destroy_voidptr(void *ptr) { (void)ptr; } /* Trivial */

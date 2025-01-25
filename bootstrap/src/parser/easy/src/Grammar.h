@@ -38,6 +38,8 @@ typedef struct {
     symbol hint;
 } Production;
 
+typedef void *(*sdt_callback)(void **sub, size_t nsub);
+
 /*
     Symbols are assumed to be terminals + N_TOKENS + non-terminals + N_SYMBOLS
         - sym = 0                 <==> Epsilon
@@ -63,6 +65,10 @@ typedef struct {
     buffer collection; /* buffer<set<Item>> */
     buffer gotos;      /* buffer<map<symbol, state>> */
     buffer table;      /* buffer<map<symbol, Entry>> */
+
+    buffer prod2name; /* buffer<char*> */
+    map name2prod;    /* map<char*, size_t> */
+    buffer outputs;   /* buffer<sdt_callback> */
 
     /* Debugging (showing errors) */
     const char **strtokens;
@@ -106,12 +112,20 @@ void Grammar_set_debugging(
     Grammar *g, const char **strtokens, const char **strnts);
 void Grammar_add(Grammar *g, symbol lhs, buffer rhs);
 void Grammar_add_hint(Grammar *g, size_t prod, symbol hint);
+void Grammar_add_name(Grammar *g, size_t prod, const char *name);
+void Grammar_add_output(Grammar *g, const char *name, sdt_callback func);
 void Grammar_shrink(Grammar *g);
 void Grammar_clean(Grammar *g); /* Free everything not needed for parsing */
 void Grammar_out(Grammar *g);
 
-/* functions */
 void Grammar_compile(Grammar *g);
-void Grammar_parse(Grammar *g, const symbol *stream, void *data);
+
+/* Parser */
+typedef struct {
+    symbol sym;
+    void *data; /* Anything you want! */
+} StreamElement;
+
+void Grammar_parse(Grammar *g, const StreamElement *stream);
 
 #endif

@@ -2,8 +2,8 @@
 S -> USES GLOBALS
   USES -> USE USES | USE
   USE -> use RELATIVE_PATH semicolon
-    RELATIVE_PATH -> dot RELATIVE_PATH | MODULE
-      MODULE -> id dot MODULE | id
+    RELATIVE_PATH -> dot RELATIVE_PATH 'relpath_dot | MODULE 'relpath_direct
+      MODULE -> id dot MODULE 'module_dot | id 'module_direct
 
   GLOBALS -> GLOBAL GLOBALS | GLOBAL
   GLOBAL -> ASSIGNMENT semicolon | FUNCTION

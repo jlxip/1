@@ -23,6 +23,11 @@ size_t equal_size_t(const void *a, const void *b);
 void *copy_size_t(const void *a);
 void destroy_size_t(void *a);
 
+size_t hash_voidptr(const void *x);
+size_t equal_voidptr(const void *a, const void *b);
+void *copy_voidptr(const void *a);
+void destroy_voidptr(void *a);
+
 #define hash_bool hash_size_t
 #define equal_bool equal_size_t
 #define copy_bool copy_size_t

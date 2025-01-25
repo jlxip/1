@@ -8,6 +8,10 @@ void *grammar(
 void grammar_compile(void *g);
 void grammar_out(void *g);
 
-void grammar_parse(void *g, const size_t *stream, void *data);
+typedef struct {
+    size_t sym;
+    void *data;
+} TokenData;
+void grammar_parse(void *g, const TokenData *stream);
 
 #endif

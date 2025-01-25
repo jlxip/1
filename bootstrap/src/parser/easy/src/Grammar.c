@@ -1,6 +1,9 @@
 #include "Grammar.h"
 #include <stdarg.h>
 #include <stdlib.h>
+#include <string.h>
+
+static char *null = NULL;
 
 /* --- Precedence --- */
 static size_t hash_precedence(const void *ptr) {
@@ -143,6 +146,14 @@ void Grammar_new(Grammar *g, size_t ntok, size_t nsym, symbol start) {
     g->gotos = NULL;
     g->table = NULL;
 
+    g->prod2name = NULL;
+    buffer_new(&g->prod2name, sizeof(char *));
+    g->name2prod = NULL;
+    map_new_string(&g->name2prod, sizeof(size_t), hash_size_t, equal_size_t,
+        copy_size_t, destroy_size_t);
+    g->outputs = NULL;
+    buffer_new(&g->outputs, sizeof(sdt_callback));
+
     g->strtokens = NULL;
     g->strnts = NULL;
 }
@@ -159,16 +170,37 @@ void Grammar_add(Grammar *g, symbol lhs, buffer rhs) {
     prod.rhs = rhs;
     prod.hint = 0;
     buffer_push(g->g, &prod);
+    buffer_push(g->prod2name, &null);
+    buffer_push(g->outputs, &null);
 }
 
 void Grammar_add_hint(Grammar *g, size_t prod, symbol hint) {
     buffer_get(g->g, prod, Production)->hint = hint;
 }
 
+void Grammar_add_name(Grammar *g, size_t prod, const char *name) {
+    size_t namelen;
+    char *namecopy;
+    namelen = strlen(name);
+    namecopy = malloc(namelen + 1);
+    memcpy(namecopy, name, namelen + 1);
+
+    buffer_set(g->prod2name, prod, &namecopy);
+    map_add(g->name2prod, name, &prod);
+}
+
+void Grammar_add_output(Grammar *g, const char *name, sdt_callback func) {
+    size_t prod;
+    assert(map_has(g->name2prod, name));
+    prod = *map_get(g->name2prod, name, size_t);
+    buffer_set(g->outputs, prod, &func);
+}
+
 void Grammar_shrink(Grammar *g) { buffer_shrink(g->g); }
 
 void Grammar_augment(Grammar *g) {
     Production prod;
+    map_iterator it;
 
     if (g->augmented)
         throw("tried to augment an already-augmented grammar");
@@ -184,6 +216,13 @@ void Grammar_augment(Grammar *g) {
         even though it's slower. Putting it at the end is much more confusing.
     */
     buffer_push_front(g->g, &prod);
+    buffer_push_front(g->prod2name, &null);
+    buffer_push_front(g->outputs, &null);
+    it = map_it_begin(g->name2prod);
+    while (!map_it_finished(&it)) {
+        ++*map_it_get_value(&it, size_t);
+        map_it_next(&it);
+    }
     g->start = g->ntok;
     g->augmented = true;
 }
@@ -248,4 +287,19 @@ void Grammar_out(Grammar *g) {
         }
         buffer_out(&g->table);
     }
+
+    /* Free prod2name: buffer<char*> */
+    if (g->prod2name) {
+        for (i = 0; i < buffer_num(g->prod2name); ++i)
+            free(*buffer_get(g->prod2name, i, char *));
+        buffer_out(&g->prod2name);
+    }
+
+    /* Free name2prod: map<char*, size_t> */
+    if (g->name2prod)
+        map_out(&g->name2prod);
+
+    /* Free outputs: buffer<void*> */
+    if (g->outputs)
+        buffer_out(&g->outputs);
 }

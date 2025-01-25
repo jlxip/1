@@ -5,6 +5,7 @@
 
 typedef buffer Tokens; /* buffer<Capture> */
 Tokens get_tokens(const char *code);
-void parse(const size_t *tokens, void *data);
+void parse(const Tokens tokens);
+void setup_sdt(void *ptr);
 
 #endif
