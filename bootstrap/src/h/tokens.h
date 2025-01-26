@@ -11,30 +11,25 @@ typedef enum {
 
     /* --- KEYWORDS --- */
     T_AND,      /* and */
-    T_AS,       /* as */
     T_ASSERT,   /* assert */
     T_BREAK,    /* break */
     T_CONTINUE, /* continue */
-    T_DEL,      /* del */
     T_ELIF,     /* elif */
     T_ELSE,     /* else */
     T_FN,       /* fn */
     T_FOR,      /* for */
-    T_FROM,     /* from */
     T_IF,       /* if */
     T_IN,       /* in */
     T_IS,       /* is */
-    T_LAMBDA,   /* lambda */
     T_NOT,      /* not */
     T_OR,       /* or */
     T_RETURN,   /* return */
     T_STRUCT,   /* struct */
     T_USE,      /* use */
     T_WHILE,    /* while */
-    T_WITH,     /* with */
 
     /* --- LITERALS --- */
-    T_BOOL,   /* True */
+    T_BOOL,   /* true */
     T_INT,    /* 42 */
     T_FLOAT,  /* .0 */
     T_STRING, /* "a string" */
@@ -54,8 +49,10 @@ typedef enum {
     T_HATEQ,     /* ^= */
     T_HAT,       /* ^ */
     T_AMPEQ,     /* &= */
+    T_DAMP,      /* && */
     T_AMP,       /* & */
     T_BAREQ,     /* |= */
+    T_DBAR,      /* || */
     T_BAR,       /* | */
     T_LEQ,       /* <= */
     T_LT,        /* < */
@@ -77,14 +74,14 @@ typedef enum {
 } Token;
 
 #ifdef GET_TOKEN_STRINGS
-static const char *token_strings[] = {"NULL", "id", "and", "as", "assert",
-    "break", "continue", "del", "elif", "else", "fn", "for", "from", "if", "in",
-    "is", "lambda", "not", "or", "return", "struct", "use", "while", "with",
-    "bool", "int", "float", "string", "deq", "neq", "eq", "pluseq", "plus",
-    "minuseq", "minus", "stareq", "star", "slasheq", "slash", "hateq", "hat",
-    "ampeq", "amp", "bareq", "bar", "leq", "lt", "geq", "gt", "dot", "comma",
-    "colon", "semicolon", "atsymbol", "opar", "cpar", "obracket", "cbracket",
-    "obraces", "cbraces", NULL};
+static const char *token_strings[] = {"NULL", "id", "and", "assert", "break",
+    "continue", "elif", "else", "fn", "for", "if", "in", "is", "not", "or",
+    "return", "struct", "use", "while", "bool", "int", "float", "string", "deq",
+    "neq", "eq", "pluseq", "plus", "minuseq", "minus", "stareq", "star",
+    "slasheq", "slash", "hateq", "hat", "ampeq", "damp", "amp", "bareq", "dbar",
+    "bar", "leq", "lt", "geq", "gt", "dot", "comma", "colon", "semicolon",
+    "atsymbol", "opar", "cpar", "obracket", "cbracket", "obraces", "cbraces",
+    NULL};
 #endif
 
 typedef struct {

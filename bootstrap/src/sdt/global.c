@@ -55,14 +55,14 @@ void *sdt_global_assign(void **sub) { NOT_IMPLEMENTED; }
 /* GLOBAL -> FUNCTION */
 void *sdt_global_func(void **sub) { NOT_IMPLEMENTED; }
 
+/* GLOBAL -> STRUCT */
+void *sdt_global_struct(void **sub) { NOT_IMPLEMENTED; }
+
 /* FUNCTION -> fn id opar TYPED_IDS cpar BLOCK */
 void *sdt_func_args(void **sub) { NOT_IMPLEMENTED; }
-
-/* FUNCTION -> fn id opar cpar BLOCK */
-void *sdt_func_direct(void **sub) { NOT_IMPLEMENTED; }
 
 /* TYPED_IDS -> TYPED_ID comma TYPED_IDS */
 void *sdt_typed_ids_rec(void **sub) { NOT_IMPLEMENTED; }
 
-/* TYPED_IDS -> TYPED_ID */
-void *sdt_typed_ids_direct(void **sub) { NOT_IMPLEMENTED; }
+/* TYPED_IDS -> EPSILON */
+void *sdt_typed_ids_null(void **sub) { NOT_IMPLEMENTED; }

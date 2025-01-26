@@ -27,6 +27,9 @@ void *sdt_expr_plus(void **sub) { NOT_IMPLEMENTED; }
 /* EXPRESSION -> EXPRESSION minus EXPRESSION */
 void *sdt_expr_minus(void **sub) { NOT_IMPLEMENTED; }
 
+/* EXPRESSION -> EXPRESSION is EXPRESSION */
+void *sdt_expr_is(void **sub) { NOT_IMPLEMENTED; }
+
 /* EXPRESSION -> EXPRESSION deq EXPRESSION */
 void *sdt_expr_deq(void **sub) { NOT_IMPLEMENTED; }
 
@@ -51,8 +54,14 @@ void *sdt_expr_not(void **sub) { NOT_IMPLEMENTED; }
 /* EXPRESSION -> EXPRESSION and EXPRESSION */
 void *sdt_expr_and(void **sub) { NOT_IMPLEMENTED; }
 
+/* EXPRESSION -> EXPRESSION damp EXPRESSION */
+void *sdt_expr_and2(void **sub) { return sdt_expr_and(sub); }
+
 /* EXPRESSION -> EXPRESSION or EXPRESSION */
 void *sdt_expr_or(void **sub) { NOT_IMPLEMENTED; }
+
+/* EXPRESSION -> EXPRESSION dbar EXPRESSION */
+void *sdt_expr_or2(void **sub) { return sdt_expr_or(sub); }
 
 /* EXPRESSION -> ASSIGNMENT */
 void *sdt_expr_assign(void **sub) { NOT_IMPLEMENTED; }

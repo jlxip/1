@@ -9,8 +9,9 @@
 
 const char *nts[] = {"S", "USES", "USE", "RELATIVE_PATH", "MODULE", "GLOBALS",
     "GLOBAL", "FUNCTION", "TYPED_IDS", "EXPRESSION", "ASSIGNMENT", "LHS",
-    "TYPED_ID", "TYPE", "TYPES", "RHS", "BLOCK", "STATEMENTS", "STATEMENT",
-    NULL};
+    "TYPED_ID", "TYPE", "TYPES", "RHS", "CONTROL", "CONDITIONAL", "IF", "ELIF",
+    "ELSE", "LOOP", "FOR", "WHILE", "STRUCT", "STRUCT_DEF", "BLOCK",
+    "STATEMENTS", "STATEMENT", NULL};
 
 void parse(const Tokens tokens) {
     void *g;

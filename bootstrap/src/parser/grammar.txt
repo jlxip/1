@@ -6,11 +6,13 @@ RELATIVE_PATH -> dot RELATIVE_PATH 'relpath_dot | MODULE 'relpath_direct
 MODULE -> id dot MODULE 'module_dot | id 'module_direct
 
 GLOBALS -> GLOBAL GLOBALS 'globals_rec | GLOBAL 'globals_direct
-GLOBAL -> ASSIGNMENT semicolon 'global_assign | FUNCTION 'global_func
+GLOBAL -> ASSIGNMENT semicolon 'global_assign
+GLOBAL -> FUNCTION 'global_func
+GLOBAL -> STRUCT 'global_struct
+
 FUNCTION -> fn id opar TYPED_IDS cpar BLOCK 'func_args
-FUNCTION -> fn id opar cpar BLOCK 'func_direct
 TYPED_IDS -> TYPED_ID comma TYPED_IDS 'typed_ids_rec
-TYPED_IDS -> TYPED_ID 'typed_ids_direct
+TYPED_IDS -> EPSILON 'typed_ids_null
 
 
 
@@ -34,7 +36,8 @@ EXPRESSION -> EXPRESSION minus EXPRESSION 'expr_minus
 
 # Comparison
 # 2 + 1 == 3 -> (2 + 1) == (3)
-%nonassoc deq neq lt leq gt geq
+%nonassoc is deq neq lt leq gt geq
+EXPRESSION -> EXPRESSION is EXPRESSION 'expr_is
 EXPRESSION -> EXPRESSION deq EXPRESSION 'expr_deq
 EXPRESSION -> EXPRESSION neq EXPRESSION 'expr_neq
 EXPRESSION -> EXPRESSION lt EXPRESSION 'expr_lt
@@ -44,10 +47,12 @@ EXPRESSION -> EXPRESSION geq EXPRESSION 'expr_geq
 
 # Logic: lowest priority, grouped at the end
 # This means bigger chunks: 1 + 3 or 0 -> (1 + 3) or (0)
-%left not and or
+%left not and damp or dbar
 EXPRESSION -> not EXPRESSION 'expr_not
 EXPRESSION -> EXPRESSION and EXPRESSION 'expr_and
+EXPRESSION -> EXPRESSION damp EXPRESSION 'expr_and2
 EXPRESSION -> EXPRESSION or EXPRESSION 'expr_or
+EXPRESSION -> EXPRESSION dbar EXPRESSION 'expr_or2
 
 # Assignments
 EXPRESSION -> ASSIGNMENT 'expr_assign
@@ -87,22 +92,50 @@ EXPRESSION -> string 'expr_string
 
 
 # ---------- CONTROL ----------
-#CONTROL -> EPSILON
+CONTROL -> assert EXPRESSION 'ctrl_assert
+CONTROL -> break 'ctrl_break
+CONTROL -> continue 'ctrl_continue
+CONTROL -> return 'ctrl_ret
+CONTROL -> return EXPRESSION 'ctrl_retval
 
 
 
 # ---------- CONDITIONAL ----------
-#CONDITIONAL -> EPSILON
+CONDITIONAL -> IF 'cond_if
+
+# Dangling else problem, solve by shift
+%left else elif if
+IF -> if EXPRESSION STATEMENT 'if_only
+IF -> if EXPRESSION STATEMENT ELIF 'if_elif
+ELIF -> elif EXPRESSION STATEMENT 'elif_only
+ELIF -> elif EXPRESSION STATEMENT ELIF 'elif_rec
+ELIF -> ELSE 'elif_else
+ELSE -> else STATEMENT 'else
 
 
 
 # ---------- LOOP ----------
-#LOOP -> EPSILON
+LOOP -> FOR 'loop_for
+LOOP -> WHILE 'loop_while
+FOR -> for id in EXPRESSION STATEMENT 'for
+WHILE -> while EXPRESSION STATEMENT 'while
+
+
+
+# ---------- STRUCT ----------
+STRUCT -> struct id obraces STRUCT_DEF cbraces 'struct
+STRUCT_DEF -> ASSIGNMENT semicolon STRUCT_DEF 'struct_def
+STRUCT_DEF -> EPSILON 'struct_def_null
 
 
 
 # ---------- BLOCK ----------
 BLOCK -> obraces STATEMENTS cbraces 'block
-STATEMENTS -> STATEMENT semicolon STATEMENTS 'statements_rec
-STATEMENTS -> STATEMENT semicolon 'statements_direct
-STATEMENT -> EXPRESSION 'statement_expr
+STATEMENTS -> STATEMENT semicolon STATEMENTS 'stmts_rec
+STATEMENTS -> EPSILON 'stmts_null
+
+STATEMENT -> BLOCK 'stmt_block
+STATEMENT -> EXPRESSION 'stmt_expr
+STATEMENT -> CONTROL 'stmt_ctrl
+STATEMENT -> CONDITIONAL 'stmt_cond
+STATEMENT -> LOOP 'stmt_loop

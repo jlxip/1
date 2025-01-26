@@ -45,24 +45,14 @@ size_t match_keyword(Capture *ret, const char *cur) {
     const char *begin = cur;
     switch (*cur++) {
     case 'a':
-        /* a: and, as */
-        switch (*cur++) {
-        case 'n':
-            /* an: and */
-            MATCH_REST("d", T_AND);
-        case 's':
-            /* as: as */
-            MAYBE_KEYWORD(T_AS);
-        }
+        /* a: and */
+        MATCH_REST("nd", T_AND);
     case 'b':
         /* b: break */
         MATCH_REST("reak", T_BREAK);
     case 'c':
         /* c: continue */
         MATCH_REST("ontinue", T_CONTINUE);
-    case 'd':
-        /* d: del */
-        MATCH_REST("el", T_DEL);
     case 'e':
         /* e: elif, else */
         switch (*cur++) {
@@ -78,7 +68,7 @@ size_t match_keyword(Capture *ret, const char *cur) {
             }
         }
     case 'f':
-        /* f: false, fn, for, from */
+        /* f: false, fn, for */
         switch (*cur++) {
         case 'a':
             /* fa: false */
@@ -89,9 +79,6 @@ size_t match_keyword(Capture *ret, const char *cur) {
         case 'o':
             /* fo: for */
             MATCH_REST("r", T_FOR);
-        case 'r':
-            /* fr: from */
-            MATCH_REST("om", T_FROM);
         }
     case 'i':
         /* i: in, is, if */
@@ -103,9 +90,6 @@ size_t match_keyword(Capture *ret, const char *cur) {
         case 'f':
             MAYBE_KEYWORD(T_IF);
         }
-    case 'l':
-        /* l: lambda */
-        MATCH_REST("ambda", T_LAMBDA);
     case 'n':
         /* n: not */
         MATCH_REST("ot", T_NOT);
@@ -125,15 +109,8 @@ size_t match_keyword(Capture *ret, const char *cur) {
         /* u: use */
         MATCH_REST("se", T_USE);
     case 'w':
-        /* w: while, with */
-        switch (*cur++) {
-        case 'h':
-            /* wh: while */
-            MATCH_REST("ile", T_WHILE);
-        case 'i':
-            /* wi: with */
-            MATCH_REST("th", T_WITH);
-        }
+        /* w: while */
+        MATCH_REST("hile", T_WHILE);
     }
 
     return 0;

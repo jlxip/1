@@ -33,12 +33,12 @@ void setup_sdt(void *ptr) {
     /* GLOBAL */
     ADD(global_assign);
     ADD(global_func);
+    ADD(global_struct);
     /* FUNCTION */
     ADD(func_args);
-    ADD(func_direct);
     /* TYPED_IDS */
     ADD(typed_ids_rec);
-    ADD(typed_ids_direct);
+    ADD(typed_ids_null);
 
     /* --- EXPRESSIONS (expr.c) --- */
     ADD(expr_par);
@@ -49,6 +49,7 @@ void setup_sdt(void *ptr) {
     ADD(expr_slash);
     ADD(expr_plus);
     ADD(expr_minus);
+    ADD(expr_is);
     ADD(expr_deq);
     ADD(expr_neq);
     ADD(expr_lt);
@@ -57,7 +58,9 @@ void setup_sdt(void *ptr) {
     ADD(expr_geq);
     ADD(expr_not);
     ADD(expr_and);
+    ADD(expr_and2);
     ADD(expr_or);
+    ADD(expr_or2);
     ADD(expr_assign);
     ADD(expr_id);
     ADD(expr_bool);
@@ -89,11 +92,42 @@ void setup_sdt(void *ptr) {
     ADD(rhs_rec);
     ADD(rhs_direct);
 
+    /* --- CONTROL (ctrl.c) --- */
+    ADD(ctrl_assert);
+    ADD(ctrl_break);
+    ADD(ctrl_continue);
+    ADD(ctrl_ret);
+    ADD(ctrl_retval);
+
+    /* --- CONDITIONAL (cond.c) --- */
+    ADD(cond_if);
+    ADD(if_only);
+    ADD(if_elif);
+    ADD(elif_only);
+    ADD(elif_rec);
+    ADD(elif_else);
+    ADD(else);
+
+    /* --- LOOP (loop.c) --- */
+    ADD(loop_for);
+    ADD(loop_while);
+    ADD(for);
+    ADD(while);
+
+    /* --- STRUCT (struct.c) --- */
+    ADD(struct);
+    ADD(struct_def);
+    ADD(struct_def_null);
+
     /* --- BLOCK (block.c) --- */
     ADD(block);
-    ADD(statements_rec);
-    ADD(statements_direct);
-    ADD(statement_expr);
+    ADD(stmts_rec);
+    ADD(stmts_null);
+    ADD(stmt_block);
+    ADD(stmt_expr);
+    ADD(stmt_ctrl);
+    ADD(stmt_cond);
+    ADD(stmt_loop);
 
     /* Check all NTs have an output function */
     do {

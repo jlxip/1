@@ -94,8 +94,11 @@ size_t match_symbol(Capture *ret, const char *cur) {
             OK_TOKEN(T_HAT);
         }
     case '&':
-        /* &: &, &= */
+        /* &: &, &&, &= */
         switch (*cur++) {
+        case '&':
+            /* && */
+            OK_TOKEN(T_DAMP);
         case '=':
             /* &= */
             OK_TOKEN(T_AMPEQ);
@@ -104,8 +107,11 @@ size_t match_symbol(Capture *ret, const char *cur) {
             OK_TOKEN(T_AMP);
         }
     case '|':
-        /* |: |, |= */
+        /* |: |, ||, |= */
         switch (*cur++) {
+        case '|':
+            /* || */
+            OK_TOKEN(T_DBAR);
         case '=':
             /* |= */
             OK_TOKEN(T_BAREQ);
