@@ -1,5 +1,5 @@
-#ifdef DEBUG_PRINT_TOKENS
-#define CREATE_TOKEN_STRINGS
+#ifdef DEBUG
+#define GET_TOKEN_STRINGS
 #endif
 
 /* Hand-written lexer for this project */
@@ -73,11 +73,13 @@ buffer get_tokens(const char *code) {
 
     buffer_shrink(buf);
 
-#ifdef DEBUG_PRINT_TOKENS
-    {
-        Capture *x = NULL;
-        assert(T_NTOKENS == sizeof(token_strings) / sizeof(const char *));
-        for (buffer_iter(buf, Capture, x)) {
+#ifdef DEBUG
+    do {
+        size_t i;
+        assert(T_NTOKENS + 1 == sizeof(token_strings) / sizeof(const char *));
+        printf("Printing tokens\n");
+        for (i = 0; i < buffer_num(buf); ++i) {
+            Capture *x = buffer_get(buf, i, Capture);
             printf("%s", token_strings[x->token]);
             switch (x->token) {
             case T_BOOL:
@@ -93,8 +95,8 @@ buffer get_tokens(const char *code) {
                 printf(" ");
             }
         }
-        printf("\n");
-    }
+        printf("\nEnd of tokens\n");
+    } while (0);
 #endif
 
     return buf;

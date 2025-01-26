@@ -103,12 +103,10 @@ void Grammar_parse(Grammar *g, const StreamElement *stream) {
             /* Output */
             if (*buffer_get(g->outputs, prodidx, void *)) {
                 sdt_callback x = *buffer_get(g->outputs, prodidx, sdt_callback);
-                val = x(buffer_get_raw(sub, void *), buffer_num(sub));
+                val = x(buffer_get_raw(sub, void *));
             } else {
-#ifdef DEBUG
-                printf("WARNING: no output defined for \"%s\"\n",
+                throwe("no output defined for \"%s\"",
                     *buffer_get(g->prod2name, prodidx, char *));
-#endif
             }
             buffer_push(valstack, &val);
             buffer_out(&sub);

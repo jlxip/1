@@ -5,10 +5,9 @@
 #define CAN_BE_KEYWORD(X) (IS_AZ(X) || IS_az(X))
 
 #define MAYBE_KEYWORD(X)                                                       \
-    do {                                                                       \
-        if (!CAN_BE_KEYWORD(*cur))                                             \
-            OK_TOKEN(X);                                                       \
-    } while (0)
+    if (!CAN_BE_KEYWORD(*cur))                                                 \
+        OK_TOKEN(X);                                                           \
+    break;
 
 /* Check the rest of the token, in case there's only one match. Keywords only */
 static size_t _match(const char **cur, const char *target) {
@@ -18,10 +17,8 @@ static size_t _match(const char **cur, const char *target) {
 
         /* End of target = probably match */
         if (!b) {
-            if (!CAN_BE_KEYWORD(a)) {
-                --(*cur); /* go back */
+            if (!CAN_BE_KEYWORD(a))
                 return 1;
-            }
             return 0;
         }
 
@@ -37,10 +34,12 @@ static size_t _match(const char **cur, const char *target) {
 /* Call _match, maybe call OK_TOKEN */
 #define MATCH_REST(P, T)                                                       \
     if (_match(&cur, P))                                                       \
-        OK_TOKEN(T);
+        OK_TOKEN(T);                                                           \
+    break;
 #define MATCH_REST_INFO(P, T, I)                                               \
     if (_match(&cur, P))                                                       \
-        OK_TOKEN_INFO(T, I);
+        OK_TOKEN_INFO(T, I);                                                   \
+    break;
 
 size_t match_keyword(Capture *ret, const char *cur) {
     const char *begin = cur;
@@ -78,20 +77,20 @@ size_t match_keyword(Capture *ret, const char *cur) {
                 MATCH_REST("e", T_ELSE);
             }
         }
-    case 'F':
-        /* F: False */
-        MATCH_REST_INFO("alse", T_BOOL, 0);
     case 'f':
-        /* f: fn, for, from */
+        /* f: false, fn, for, from */
         switch (*cur++) {
+        case 'a':
+            /* fa: false */
+            MATCH_REST_INFO("lse", T_BOOL, 0);
         case 'n':
-            /* FN: fn */
+            /* fn: fn */
             MAYBE_KEYWORD(T_FN);
         case 'o':
-            /* FO: for */
+            /* fo: for */
             MATCH_REST("r", T_FOR);
         case 'r':
-            /* FR: from */
+            /* fr: from */
             MATCH_REST("om", T_FROM);
         }
     case 'i':
@@ -107,9 +106,6 @@ size_t match_keyword(Capture *ret, const char *cur) {
     case 'l':
         /* l: lambda */
         MATCH_REST("ambda", T_LAMBDA);
-    case 'N':
-        /* N: None */
-        MATCH_REST("one", T_NONE);
     case 'n':
         /* n: not */
         MATCH_REST("ot", T_NOT);
@@ -122,8 +118,8 @@ size_t match_keyword(Capture *ret, const char *cur) {
     case 's':
         /* s: struct */
         MATCH_REST("truct", T_STRUCT);
-    case 'T':
-        /* T: True */
+    case 't':
+        /* t: true */
         MATCH_REST_INFO("rue", T_BOOL, 1);
     case 'u':
         /* u: use */

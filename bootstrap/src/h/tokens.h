@@ -34,7 +34,6 @@ typedef enum {
     T_WITH,     /* with */
 
     /* --- LITERALS --- */
-    T_NONE,   /* None */
     T_BOOL,   /* True */
     T_INT,    /* 42 */
     T_FLOAT,  /* .0 */
@@ -81,11 +80,11 @@ typedef enum {
 static const char *token_strings[] = {"NULL", "id", "and", "as", "assert",
     "break", "continue", "del", "elif", "else", "fn", "for", "from", "if", "in",
     "is", "lambda", "not", "or", "return", "struct", "use", "while", "with",
-    "None", "bool", "int", "float", "string", "deq", "neq", "eq", "pluseq",
-    "plus", "minuseq", "minus", "stareq", "star", "slasheq", "slash", "hateq",
-    "hat", "ampeq", "amp", "bareq", "bar", "leq", "lt", "geq", "gt", "dot",
-    "comma", "colon", "semicolon", "atsymbol", "opar", "cpar", "obracket",
-    "cbracket", "obraces", "cbraces", NULL};
+    "bool", "int", "float", "string", "deq", "neq", "eq", "pluseq", "plus",
+    "minuseq", "minus", "stareq", "star", "slasheq", "slash", "hateq", "hat",
+    "ampeq", "amp", "bareq", "bar", "leq", "lt", "geq", "gt", "dot", "comma",
+    "colon", "semicolon", "atsymbol", "opar", "cpar", "obracket", "cbracket",
+    "obraces", "cbraces", NULL};
 #endif
 
 typedef struct {

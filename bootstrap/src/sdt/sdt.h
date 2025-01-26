@@ -3,10 +3,11 @@
 
 #include <stdio.h>
 
-/* MODULE */
-void *sdt_relpath_dot(void **sub, size_t nsub);
-void *sdt_relpath_direct(void **sub, size_t nsub);
-void *sdt_module_dot(void **sub, size_t nsub);
-void *sdt_module_direct(void **sub, size_t nsub);
+#define DEFINE(X) void *sdt_##X(void **sub)
+
+#define NOT_IMPLEMENTED                                                        \
+    (void)sub;                                                                 \
+    todo();                                                                    \
+    return NULL
 
 #endif

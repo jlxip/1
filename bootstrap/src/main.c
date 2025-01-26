@@ -11,8 +11,10 @@ int main(int argc, const char *argv[]) {
     Tokens tokens;
     size_t i;
 
+#ifdef DEBUG
     printf("Testing LALR implementation\n");
     test_lalr();
+#endif
 
     if (argc < 2) {
         printf("Usage:   1 <path/to/main>\n"

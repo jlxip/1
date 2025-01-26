@@ -1,82 +1,88 @@
 # ---------- GLOBAL SCOPE -----------
-S -> USES GLOBALS
-  USES -> USE USES | USE
-  USE -> use RELATIVE_PATH semicolon
-    RELATIVE_PATH -> dot RELATIVE_PATH 'relpath_dot | MODULE 'relpath_direct
-      MODULE -> id dot MODULE 'module_dot | id 'module_direct
+S -> USES GLOBALS 'program
+USES -> USE USES 'uses_rec | USE 'uses_direct
+USE -> use RELATIVE_PATH semicolon 'use
+RELATIVE_PATH -> dot RELATIVE_PATH 'relpath_dot | MODULE 'relpath_direct
+MODULE -> id dot MODULE 'module_dot | id 'module_direct
 
-  GLOBALS -> GLOBAL GLOBALS | GLOBAL
-  GLOBAL -> ASSIGNMENT semicolon | FUNCTION
-    FUNCTION -> fn id opar TYPED_IDS cpar BLOCK | fn id opar cpar BLOCK
-      TYPED_IDS -> TYPED_ID comma TYPED_IDS | TYPED_ID
-      # Block is defined at the end
+GLOBALS -> GLOBAL GLOBALS 'globals_rec | GLOBAL 'globals_direct
+GLOBAL -> ASSIGNMENT semicolon 'global_assign | FUNCTION 'global_func
+FUNCTION -> fn id opar TYPED_IDS cpar BLOCK 'func_args
+FUNCTION -> fn id opar cpar BLOCK 'func_direct
+TYPED_IDS -> TYPED_ID comma TYPED_IDS 'typed_ids_rec
+TYPED_IDS -> TYPED_ID 'typed_ids_direct
 
 
 
 # ---------- EXPRESSIONS ----------
-EXPRESSION -> opar EXPRESSION cpar
+EXPRESSION -> opar EXPRESSION cpar 'expr_par
 
 # Bitwise: highest priority, it's grouped first
 # That means small chunks: 1 + 3 ^ 5 or 0 -> 1 + (3 ^ 5) or 0
 %left hat amp bar
-EXPRESSION -> EXPRESSION hat EXPRESSION
-EXPRESSION -> EXPRESSION amp EXPRESSION
-EXPRESSION -> EXPRESSION bar EXPRESSION
+EXPRESSION -> EXPRESSION hat EXPRESSION 'expr_hat
+EXPRESSION -> EXPRESSION amp EXPRESSION 'expr_amp
+EXPRESSION -> EXPRESSION bar EXPRESSION 'expr_bar
 
 # Arithmetic
 # 1 + 2 * 3 * 4 / 4 -> 1 + (((2 * 3) * 4) / 4)
 %left star slash plus minus
-EXPRESSION -> EXPRESSION star EXPRESSION
-EXPRESSION -> EXPRESSION slash EXPRESSION
-EXPRESSION -> EXPRESSION plus EXPRESSION
-EXPRESSION -> EXPRESSION minus EXPRESSION
+EXPRESSION -> EXPRESSION star EXPRESSION 'expr_star
+EXPRESSION -> EXPRESSION slash EXPRESSION 'expr_slash
+EXPRESSION -> EXPRESSION plus EXPRESSION 'expr_plus
+EXPRESSION -> EXPRESSION minus EXPRESSION 'expr_minus
 
 # Comparison
 # 2 + 1 == 3 -> (2 + 1) == (3)
 %nonassoc deq neq lt leq gt geq
-EXPRESSION -> EXPRESSION deq EXPRESSION
-EXPRESSION -> EXPRESSION neq EXPRESSION
-EXPRESSION -> EXPRESSION lt EXPRESSION
-EXPRESSION -> EXPRESSION leq EXPRESSION
-EXPRESSION -> EXPRESSION gt EXPRESSION
-EXPRESSION -> EXPRESSION geq EXPRESSION
+EXPRESSION -> EXPRESSION deq EXPRESSION 'expr_deq
+EXPRESSION -> EXPRESSION neq EXPRESSION 'expr_neq
+EXPRESSION -> EXPRESSION lt EXPRESSION 'expr_lt
+EXPRESSION -> EXPRESSION leq EXPRESSION 'expr_leq
+EXPRESSION -> EXPRESSION gt EXPRESSION 'expr_gt
+EXPRESSION -> EXPRESSION geq EXPRESSION 'expr_geq
 
 # Logic: lowest priority, grouped at the end
 # This means bigger chunks: 1 + 3 or 0 -> (1 + 3) or (0)
 %left not and or
-EXPRESSION -> not EXPRESSION
-EXPRESSION -> EXPRESSION and EXPRESSION
-EXPRESSION -> EXPRESSION or EXPRESSION
+EXPRESSION -> not EXPRESSION 'expr_not
+EXPRESSION -> EXPRESSION and EXPRESSION 'expr_and
+EXPRESSION -> EXPRESSION or EXPRESSION 'expr_or
 
 # Assignments
-EXPRESSION -> ASSIGNMENT
+EXPRESSION -> ASSIGNMENT 'expr_assign
 %right eq
-ASSIGNMENT -> LHS eq RHS
+ASSIGNMENT -> LHS eq RHS 'assign_eq
 %nonassoc pluseq minuseq stareq slasheq hateq ampeq bareq
-ASSIGNMENT -> LHS pluseq RHS
-ASSIGNMENT -> LHS minuseq RHS
-ASSIGNMENT -> LHS stareq RHS
-ASSIGNMENT -> LHS slasheq RHS
-ASSIGNMENT -> LHS hateq RHS
-ASSIGNMENT -> LHS ampeq RHS
-ASSIGNMENT -> LHS bareq RHS
+ASSIGNMENT -> LHS pluseq RHS 'assign_plus
+ASSIGNMENT -> LHS minuseq RHS 'assign_minus
+ASSIGNMENT -> LHS stareq RHS 'assign_star
+ASSIGNMENT -> LHS slasheq RHS 'assign_slash
+ASSIGNMENT -> LHS hateq RHS 'assign_hat
+ASSIGNMENT -> LHS ampeq RHS 'assign_amp
+ASSIGNMENT -> LHS bareq RHS 'assign_bar
 
-LHS -> TYPED_ID comma LHS
-LHS -> TYPED_ID
-LHS -> id comma LHS
+LHS -> TYPED_ID comma LHS 'lhs_typed_rec
+LHS -> TYPED_ID 'lhs_typed
+LHS -> id comma LHS 'lhs_id_rec
 %hint comma
-LHS -> id
-TYPED_ID -> id colon TYPE
-TYPE -> id lt TYPES gt | id
-TYPES -> TYPE comma TYPES | TYPE
+LHS -> id 'lhs_id
+TYPED_ID -> id colon TYPE 'typed
+TYPE -> id lt TYPES gt 'type_typed
+TYPE -> id 'type_direct
+TYPES -> TYPE comma TYPES 'types_rec
+TYPES -> TYPE 'types_direct
 
 %left comma
-RHS -> EXPRESSION comma RHS
+RHS -> EXPRESSION comma RHS 'rhs_rec
 %hint eq
-RHS -> EXPRESSION
+RHS -> EXPRESSION 'rhs_direct
 
-EXPRESSION -> id
-EXPRESSION -> None | bool | int | float | string
+EXPRESSION -> id 'expr_id
+EXPRESSION -> bool 'expr_bool
+EXPRESSION -> int 'expr_int
+EXPRESSION -> float 'expr_float
+EXPRESSION -> string 'expr_string
 
 
 
@@ -96,6 +102,7 @@ EXPRESSION -> None | bool | int | float | string
 
 
 # ---------- BLOCK ----------
-BLOCK -> obraces STATEMENTS cbraces
-  STATEMENTS -> STATEMENT semicolon STATEMENTS | STATEMENT semicolon
-  STATEMENT -> EXPRESSION
+BLOCK -> obraces STATEMENTS cbraces 'block
+STATEMENTS -> STATEMENT semicolon STATEMENTS 'statements_rec
+STATEMENTS -> STATEMENT semicolon 'statements_direct
+STATEMENT -> EXPRESSION 'statement_expr

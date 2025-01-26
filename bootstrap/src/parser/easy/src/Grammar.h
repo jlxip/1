@@ -38,7 +38,7 @@ typedef struct {
     symbol hint;
 } Production;
 
-typedef void *(*sdt_callback)(void **sub, size_t nsub);
+typedef void *(*sdt_callback)(void **sub);
 
 /*
     Symbols are assumed to be terminals + N_TOKENS + non-terminals + N_SYMBOLS
