@@ -34,6 +34,10 @@ void setup_sdt(void *ptr) {
     ADD(global_assign);
     ADD(global_func);
     ADD(global_struct);
+    /* ANNOTATIONS */
+    ADD(annotations_rec);
+    ADD(annotations_null);
+    ADD(annotation);
     /* FUNCTION */
     ADD(func_args);
     /* TYPED_IDS */

@@ -10,7 +10,11 @@ GLOBAL -> ASSIGNMENT semicolon 'global_assign
 GLOBAL -> FUNCTION 'global_func
 GLOBAL -> STRUCT 'global_struct
 
-FUNCTION -> fn id opar TYPED_IDS cpar BLOCK 'func_args
+ANNOTATIONS -> ANNOTATION ANNOTATIONS 'annotations_rec
+ANNOTATIONS -> EPSILON 'annotations_null
+ANNOTATION -> atsymbol id 'annotation
+
+FUNCTION -> ANNOTATIONS fn id opar TYPED_IDS cpar BLOCK 'func_args
 TYPED_IDS -> TYPED_ID comma TYPED_IDS 'typed_ids_rec
 TYPED_IDS -> EPSILON 'typed_ids_null
 
@@ -134,7 +138,7 @@ WHILE -> while EXPRESSION STATEMENT 'while
 
 
 # ---------- STRUCT ----------
-STRUCT -> struct id obraces STRUCT_DEF cbraces 'struct
+STRUCT -> ANNOTATIONS struct id obraces STRUCT_DEF cbraces 'struct
 STRUCT_DEF -> ASSIGNMENT semicolon STRUCT_DEF 'struct_def
 STRUCT_DEF -> EPSILON 'struct_def_null
 

@@ -58,6 +58,15 @@ void *sdt_global_func(void **sub) { NOT_IMPLEMENTED; }
 /* GLOBAL -> STRUCT */
 void *sdt_global_struct(void **sub) { NOT_IMPLEMENTED; }
 
+/* ANNOTATIONS -> ANNOTATION ANNOTATIONS */
+void *sdt_annotations_rec(void **sub) { NOT_IMPLEMENTED; }
+
+/* ANNOTATIONS -> EPSILON */
+void *sdt_annotations_null(void **sub) { NOT_IMPLEMENTED; }
+
+/* ANNOTATION -> atsymbol id */
+void *sdt_annotation(void **sub) { NOT_IMPLEMENTED; }
+
 /* FUNCTION -> fn id opar TYPED_IDS cpar BLOCK */
 void *sdt_func_args(void **sub) { NOT_IMPLEMENTED; }
 
