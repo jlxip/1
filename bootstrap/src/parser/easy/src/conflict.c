@@ -127,6 +127,7 @@ foundtok:
     symprec = map_get(g->prec, &sym, Precedence);
     if (prodprec == NULL || symprec == NULL) {
         could_not_solve_sr(g, st, sym, "undefined associativity");
+        ret = 69; /* cannot happen */
     } else if (prodprec->prio < symprec->prio) {
         /* Production's token has more priority, so reduce (1) */
         ret = 1;
@@ -138,6 +139,7 @@ foundtok:
         switch (prodprec->assoc) {
         case UNDEFINED_ASSOC:
             could_not_solve_sr(g, st, sym, "undefined associativity");
+            ret = 69; /* cannot happen */
             break;
         case NONASSOC:
             /* Non associative, doesn't matter the choice */
