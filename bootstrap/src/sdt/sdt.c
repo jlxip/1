@@ -42,6 +42,8 @@ void setup_sdt(void *ptr) {
 
     /* --- EXPRESSIONS (expr.c) --- */
     ADD(expr_par);
+    ADD(expr_id);
+    ADD(expr_lit);
     ADD(expr_hat);
     ADD(expr_amp);
     ADD(expr_bar);
@@ -62,11 +64,12 @@ void setup_sdt(void *ptr) {
     ADD(expr_or);
     ADD(expr_or2);
     ADD(expr_assign);
-    ADD(expr_id);
-    ADD(expr_bool);
-    ADD(expr_int);
-    ADD(expr_float);
-    ADD(expr_string);
+
+    /* --- LITERALS (lit.c) --- */
+    ADD(lit_bool);
+    ADD(lit_int);
+    ADD(lit_float);
+    ADD(lit_string);
 
     /* --- ASSIGNMENT (assign.c) --- */
     ADD(assign_eq);
@@ -96,17 +99,24 @@ void setup_sdt(void *ptr) {
     ADD(ctrl_assert);
     ADD(ctrl_break);
     ADD(ctrl_continue);
+    ADD(ctrl_fall);
     ADD(ctrl_ret);
     ADD(ctrl_retval);
 
     /* --- CONDITIONAL (cond.c) --- */
     ADD(cond_if);
+    ADD(cond_switch);
     ADD(if_only);
     ADD(if_elif);
     ADD(elif_only);
     ADD(elif_rec);
     ADD(elif_else);
     ADD(else);
+    ADD(switch);
+    ADD(switch_rec);
+    ADD(switch_one);
+    ADD(switch_case);
+    ADD(switch_default);
 
     /* --- LOOP (loop.c) --- */
     ADD(loop_for);

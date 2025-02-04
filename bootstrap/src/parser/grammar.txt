@@ -19,6 +19,15 @@ TYPED_IDS -> EPSILON 'typed_ids_null
 # ---------- EXPRESSIONS ----------
 EXPRESSION -> opar EXPRESSION cpar 'expr_par
 
+%left id
+EXPRESSION -> id 'expr_id
+
+EXPRESSION -> LITERAL 'expr_lit
+LITERAL -> bool 'lit_bool
+LITERAL -> int 'lit_int
+LITERAL -> float 'lit_float
+LITERAL -> string 'lit_string
+
 # Bitwise: highest priority, it's grouped first
 # That means small chunks: 1 + 3 ^ 5 or 0 -> 1 + (3 ^ 5) or 0
 %left hat amp bar
@@ -83,18 +92,13 @@ RHS -> EXPRESSION comma RHS 'rhs_rec
 %hint eq
 RHS -> EXPRESSION 'rhs_direct
 
-EXPRESSION -> id 'expr_id
-EXPRESSION -> bool 'expr_bool
-EXPRESSION -> int 'expr_int
-EXPRESSION -> float 'expr_float
-EXPRESSION -> string 'expr_string
-
 
 
 # ---------- CONTROL ----------
 CONTROL -> assert EXPRESSION 'ctrl_assert
 CONTROL -> break 'ctrl_break
 CONTROL -> continue 'ctrl_continue
+CONTROL -> fall 'ctrl_fall
 CONTROL -> return 'ctrl_ret
 CONTROL -> return EXPRESSION 'ctrl_retval
 
@@ -102,6 +106,7 @@ CONTROL -> return EXPRESSION 'ctrl_retval
 
 # ---------- CONDITIONAL ----------
 CONDITIONAL -> IF 'cond_if
+CONDITIONAL -> SWITCH 'cond_switch
 
 # Dangling else problem, solve by shift
 %left else elif if
@@ -111,6 +116,12 @@ ELIF -> elif EXPRESSION STATEMENT 'elif_only
 ELIF -> elif EXPRESSION STATEMENT ELIF 'elif_rec
 ELIF -> ELSE 'elif_else
 ELSE -> else STATEMENT 'else
+
+SWITCH -> switch EXPRESSION obraces SWITCH_BODY cbraces 'switch
+SWITCH_BODY -> SWITCH_CASE SWITCH_BODY 'switch_rec
+SWITCH_BODY -> SWITCH_CASE 'switch_one
+SWITCH_CASE -> case LITERAL colon STATEMENTS 'switch_case
+SWITCH_CASE -> default colon STATEMENTS 'switch_default
 
 
 

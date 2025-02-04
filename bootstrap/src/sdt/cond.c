@@ -6,6 +6,9 @@
 /* CONDITIONAL -> IF */
 void *sdt_cond_if(void **sub) { NOT_IMPLEMENTED; }
 
+/* CONDITIONAL -> SWITCH */
+void *sdt_cond_switch(void **sub) { NOT_IMPLEMENTED; }
+
 /* IF -> if EXPRESSION STATEMENT */
 void *sdt_if_only(void **sub) { NOT_IMPLEMENTED; }
 
@@ -23,3 +26,18 @@ void *sdt_elif_else(void **sub) { NOT_IMPLEMENTED; }
 
 /* ELSE -> else STATEMENT */
 void *sdt_else(void **sub) { NOT_IMPLEMENTED; }
+
+/* SWITCH -> switch EXPRESSION obraces SWITCH_BODY cbraces */
+void *sdt_switch(void **sub) { NOT_IMPLEMENTED; }
+
+/* SWITCH_BODY -> SWITCH_CASE SWITCH_BODY */
+void *sdt_switch_rec(void **sub) { NOT_IMPLEMENTED; }
+
+/* SWITCH_BODY -> SWITCH_CASE */
+void *sdt_switch_one(void **sub) { NOT_IMPLEMENTED; }
+
+/* SWITCH_CASE -> case LITERAL colon STATEMENTS */
+void *sdt_switch_case(void **sub) { NOT_IMPLEMENTED; }
+
+/* SWITCH_CASE -> default colon STATEMENTS */
+void *sdt_switch_default(void **sub) { NOT_IMPLEMENTED; }

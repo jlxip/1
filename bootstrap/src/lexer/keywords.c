@@ -51,8 +51,18 @@ size_t match_keyword(Capture *ret, const char *cur) {
         /* b: break */
         MATCH_REST("reak", T_BREAK);
     case 'c':
-        /* c: continue */
-        MATCH_REST("ontinue", T_CONTINUE);
+        /* c: case, continue */
+        switch (*cur++) {
+        case 'a':
+            /* ca: case */
+            MATCH_REST("se", T_CASE);
+        case 'o':
+            /* co: continue */
+            MATCH_REST("ntinue", T_CONTINUE);
+        }
+    case 'd':
+        /* d: default */
+        MATCH_REST("efault", T_DEFAULT);
     case 'e':
         /* e: elif, else */
         switch (*cur++) {
@@ -68,11 +78,21 @@ size_t match_keyword(Capture *ret, const char *cur) {
             }
         }
     case 'f':
-        /* f: false, fn, for */
+        /* f: fall, false, fn, for */
         switch (*cur++) {
         case 'a':
-            /* fa: false */
-            MATCH_REST_INFO("lse", T_BOOL, 0);
+            /* fa: fall, false */
+            switch (*cur++) {
+            case 'l':
+                /* fal: fall, false */
+                switch (*cur++) {
+                case 'l':
+                    /* fall */
+                    MAYBE_KEYWORD(T_FALL);
+                case 's':
+                    MATCH_REST_INFO("e", T_BOOL, 0);
+                }
+            }
         case 'n':
             /* fn: fn */
             MAYBE_KEYWORD(T_FN);

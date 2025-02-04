@@ -16,7 +16,6 @@ The bootstrap compiler is in progress of being written. It's progressing fast as
 - [ ] Write the bootstrap compiler [*IN PROGRESS*](bootstrap)
 - [ ] Write the compiler
 - [ ] Finish bootstrapping
-- [ ] Standard library
 - [ ] At least document something
 
 ## Contributions

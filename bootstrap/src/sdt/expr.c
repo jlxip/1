@@ -6,6 +6,12 @@
 /* EXPRESSION -> opar EXPRESSION cpar */
 void *sdt_expr_par(void **sub) { NOT_IMPLEMENTED; }
 
+/* EXPRESSION -> id */
+void *sdt_expr_id(void **sub) { NOT_IMPLEMENTED; }
+
+/* EXPRESSION -> LITERAL */
+void *sdt_expr_lit(void **sub) { NOT_IMPLEMENTED; }
+
 /* EXPRESSION -> EXPRESSION hat EXPRESSION */
 void *sdt_expr_hat(void **sub) { NOT_IMPLEMENTED; }
 
@@ -65,20 +71,3 @@ void *sdt_expr_or2(void **sub) { return sdt_expr_or(sub); }
 
 /* EXPRESSION -> ASSIGNMENT */
 void *sdt_expr_assign(void **sub) { NOT_IMPLEMENTED; }
-
-/* --- */
-
-/* EXPRESSION -> id */
-void *sdt_expr_id(void **sub) { NOT_IMPLEMENTED; }
-
-/* EXPRESSION -> bool */
-void *sdt_expr_bool(void **sub) { NOT_IMPLEMENTED; }
-
-/* EXPRESSION -> int */
-void *sdt_expr_int(void **sub) { NOT_IMPLEMENTED; }
-
-/* EXPRESSION -> float */
-void *sdt_expr_float(void **sub) { NOT_IMPLEMENTED; }
-
-/* EXPRESSION -> string */
-void *sdt_expr_string(void **sub) { NOT_IMPLEMENTED; }

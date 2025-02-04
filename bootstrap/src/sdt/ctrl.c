@@ -12,6 +12,9 @@ void *sdt_ctrl_break(void **sub) { NOT_IMPLEMENTED; }
 /* CONTROL -> continue */
 void *sdt_ctrl_continue(void **sub) { NOT_IMPLEMENTED; }
 
+/* CONTROL -> fall */
+void *sdt_ctrl_fall(void **sub) { NOT_IMPLEMENTED; }
+
 /* CONTROL -> return */
 void *sdt_ctrl_ret(void **sub) { NOT_IMPLEMENTED; }
 

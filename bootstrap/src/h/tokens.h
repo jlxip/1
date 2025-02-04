@@ -13,9 +13,12 @@ typedef enum {
     T_AND,      /* and */
     T_ASSERT,   /* assert */
     T_BREAK,    /* break */
+    T_CASE,     /* case */
     T_CONTINUE, /* continue */
+    T_DEFAULT,  /* default */
     T_ELIF,     /* elif */
     T_ELSE,     /* else */
+    T_FALL,     /* fall */
     T_FN,       /* fn */
     T_FOR,      /* for */
     T_IF,       /* if */
@@ -25,6 +28,7 @@ typedef enum {
     T_OR,       /* or */
     T_RETURN,   /* return */
     T_STRUCT,   /* struct */
+    T_SWITCH,   /* switch */
     T_USE,      /* use */
     T_WHILE,    /* while */
 
@@ -75,13 +79,13 @@ typedef enum {
 
 #ifdef GET_TOKEN_STRINGS
 static const char *token_strings[] = {"NULL", "id", "and", "assert", "break",
-    "continue", "elif", "else", "fn", "for", "if", "in", "is", "not", "or",
-    "return", "struct", "use", "while", "bool", "int", "float", "string", "deq",
-    "neq", "eq", "pluseq", "plus", "minuseq", "minus", "stareq", "star",
-    "slasheq", "slash", "hateq", "hat", "ampeq", "damp", "amp", "bareq", "dbar",
-    "bar", "leq", "lt", "geq", "gt", "dot", "comma", "colon", "semicolon",
-    "atsymbol", "opar", "cpar", "obracket", "cbracket", "obraces", "cbraces",
-    NULL};
+    "case", "continue", "default", "elif", "else", "fall", "fn", "for", "if",
+    "in", "is", "not", "or", "return", "struct", "switch", "use", "while",
+    "bool", "int", "float", "string", "deq", "neq", "eq", "pluseq", "plus",
+    "minuseq", "minus", "stareq", "star", "slasheq", "slash", "hateq", "hat",
+    "ampeq", "damp", "amp", "bareq", "dbar", "bar", "leq", "lt", "geq", "gt",
+    "dot", "comma", "colon", "semicolon", "atsymbol", "opar", "cpar",
+    "obracket", "cbracket", "obraces", "cbraces", NULL};
 #endif
 
 typedef struct {
