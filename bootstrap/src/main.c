@@ -9,6 +9,7 @@ void test_lalr(void);
 int main(int argc, const char *argv[]) {
     char *code = NULL;
     Tokens tokens;
+    ASTRoot ast;
     size_t i;
 
 #ifdef DEBUG
@@ -30,7 +31,10 @@ int main(int argc, const char *argv[]) {
     free(code);
 
     /* Parse */
-    parse(tokens);
+    ast = parse(tokens);
+
+    /* Walk the AST */
+    walk(ast);
 
     /* Free tokens */
     for (i = 0; i < buffer_num(tokens); ++i) {

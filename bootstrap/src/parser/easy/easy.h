@@ -1,6 +1,7 @@
 #ifndef EASY_H
 #define EASY_H
 
+#include <ds/buffer.h>
 #include <stddef.h>
 
 void *grammar(
@@ -12,6 +13,23 @@ typedef struct {
     size_t sym;
     void *data;
 } TokenData;
-void grammar_parse(void *g, const TokenData *stream);
+
+#ifndef AST_TYPEDEF
+#define AST_TYPEDEF
+typedef struct {
+    size_t prod;
+    buffer sub; /* buffer<void*> */
+} AST;
+#endif
+
+#ifndef ASTROOT_TYPEDEF
+#define ASTROOT_TYPEDEF
+typedef struct {
+    char **names;
+    AST ast;
+} ASTRoot;
+#endif
+
+ASTRoot grammar_parse(void *g, const TokenData *stream);
 
 #endif

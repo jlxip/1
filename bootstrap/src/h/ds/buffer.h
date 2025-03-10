@@ -26,6 +26,7 @@ buffer buffer_copy(const buffer buf);
 void buffer_out(buffer *buf);
 void buffer_shrink(buffer buf);
 void buffer_sort(buffer buf, int (*comp)(const void *, const void *));
+void buffer_reverse(buffer buf);
 
 /* Getters */
 size_t buffer_num(buffer buf);

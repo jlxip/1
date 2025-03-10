@@ -34,7 +34,7 @@ static void unexpected_token(const Grammar *g, const map *row, symbol sym) {
     exit(2);
 }
 
-void Grammar_parse(Grammar *g, const StreamElement *stream) {
+AST Grammar_parse(Grammar *g, const StreamElement *stream) {
     buffer stack = NULL;    /* buffer<state> */
     buffer valstack = NULL; /* buffer<void*> */
 
@@ -59,27 +59,36 @@ void Grammar_parse(Grammar *g, const StreamElement *stream) {
     buffer_new(&stack, sizeof(state));
     buffer_new(&valstack, sizeof(void *));
     buffer_push(stack, &ZERO);
-    while (stream->sym) {
+    for (;;) {
+        symbol sym;
         state st;
         const map *row;
         const Entry *entry;
 
+        if (!stream->sym)
+            sym = g->nsym;
+        else
+            sym = stream->sym;
+
         st = *buffer_back(stack, state);
         row = buffer_get(g->table, st, map);
-        if (!map_has(*row, &stream->sym))
-            unexpected_token(g, row, stream->sym);
+        if (!map_has(*row, &sym))
+            unexpected_token(g, row, sym);
 
-        entry = map_get(*row, &stream->sym, Entry);
+        entry = map_get(*row, &sym, Entry);
         switch (entry->type) {
-        case ENTRY_ACCEPT:
-            todo();
-            break;
+        case ENTRY_ACCEPT: {
+            AST ret = **buffer_back(valstack, AST *);
+            buffer_out(&valstack);
+            buffer_out(&stack);
+            return ret;
+        }
         case ENTRY_REDUCE: {
             size_t prodidx;
             const Production *prod;
             size_t x;
             buffer sub = NULL; /* buffer<void*> */
-            void *val = NULL;
+            AST *ast;
 
             /* Pop production while constructing sub */
             prodidx = entry->info;
@@ -91,6 +100,7 @@ void Grammar_parse(Grammar *g, const StreamElement *stream) {
                 buffer_push(sub, buffer_back(valstack, void *));
                 buffer_pop(valstack);
             }
+            buffer_reverse(sub);
 
             /* Perform GOTO */
             st = *buffer_back(stack, state);
@@ -100,19 +110,15 @@ void Grammar_parse(Grammar *g, const StreamElement *stream) {
             assert(entry->type == ENTRY_GOTO);
             buffer_push(stack, &entry->info);
 
-            /* Output */
-            if (*buffer_get(g->outputs, prodidx, void *)) {
-                sdt_callback x = *buffer_get(g->outputs, prodidx, sdt_callback);
-                val = x(buffer_get_raw(sub, void *));
-            } else {
-                throwe("no output defined for \"%s\"",
-                    *buffer_get(g->prod2name, prodidx, char *));
-            }
-            buffer_push(valstack, &val);
-            buffer_out(&sub);
+            /* Output (create AST element) */
+            ast = malloc(sizeof(AST));
+            ast->prod = prodidx - 1;
+            ast->sub = sub;
+            buffer_push(valstack, &ast);
             break;
         }
         case ENTRY_SHIFT:
+            assert(stream->sym != 0);
             buffer_push(stack, &entry->info);
             buffer_push(valstack, &stream->data);
             ++stream;
@@ -122,6 +128,5 @@ void Grammar_parse(Grammar *g, const StreamElement *stream) {
         }
     }
 
-    buffer_out(&stack);
-    buffer_out(&valstack);
+    UNREACHABLE;
 }

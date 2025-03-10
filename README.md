@@ -9,7 +9,7 @@ The biggest expression of my perfectionism.
 - As portable as C89
 
 ## Bootstrapping
-The bootstrap compiler is in progress of being written. It's progressing fast as of January 2024.
+The bootstrap compiler is in progress of being written.
 
 ## Status
 - [x] Define the basics in my head (over many years)

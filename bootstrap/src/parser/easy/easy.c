@@ -46,11 +46,22 @@ static buffer split(char *str, const char *del) {
     return ret;
 }
 
+static char *_strdup(const char *x) {
+    size_t len;
+    char *ret;
+
+    len = strlen(x);
+    ret = malloc(len + 1);
+    memcpy(ret, x, len + 1);
+    return ret;
+}
+
 void *grammar(const char **tokens, const char **nts, const char *cstr,
     const char *start) {
 
     const char **cur = NULL;
     map all_symbols = NULL; /* map<str, symbol> */
+    buffer names = NULL;    /* buffer<char*> */
     size_t i;
     size_t ntok;
     Grammar *ret;
@@ -60,6 +71,7 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
     size_t prio = 1;
     symbol hint = 0;
 
+    /* Symbol map */
     map_new_string(&all_symbols, sizeof(symbol), hash_symbol, equal_symbol,
         copy_symbol, destroy_symbol);
     i = 0;
@@ -76,6 +88,9 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
         map_add(all_symbols, *cur++, &i);
         ++i;
     }
+
+    /* Init names */
+    buffer_new(&names, sizeof(char *));
 
     /* Create grammar */
     ret = (Grammar *)malloc(sizeof(Grammar));
@@ -189,12 +204,14 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
 
             /* Get name for this production (right of quote) */
             namesep = split(option, "'");
-            if (buffer_num(namesep) == 2) {
+            if (buffer_num(namesep) != 2)
+                name = "???";
+            else
                 name = *buffer_get(namesep, 1, char *);
-                strip(name);
-            } else {
-                name = NULL;
-            }
+            strip(name);
+            name = _strdup(name);
+            buffer_push(names, &name);
+
             option = *buffer_get(namesep, 0, char *);
             buffer_out(&namesep);
             strip(option);
@@ -225,14 +242,17 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
             Grammar_add(ret, *lhs, syms);
             if (hint)
                 Grammar_add_hint(ret, buffer_num(ret->g) - 1, hint);
-            if (name)
-                Grammar_add_name(ret, buffer_num(ret->g) - 1, name);
+
             buffer_out(&symbols);
         }
 
         buffer_out(&options);
         hint = 0;
     }
+
+    /* Put names in g */
+    ret->names = buffer_get_raw(names, char *);
+    free(names); /* shallow free */
 
     map_out(&all_symbols);
     buffer_out(&lines);
@@ -253,8 +273,15 @@ void grammar_out(void *ptr) {
 
 /* --- */
 
-void grammar_parse(void *ptr, const TokenData *stream) {
+ASTRoot grammar_parse(void *ptr, const TokenData *stream) {
     Grammar *g = (Grammar *)ptr;
+    AST root;
+    ASTRoot ret;
+
     /* Note that TokenData = StreamElement */
-    Grammar_parse(g, (StreamElement *)stream);
+    root = Grammar_parse(g, (StreamElement *)stream);
+
+    ret.names = g->names;
+    ret.ast = root;
+    return ret;
 }

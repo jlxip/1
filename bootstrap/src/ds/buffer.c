@@ -110,6 +110,20 @@ void buffer_sort(buffer buf, int (*comp)(const void *, const void *)) {
     qsort(buf->a, buf->used, buf->datasize, comp);
 }
 
+void buffer_reverse(buffer buf) {
+    void *aux;
+    size_t i;
+    buffer_assert(buf);
+    aux = malloc(buf->datasize);
+    for (i = 0; i < buffer_num(buf) / 2; ++i) {
+        void *a = _buffer_get(buf, i);
+        void *b = _buffer_get(buf, buf->used - i - 1);
+        memcpy(aux, a, buf->datasize);
+        memcpy(a, b, buf->datasize);
+        memcpy(b, aux, buf->datasize);
+    }
+}
+
 /* --- Getters --- */
 
 size_t buffer_num(buffer buf) {

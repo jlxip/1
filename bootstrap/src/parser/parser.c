@@ -14,11 +14,12 @@ const char *nts[] = {"S", "USES", "USE", "RELATIVE_PATH", "MODULE", "GLOBALS",
     "WHILE", "STRUCT", "STRUCT_DEF", "SWITCH", "SWITCH_BODY", "SWITCH_CASE",
     "BLOCK", "STATEMENTS", "STATEMENT", NULL};
 
-void parse(const Tokens tokens) {
+ASTRoot parse(const Tokens tokens) {
     void *g;
     char *gtext;
     TokenData *stream;
     size_t i;
+    ASTRoot ret;
 
     /* Compile grammar */
     gtext = read_whole_file("src/parser/grammar.txt");
@@ -36,13 +37,12 @@ void parse(const Tokens tokens) {
     stream[buffer_num(tokens)].sym = 0;
     stream[buffer_num(tokens)].data = NULL;
 
-    /* Set up sdt now */
-    setup_sdt(g);
-
     /* Parse token */
-    grammar_parse(g, stream);
+    ret = grammar_parse(g, stream);
 
     /* Free */
     free(stream);
     grammar_out(g);
+
+    return ret;
 }

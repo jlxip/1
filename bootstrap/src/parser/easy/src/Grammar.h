@@ -66,9 +66,7 @@ typedef struct {
     buffer gotos;      /* buffer<map<symbol, state>> */
     buffer table;      /* buffer<map<symbol, Entry>> */
 
-    buffer prod2name; /* buffer<char*> */
-    map name2prod;    /* map<char*, size_t> */
-    buffer outputs;   /* buffer<sdt_callback> */
+    char **names; /* Not handled */
 
     /* Debugging (showing errors) */
     const char **strtokens;
@@ -112,8 +110,6 @@ void Grammar_set_debugging(
     Grammar *g, const char **strtokens, const char **strnts);
 void Grammar_add(Grammar *g, symbol lhs, buffer rhs);
 void Grammar_add_hint(Grammar *g, size_t prod, symbol hint);
-void Grammar_add_name(Grammar *g, size_t prod, const char *name);
-void Grammar_add_output(Grammar *g, const char *name, sdt_callback func);
 void Grammar_shrink(Grammar *g);
 void Grammar_clean(Grammar *g); /* Free everything not needed for parsing */
 void Grammar_out(Grammar *g);
@@ -126,6 +122,14 @@ typedef struct {
     void *data; /* Anything you want! */
 } StreamElement;
 
-void Grammar_parse(Grammar *g, const StreamElement *stream);
+#ifndef AST_TYPEDEF
+#define AST_TYPEDEF
+typedef struct {
+    size_t prod;
+    buffer sub; /* buffer<void*> */
+} AST;
+#endif
+
+AST Grammar_parse(Grammar *g, const StreamElement *stream);
 
 #endif
