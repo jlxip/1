@@ -17,7 +17,7 @@ typedef struct {
 #ifndef ASTROOT_TYPEDEF
 #define ASTROOT_TYPEDEF
 typedef struct {
-    const char **names;
+    char **names;
     AST ast;
 } ASTRoot;
 #endif
