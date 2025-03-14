@@ -6,7 +6,7 @@ RELATIVE_PATH -> dot RELATIVE_PATH 'relpath_dot | MODULE 'relpath_direct
 MODULE -> id dot MODULE 'module_dot | id 'module_direct
 
 GLOBALS -> GLOBAL GLOBALS 'globals_rec | EPSILON 'globals_null
-GLOBAL -> ASSIGNMENT semicolon 'global_assign
+GLOBAL -> DECLARATION semicolon 'global_decl
 GLOBAL -> FUNCTION 'global_func
 GLOBAL -> STRUCT 'global_struct
 
@@ -14,7 +14,7 @@ ANNOTATIONS -> ANNOTATION ANNOTATIONS 'annotations_rec
 ANNOTATIONS -> EPSILON 'annotations_null
 ANNOTATION -> atsymbol id 'annotation
 
-FUNCTION -> ANNOTATIONS fn id opar TYPED_IDS cpar BLOCK 'func_args
+FUNCTION -> ANNOTATIONS fn id opar TYPED_IDS cpar BLOCK 'function
 TYPED_IDS -> TYPED_ID comma TYPED_IDS 'typed_ids_rec
 TYPED_IDS -> EPSILON 'typed_ids_null
 
@@ -28,7 +28,7 @@ EXPRESSION -> id 'expr_id
 
 EXPRESSION -> LITERAL 'expr_lit
 LITERAL -> bool 'lit_bool
-LITERAL -> int 'lit_int
+LITERAL -> word 'lit_word
 LITERAL -> float 'lit_float
 LITERAL -> string 'lit_string
 
@@ -100,6 +100,13 @@ RHS -> EXPRESSION 'rhs_direct
 # TODO: primary (as in Python)
 
 
+
+# ---------- DECLARATION ----------
+DECLARATION -> let ASSIGNMENT 'decl_let
+DECLARATION -> let plus ASSIGNMENT 'decl_letp
+
+
+
 # ---------- CONTROL ----------
 CONTROL -> assert EXPRESSION 'ctrl_assert
 CONTROL -> break 'ctrl_break
@@ -153,6 +160,7 @@ STATEMENTS -> STATEMENT semicolon STATEMENTS 'stmts_rec
 STATEMENTS -> EPSILON 'stmts_null
 
 STATEMENT -> BLOCK 'stmt_block
+STATEMENT -> DECLARATION 'stmt_decl
 STATEMENT -> EXPRESSION 'stmt_expr
 STATEMENT -> CONTROL 'stmt_ctrl
 STATEMENT -> CONDITIONAL 'stmt_cond

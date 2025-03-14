@@ -65,8 +65,7 @@ size_t match_keyword(Capture *ret, const char *cur) {
         MATCH_REST("efault", T_DEFAULT);
     case 'e':
         /* e: elif, else */
-        switch (*cur++) {
-        case 'l':
+        if (*cur++ == 'l') {
             /* el: elif, else */
             switch (*cur++) {
             case 'i':
@@ -82,8 +81,7 @@ size_t match_keyword(Capture *ret, const char *cur) {
         switch (*cur++) {
         case 'a':
             /* fa: fall, false */
-            switch (*cur++) {
-            case 'l':
+            if (*cur++ == 'l') {
                 /* fal: fall, false */
                 switch (*cur++) {
                 case 'l':
@@ -110,6 +108,9 @@ size_t match_keyword(Capture *ret, const char *cur) {
         case 'f':
             MAYBE_KEYWORD(T_IF);
         }
+    case 'l':
+        /* l: let */
+        MATCH_REST("et", T_LET);
     case 'n':
         /* n: not */
         MATCH_REST("ot", T_NOT);

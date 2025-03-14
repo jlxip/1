@@ -10,7 +10,6 @@ int main(int argc, const char *argv[]) {
     char *code = NULL;
     Tokens tokens;
     ASTRoot ast;
-    size_t i;
 
 #ifdef DEBUG
     printf("Testing LALR implementation\n");
@@ -33,26 +32,9 @@ int main(int argc, const char *argv[]) {
     /* Parse */
     ast = parse(tokens);
 
-    /* Walk the AST */
+    /* Walk the AST, this frees Capture objects */
     walk(ast);
 
-    /* Free tokens */
-    for (i = 0; i < buffer_num(tokens); ++i) {
-        Capture *capture = (Capture *)buffer_get(tokens, i, Capture);
-        switch (capture->token) {
-        case T_ID:
-            /* fallthrough */
-        case T_INT:
-            /* fallthrough */
-        case T_FLOAT:
-            /* fallthrough */
-        case T_STRING:
-            free((void *)(capture->info));
-            break;
-        default:
-            break;
-        }
-    }
     buffer_out(&tokens);
     return 0;
 }

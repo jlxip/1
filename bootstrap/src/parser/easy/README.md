@@ -4,8 +4,6 @@
 
 easy is a C89 implementation of an LALR parsing table generator used in the 1 bootstrap compiler.
 
-easy can compile a grammar written in text and very quickly parse an input stream of tokens. It generates a trivially walkable AST.
+It compiles a grammar written in text and parses an input stream of tokens, generating a walkable AST as output.
 
-### How to use
-
-tbd
+The name is satiric since this is the hardest thing I've written in years.

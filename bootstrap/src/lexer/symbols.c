@@ -28,79 +28,84 @@ size_t match_symbol(Capture *ret, const char *cur) {
         break;
     case '=':
         /* =: =, == */
-        switch (*cur++) {
-        case '=':
+        if (*cur == '=') {
             /* == */
+            ++cur;
             OK_TOKEN(T_DEQ);
-        default:
-            /* = */
-            OK_TOKEN(T_EQ);
         }
+
+        /* = */
+        OK_TOKEN(T_EQ);
     case '!':
         /* !: != */
-        switch (*cur++) {
-        case '=':
+        if (*cur++ == '=') {
             /* != */
             OK_TOKEN(T_NEQ);
         }
     case '+':
         /* +: +, += */
-        switch (*cur++) {
-        case '=':
+        if (*cur == '=') {
             /* += */
+            ++cur;
             OK_TOKEN(T_PLUSEQ);
-        default:
-            /* + */
-            OK_TOKEN(T_PLUS);
         }
+
+        /* + */
+        OK_TOKEN(T_PLUS);
     case '-':
         /* -: -, -= */
-        switch (*cur++) {
-        case '=':
+        if (*cur == '=') {
             /* -= */
+            ++cur;
             OK_TOKEN(T_MINUSEQ);
-        default:
-            /* - */
-            OK_TOKEN(T_MINUS);
         }
+
+        /* - */
+        OK_TOKEN(T_MINUS);
     case '*':
         /* *: *, *= */
-        switch (*cur++) {
-        case '=':
+        if (*cur == '=') {
             /* *= */
+            ++cur;
             OK_TOKEN(T_STAREQ);
-        default:
-            /* * */
-            OK_TOKEN(T_STAR);
         }
+
+        /* * */
+        OK_TOKEN(T_STAR);
     case '/':
         /* /: /, /= */
-        switch (*cur++) {
-        case '=':
+        if (*cur == '=') {
             /* /= */
+            ++cur;
             OK_TOKEN(T_SLASHEQ);
-        default:
-            /* / */
-            OK_TOKEN(T_SLASH);
         }
+
+        /* / */
+        OK_TOKEN(T_SLASH);
     case '^':
         /* ^: ^, ^= */
-        switch (*cur++) {
-        case '=':
+        if (*cur == '=') {
             /* ^= */
+            ++cur;
             OK_TOKEN(T_HATEQ);
-        default:
-            /* ^ */
-            OK_TOKEN(T_HAT);
         }
+
+        /* ^ */
+        OK_TOKEN(T_HAT);
     case '&':
-        /* &: &, &&, &= */
-        switch (*cur++) {
+        /* &: &, &&, &+, &= */
+        switch (*cur) {
         case '&':
             /* && */
+            ++cur;
             OK_TOKEN(T_DAMP);
+        case '+':
+            /* &+ */
+            ++cur;
+            OK_TOKEN(T_AMPPLUS);
         case '=':
             /* &= */
+            ++cur;
             OK_TOKEN(T_AMPEQ);
         default:
             /* & */
@@ -108,12 +113,14 @@ size_t match_symbol(Capture *ret, const char *cur) {
         }
     case '|':
         /* |: |, ||, |= */
-        switch (*cur++) {
+        switch (*cur) {
         case '|':
             /* || */
+            ++cur;
             OK_TOKEN(T_DBAR);
         case '=':
             /* |= */
+            ++cur;
             OK_TOKEN(T_BAREQ);
         default:
             /* | */
@@ -121,23 +128,23 @@ size_t match_symbol(Capture *ret, const char *cur) {
         }
     case '<':
         /* <: <, <= */
-        switch (*cur++) {
-        case '=':
+        if (*cur == '=') {
             /* <= */
+            ++cur;
             OK_TOKEN(T_LEQ);
-        default:
-            /* < */
-            OK_TOKEN(T_LT);
         }
+
+        /* < */
+        OK_TOKEN(T_LT);
     case '>':
-        switch (*cur++) {
-        case '=':
+        if (*cur == '=') {
             /* >= */
+            ++cur;
             OK_TOKEN(T_GEQ);
-        default:
-            /* > */
-            OK_TOKEN(T_GT);
         }
+
+        /* > */
+        OK_TOKEN(T_GT);
     case '.':
         OK_TOKEN(T_DOT);
     case ',':

@@ -53,14 +53,14 @@ buffer get_tokens(const char *code) {
     Capture c;
     buffer_new(&buf, sizeof(Capture));
     c.ok = 0;
-    lineno = 0; /* Set global state */
+    lineno = 1; /* Set global state */
 
     do {
         c = next_token(code);
         switch (c.ok) {
         case 0:
             /* Lexical error */
-            todo();
+            throwe("lexical error in line %lu", lineno);
         case 1:
             /* Got a token */
             code += c.consumed;
@@ -85,10 +85,9 @@ buffer get_tokens(const char *code) {
             case T_BOOL:
                 printf("(%lu) ", x->info);
                 break;
-            case T_INT:
-                printf("(%s) ", (const char *)(x->info));
-                break;
+            case T_WORD:
             case T_STRING:
+            case T_ID:
                 printf("(%s) ", (const char *)(x->info));
                 break;
             default:

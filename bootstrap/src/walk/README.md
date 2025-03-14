@@ -1,1 +1,1 @@
-This directory contains all the function that walk the AST, top-down. This includes semantic analysis and code generation.
+This directory contains all the functions that walk the AST, top-down. This includes semantic analysis and code generation.

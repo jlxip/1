@@ -18,7 +18,7 @@
 
 size_t match_numeric(Capture *ret, const char *cur) {
     const char *begin = cur;
-    char *buf = NULL;   /* In case of int */
+    char *buf = NULL;   /* In case of word */
     double *val = NULL; /* In case of float */
     size_t len = 0;
 
@@ -32,12 +32,12 @@ size_t match_numeric(Capture *ret, const char *cur) {
         case 'e':
             goto state2;
         default:
-            /* It's an int! */
+            /* It's a word! */
             len = --cur - begin;
             buf = malloc(len + 1);
             memcpy(buf, begin, len);
             buf[len] = '\0';
-            OK_TOKEN_INFO(T_INT, (size_t)buf);
+            OK_TOKEN_INFO(T_WORD, (size_t)buf);
         }
     }
 
