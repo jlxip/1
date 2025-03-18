@@ -1,5 +1,6 @@
 #include "block.h"
 #include "../expr/expr.h"
+#include "decl/decl.h"
 #include <tokens.h>
 
 void walk_statements(AST *ast, const char **names, Symbols *syms);
@@ -30,7 +31,8 @@ void walk_statement(AST *ast, const char **names, Symbols *syms) {
     if (IS_NAME("stmt_block")) {
         todo();
     } else if (IS_NAME("stmt_decl")) {
-        todo();
+        ast = SUB_AST(0);
+        (void)walk_decl(ast, names, syms);
     } else if (IS_NAME("stmt_expr")) {
         ast = SUB_AST(0);
         (void)walk_expr(ast, names, syms);

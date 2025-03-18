@@ -48,6 +48,7 @@ typedef buffer Symbols;     /* buffer<SymbolTable> */
 #define PUSH_TO_SCOPE(NAME, DECL)                                              \
     do {                                                                       \
         SymbolTable st = *buffer_back(*syms, SymbolTable);                     \
+        map_remove_if_there(st, NAME);                                         \
         map_add(st, NAME, &DECL);                                              \
     } while (0)
 

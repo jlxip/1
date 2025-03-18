@@ -223,6 +223,9 @@ static size_t _map_remove(map m, const void *k) {
     size_t idx;
     map_assert(m);
 
+    if (!m->alloc)
+        return 0;
+
     h = m->hash(k);
     idx = h % m->alloc;
     for (;;) {

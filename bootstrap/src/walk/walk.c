@@ -1,4 +1,5 @@
 #include "walk.h"
+#include "block/decl/decl.h"
 #include "expr/expr.h"
 #include "func/func.h"
 #include <stdio.h>
@@ -7,7 +8,6 @@
 void walk_uses(AST *ast, const char **names, Symbols *syms);
 void walk_globals(AST *ast, const char **names, Symbols *syms);
 void walk_global(AST *ast, const char **names, Symbols *syms);
-void walk_global_decl(AST *ast, const char **names, Symbols *syms);
 
 void walk(ASTRoot root) {
     AST *ast = &root.ast;
@@ -51,7 +51,8 @@ void walk_global(AST *ast, const char **names, Symbols *syms) {
 
     if (IS_NAME("global_decl")) {
         ast = SUB_AST(0);
-        walk_global_decl(ast, names, syms);
+        (void)walk_decl(ast, names, syms);
+        /* TODO: assert declaration's expression is KACT */
     } else if (IS_NAME("global_func")) {
         ast = SUB_AST(0);
         assert(IS_NAME("function"));
@@ -60,57 +61,4 @@ void walk_global(AST *ast, const char **names, Symbols *syms) {
         todo();
     } else
         UNREACHABLE;
-}
-
-void walk_global_decl(AST *ast, const char **names, Symbols *syms) {
-    bool mut = false;
-    bool typed = false;
-    AST *lhs, *rhs;
-    char *name = NULL;
-    size_t lineno = 0;
-    ObjExpression expr;
-    Declaration decl;
-
-    /* Check mutability and get lhs and rhs */
-    if (IS_NAME("decl_let_id")) {
-        mut = false;
-        typed = false;
-    } else if (IS_NAME("decl_let_p_id")) {
-        mut = true;
-        typed = false;
-    } else if (IS_NAME("decl_let_typed")) {
-        mut = false;
-        typed = true;
-    } else if (IS_NAME("decl_let_p_typed")) {
-        mut = true;
-        typed = true;
-    } else
-        UNREACHABLE;
-
-    if (typed)
-        todo();
-
-    /* Assumed untyped */
-    if (!mut) {
-        lhs = SUB_AST(1);
-        rhs = SUB_AST(3);
-    } else {
-        lhs = SUB_AST(2);
-        rhs = SUB_AST(4);
-    }
-
-    do {
-        Capture *id = (Capture *)lhs;
-        assert(id->token == T_ID);
-        name = (char *)(id->info);
-        lineno = id->lineno;
-    } while (0);
-
-    /* Get rhs */
-    expr = walk_expr(rhs, names, syms);
-
-    decl.lineno = lineno;
-    decl.type = expr.type;
-    decl.mut = mut;
-    PUSH_TO_SCOPE(name, decl);
 }
