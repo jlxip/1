@@ -64,54 +64,51 @@ void walk_global(AST *ast, const char **names, Symbols *syms) {
 
 void walk_global_decl(AST *ast, const char **names, Symbols *syms) {
     bool mut = false;
-    AST *lhs;
+    bool typed = false;
+    AST *lhs, *rhs;
     char *name = NULL;
     size_t lineno = 0;
     ObjExpression expr;
     Declaration decl;
 
-    /* Check mutability and get assignment */
-    if (IS_NAME("decl_let")) {
-        ast = SUB_AST(1);
-    } else if (IS_NAME("decl_letp")) {
+    /* Check mutability and get lhs and rhs */
+    if (IS_NAME("decl_let_id")) {
+        mut = false;
+        typed = false;
+    } else if (IS_NAME("decl_let_p_id")) {
         mut = true;
-        ast = SUB_AST(2);
+        typed = false;
+    } else if (IS_NAME("decl_let_typed")) {
+        mut = false;
+        typed = true;
+    } else if (IS_NAME("decl_let_p_typed")) {
+        mut = true;
+        typed = true;
     } else
         UNREACHABLE;
 
-    if (!IS_NAME("assign_eq"))
-        throw("only `=' can be used in global declarations");
+    if (typed)
+        todo();
 
-    /* Get lhs */
-    lhs = SUB_AST(0);
+    /* Assumed untyped */
+    if (!mut) {
+        lhs = SUB_AST(1);
+        rhs = SUB_AST(3);
+    } else {
+        lhs = SUB_AST(2);
+        rhs = SUB_AST(4);
+    }
+
     do {
-        AST *ast = lhs;
-        if (IS_NAME("lhs_typed_rec") || IS_NAME("lhs_id_rec")) {
-            /* There's no reason for this but I'm lazy */
-            throw("only one declaration per line in global scope");
-        }
-
-        if (IS_NAME("lhs_typed")) {
-            todo();
-        } else if (IS_NAME("lhs_id")) {
-            Capture *id = (Capture *)SUB_AST(0);
-            assert(id->token == T_ID);
-            name = (char *)(id->info);
-            lineno = id->lineno;
-        }
+        Capture *id = (Capture *)lhs;
+        assert(id->token == T_ID);
+        name = (char *)(id->info);
+        lineno = id->lineno;
     } while (0);
 
     /* Get rhs */
-    ast = SUB_AST(2);
-    if (IS_NAME("rhs_rec")) {
-        /* Same reason as above (none) */
-        throw("only one right-hand side per line in global scope");
-    }
+    expr = walk_expr(rhs, names, syms);
 
-    assert(IS_NAME("rhs_direct"));
-    ast = SUB_AST(0);
-
-    expr = walk_expr(ast, names, syms);
     decl.lineno = lineno;
     decl.type = expr.type;
     decl.mut = mut;

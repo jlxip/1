@@ -1,4 +1,6 @@
 #include "block.h"
+#include "../expr/expr.h"
+#include <tokens.h>
 
 void walk_statements(AST *ast, const char **names, Symbols *syms);
 void walk_statement(AST *ast, const char **names, Symbols *syms);
@@ -9,10 +11,7 @@ ObjBlock walk_block(AST *ast, const char **names, Symbols *syms) {
     ast = SUB_AST(1);
     walk_statements(ast, names, syms);
 
-    printf("Finished block!\n");
-    while (1)
-        ;
-
+    ret.lineno = ((Capture *)SUB_AST(0))->lineno;
     return ret;
 }
 
@@ -22,7 +21,7 @@ void walk_statements(AST *ast, const char **names, Symbols *syms) {
     assert(IS_NAME("stmts_rec"));
 
     walk_statement(SUB_AST(0), names, syms);
-    walk_statements(SUB_AST(1), names, syms);
+    walk_statements(SUB_AST(2), names, syms);
 }
 
 void walk_statement(AST *ast, const char **names, Symbols *syms) {
@@ -33,7 +32,8 @@ void walk_statement(AST *ast, const char **names, Symbols *syms) {
     } else if (IS_NAME("stmt_decl")) {
         todo();
     } else if (IS_NAME("stmt_expr")) {
-        todo();
+        ast = SUB_AST(0);
+        (void)walk_expr(ast, names, syms);
     } else if (IS_NAME("stmt_ctrl")) {
         todo();
     } else if (IS_NAME("stmt_cond")) {

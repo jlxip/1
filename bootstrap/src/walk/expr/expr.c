@@ -1,4 +1,5 @@
 #include "expr.h"
+#include "assign/assign.h"
 #include "lit/lit.h"
 
 ObjExpression walk_expr(AST *ast, const char **names, Symbols *syms) {
@@ -53,7 +54,11 @@ ObjExpression walk_expr(AST *ast, const char **names, Symbols *syms) {
     } else if (IS_NAME("expr_or2")) {
         todo();
     } else if (IS_NAME("expr_assign")) {
-        todo();
+        ObjAssign assign;
+        ast = SUB_AST(0);
+        assign = walk_assign(ast, names, syms);
+        ret.lineno = assign.lineno;
+        ret.type = assign.type;
     } else
         UNREACHABLE;
 

@@ -49,6 +49,23 @@ typedef buffer Symbols;     /* buffer<SymbolTable> */
     do {                                                                       \
         SymbolTable st = *buffer_back(*syms, SymbolTable);                     \
         map_add(st, NAME, &DECL);                                              \
-    } while (0);
+    } while (0)
+
+#define LOOKUP(X, NAME)                                                        \
+    do {                                                                       \
+        bool found = false;                                                    \
+        size_t _nsyms = buffer_num(*syms);                                     \
+        size_t _i;                                                             \
+        for (_i = 0; _i < _nsyms; ++_i) {                                      \
+            SymbolTable st = *buffer_get(*syms, _nsyms - _i - 1, SymbolTable); \
+            if (map_has(st, NAME)) {                                           \
+                X = map_get(st, NAME, Declaration);                            \
+                found = true;                                                  \
+                break;                                                         \
+            }                                                                  \
+        }                                                                      \
+        if (!found)                                                            \
+            throwe("undeclared symbol: %s", NAME);                             \
+    } while (0)
 
 #endif

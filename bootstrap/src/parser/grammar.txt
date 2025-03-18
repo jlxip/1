@@ -70,40 +70,33 @@ EXPRESSION -> EXPRESSION dbar EXPRESSION 'expr_or2
 # Assignments
 EXPRESSION -> ASSIGNMENT 'expr_assign
 %right eq
-ASSIGNMENT -> LHS eq RHS 'assign_eq
+ASSIGNMENT -> PRIMARY eq EXPRESSION 'assign_eq
 %nonassoc pluseq minuseq stareq slasheq hateq ampeq bareq
-ASSIGNMENT -> LHS pluseq RHS 'assign_plus
-ASSIGNMENT -> LHS minuseq RHS 'assign_minus
-ASSIGNMENT -> LHS stareq RHS 'assign_star
-ASSIGNMENT -> LHS slasheq RHS 'assign_slash
-ASSIGNMENT -> LHS hateq RHS 'assign_hat
-ASSIGNMENT -> LHS ampeq RHS 'assign_amp
-ASSIGNMENT -> LHS bareq RHS 'assign_bar
+ASSIGNMENT -> PRIMARY pluseq EXPRESSION 'assign_plus
+ASSIGNMENT -> PRIMARY minuseq EXPRESSION 'assign_minus
+ASSIGNMENT -> PRIMARY stareq EXPRESSION 'assign_star
+ASSIGNMENT -> PRIMARY slasheq EXPRESSION 'assign_slash
+ASSIGNMENT -> PRIMARY hateq EXPRESSION 'assign_hat
+ASSIGNMENT -> PRIMARY ampeq EXPRESSION 'assign_amp
+ASSIGNMENT -> PRIMARY bareq EXPRESSION 'assign_bar
 
-LHS -> TYPED_ID comma LHS 'lhs_typed_rec
-LHS -> TYPED_ID 'lhs_typed
-LHS -> id comma LHS 'lhs_id_rec
-%hint comma
-LHS -> id 'lhs_id
+PRIMARY -> id 'primary_direct
+PRIMARY -> id dot PRIMARY 'primary_rec
+# TODO: id[]
+
+
+
+# ---------- DECLARATION ----------
+DECLARATION -> let id eq EXPRESSION 'decl_let_id
+DECLARATION -> let plus id eq EXPRESSION 'decl_let_p_id
+DECLARATION -> let TYPED_ID eq EXPRESSION 'decl_let_typed
+DECLARATION -> let plus TYPED_ID eq EXPRESSION 'decl_let_p_typed
+
 TYPED_ID -> id colon TYPE 'typed
 TYPE -> id lt TYPES gt 'type_typed
 TYPE -> id 'type_direct
 TYPES -> TYPE comma TYPES 'types_rec
 TYPES -> TYPE 'types_direct
-
-%left comma
-RHS -> EXPRESSION comma RHS 'rhs_rec
-%hint eq
-RHS -> EXPRESSION 'rhs_direct
-
-
-# TODO: primary (as in Python)
-
-
-
-# ---------- DECLARATION ----------
-DECLARATION -> let ASSIGNMENT 'decl_let
-DECLARATION -> let plus ASSIGNMENT 'decl_letp
 
 
 
