@@ -29,6 +29,7 @@ typedef struct {
     bool mut;
 } Declaration;
 
+size_t hash_type(const void *x);
 size_t hash_declaration(const void *x);
 size_t equal_declaration(const void *a, const void *b);
 void *copy_declaration(const void *x);

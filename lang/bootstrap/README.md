@@ -15,4 +15,3 @@ you probably want to disable warnings when using an old compiler, in case of bug
 - [x] Parser
 - [ ] Semantic analysis *IN PROGRESS*
 - [ ] Code generation
-- [ ] Try to [compile in Windows 95](https://www.vogons.org/viewtopic.php?t=17324)

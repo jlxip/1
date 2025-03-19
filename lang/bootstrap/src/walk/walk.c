@@ -2,6 +2,7 @@
 #include "block/decl/decl.h"
 #include "expr/expr.h"
 #include "func/func.h"
+#include "struct/struct.h"
 #include <stdio.h>
 #include <tokens.h>
 
@@ -58,7 +59,9 @@ void walk_global(AST *ast, const char **names, Symbols *syms) {
         assert(IS_NAME("function"));
         walk_function(ast, names, syms);
     } else if (IS_NAME("global_struct")) {
-        todo();
+        ast = SUB_AST(0);
+        assert(IS_NAME("struct"));
+        walk_struct(ast, names, syms);
     } else
         UNREACHABLE;
 }

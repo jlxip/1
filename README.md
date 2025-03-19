@@ -3,20 +3,7 @@
 The biggest expression of my perfectionism.
 
 ## The 1 Programming Language
-1 is a programming language.
-- As easy and fast to write as Python: no boilerplate, extended syntax, sensible iterators
-- As fast in runtime as C
-- As portable as C89
-
-## Bootstrapping
-The bootstrap compiler is in progress of being written.
-
-## Status
-- [x] Define the basics in my head (over many years)
-- [ ] Write the bootstrap compiler [*IN PROGRESS*](bootstrap)
-- [ ] Write the compiler
-- [ ] Finish bootstrapping
-- [ ] At least document something
+As of now, the only element of The 1 System is [The 1 Programming Language](lang), which is being developed.
 
 ## Contributions
 - Bug issues are welcome
