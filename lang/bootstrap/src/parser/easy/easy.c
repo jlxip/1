@@ -165,6 +165,8 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
                     symbol sym;
 
                     strsym = *buffer_get(spaces, i, const char *);
+                    if (!map_has(all_symbols, strsym))
+                        throwe("undefined symbol: %s", strsym);
                     sym = *map_get(all_symbols, strsym, symbol);
 
                     prec.prio = prio++;

@@ -23,7 +23,6 @@ typedef enum {
     T_FOR,      /* for */
     T_IF,       /* if */
     T_IN,       /* in */
-    T_IS,       /* is */
     T_LET,      /* let */
     T_NOT,      /* not */
     T_OR,       /* or */
@@ -82,11 +81,11 @@ typedef enum {
 #ifdef GET_TOKEN_STRINGS
 static const char *token_strings[] = {"NULL", "id", "and", "assert", "break",
     "case", "continue", "default", "elif", "else", "fall", "fn", "for", "if",
-    "in", "is", "let", "not", "or", "return", "struct", "switch", "use",
-    "while", "bool", "word", "float", "string", "deq", "neq", "eq", "pluseq",
-    "plus", "minuseq", "minus", "stareq", "star", "slasheq", "slash", "hateq",
-    "hat", "ampeq", "damp", "ampplus", "amp", "bareq", "dbar", "bar", "leq",
-    "lt", "geq", "gt", "dot", "comma", "colon", "semicolon", "atsymbol", "opar",
+    "in", "let", "not", "or", "return", "struct", "switch", "use", "while",
+    "bool", "word", "float", "string", "deq", "neq", "eq", "pluseq", "plus",
+    "minuseq", "minus", "stareq", "star", "slasheq", "slash", "hateq", "hat",
+    "ampeq", "damp", "ampplus", "amp", "bareq", "dbar", "bar", "leq", "lt",
+    "geq", "gt", "dot", "comma", "colon", "semicolon", "atsymbol", "opar",
     "cpar", "obracket", "cbracket", "obraces", "cbraces", NULL};
 #endif
 

@@ -29,8 +29,6 @@ ObjExpression walk_expr(AST *ast, const char **names, Symbols *syms) {
         todo();
     } else if (IS_NAME("expr_minus")) {
         todo();
-    } else if (IS_NAME("expr_is")) {
-        todo();
     } else if (IS_NAME("expr_deq")) {
         todo();
     } else if (IS_NAME("expr_neq")) {

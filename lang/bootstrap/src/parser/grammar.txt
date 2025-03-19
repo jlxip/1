@@ -53,8 +53,7 @@ EXPRESSION -> EXPRESSION minus EXPRESSION 'expr_minus
 
 # Comparison
 # 2 + 1 == 3 -> (2 + 1) == (3)
-%nonassoc is deq neq lt leq gt geq
-EXPRESSION -> EXPRESSION is EXPRESSION 'expr_is
+%nonassoc deq neq lt leq gt geq
 EXPRESSION -> EXPRESSION deq EXPRESSION 'expr_deq
 EXPRESSION -> EXPRESSION neq EXPRESSION 'expr_neq
 EXPRESSION -> EXPRESSION lt EXPRESSION 'expr_lt

@@ -99,12 +99,10 @@ size_t match_keyword(Capture *ret, const char *cur) {
             MATCH_REST("r", T_FOR);
         }
     case 'i':
-        /* i: in, is, if */
+        /* i: in, if */
         switch (*cur++) {
         case 'n':
             MAYBE_KEYWORD(T_IN);
-        case 's':
-            MAYBE_KEYWORD(T_IS);
         case 'f':
             MAYBE_KEYWORD(T_IF);
         }
