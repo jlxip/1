@@ -14,8 +14,18 @@ ObjAssign walk_assign(AST *ast, const char **names, Symbols *syms) {
         throwe("tried to assign to immutable symbol: %s", lhs.name);
 
     rhs = walk_expr(SUB_AST(2), names, syms);
-    if (decl->type != rhs.type)
+    if (decl->type.id != rhs.type.id)
         throwe("type error in assignment to: %s", lhs.name);
+
+    switch (decl->type.id) {
+    case TYPE_BOOL:
+    case TYPE_WORD:
+    case TYPE_FLOAT:
+    case TYPE_STRING:
+        break;
+    default:
+        todo();
+    }
 
     /*if (IS_NAME("assign_eq")) {
         todo();

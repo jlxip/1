@@ -21,6 +21,11 @@ typedef enum {
     /*TYPE_DICT,*/
     TYPE_FUNC
     /*TYPE_STRUCT,*/
+} TypeId;
+
+typedef struct {
+    TypeId id;
+    void *data;
 } Type;
 
 typedef struct {
@@ -29,20 +34,13 @@ typedef struct {
     bool mut;
 } Declaration;
 
-size_t hash_type(const void *x);
-size_t hash_declaration(const void *x);
-size_t equal_declaration(const void *a, const void *b);
-void *copy_declaration(const void *x);
-void destroy_declaration(void *x);
-
-typedef map SymbolTable;    /* map<char*, Declaration> */
-typedef buffer Symbols;     /* buffer<SymbolTable> */
+typedef map SymbolTable; /* map<char*, Declaration> */
+typedef buffer Symbols;  /* buffer<SymbolTable> */
 
 #define NEW_SCOPE                                                              \
     do {                                                                       \
         map _x = NULL;                                                         \
-        map_new_string(&_x, sizeof(Declaration), hash_declaration,             \
-            equal_declaration, copy_declaration, destroy_declaration);         \
+        map_new_string(&_x, sizeof(Declaration), NULL, NULL, NULL, NULL);      \
         buffer_push(*syms, &_x);                                               \
     } while (0)
 

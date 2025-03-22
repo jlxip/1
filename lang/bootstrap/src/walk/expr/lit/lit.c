@@ -11,7 +11,8 @@ ObjLiteral walk_lit(AST *ast, const char **names, Symbols *syms) {
     } else if (IS_NAME("lit_word")) {
         assert(capture->token == T_WORD);
         ret.lineno = capture->lineno;
-        ret.type = TYPE_WORD;
+        ret.type.id = TYPE_WORD;
+        ret.type.data = NULL;
     } else if (IS_NAME("lit_float")) {
         todo();
     } else if (IS_NAME("lit_string")) {
