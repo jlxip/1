@@ -13,5 +13,7 @@ you probably want to disable warnings when using an old compiler, in case of bug
 - [x] LALR parser generator
 - [x] Lexer (second thought)
 - [x] Parser
-- [ ] Semantic analysis *IN PROGRESS*
+- [ ] Full semantic analysis *IN PROGRESS*
+- [ ] Free memory
+- [ ] Compile-time interpreter
 - [ ] Code generation

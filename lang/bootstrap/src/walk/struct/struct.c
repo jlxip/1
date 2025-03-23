@@ -1,13 +1,16 @@
 #include "struct.h"
 #include "../annotations/annotations.h"
+#include "../type/type.h"
 #include <tokens.h>
 
-void walk_struct_def(AST *ast, const char **names, Symbols *syms);
+static map walk_struct_def(AST *ast, const char **names, Symbols *syms);
 
-void walk_struct(AST *ast, const char **names, Symbols *syms) {
+ObjStruct walk_struct(AST *ast, const char **names, Symbols *syms) {
+    ObjStruct ret;
     ObjAnnotations anns;
     Capture *id;
     const char *name;
+    map fields;
 
     anns = walk_annotations(SUB_AST(0), names, syms);
     (void)anns;
@@ -15,29 +18,42 @@ void walk_struct(AST *ast, const char **names, Symbols *syms) {
     id = (Capture *)SUB_AST(2);
     name = (const char *)(id->info);
 
-    printf("Defining struct: %s\n", name);
-
     ast = SUB_AST(4);
-    walk_struct_def(ast, names, syms);
+    fields = walk_struct_def(ast, names, syms);
+
+    ret.lineno = id->lineno;
+    ret.name = name;
+    ret.fields = fields;
+    return ret;
 }
 
-void walk_struct_def(AST *ast, const char **names, Symbols *syms) {
-    AST *aux;
-
+static map walk_struct_def(AST *ast, const char **names, Symbols *syms) {
+    map ret = NULL; /* map<const char*, Type> */
     if (IS_NAME("struct_def_null"))
-        return;
+        throw("empty struct");
+
     assert(IS_NAME("struct_def"));
+    map_new_string(&ret, sizeof(Type), NULL, NULL, NULL, NULL);
 
-    aux = SUB_AST(0);
-    do {
-        AST *ast = aux;
-        Capture *id;
+    for (;;) {
+        AST *next;
+        const char *name;
+        Type type;
 
-        id = (Capture *)SUB_AST(0);
-        assert(id->token == T_ID);
-        printf("Element: %s\n", (const char *)(id->info));
-    } while (0);
+        if (IS_NAME("struct_def_null"))
+            break;
 
-    ast = SUB_AST(2);
-    walk_struct_def(ast, names, syms);
+        next = SUB_AST(2);
+        ast = SUB_AST(0);
+
+        name = (const char *)(((Capture *)SUB_AST(0))->info);
+        type = walk_type(SUB_AST(2), names, syms);
+
+        if (map_has(ret, name))
+            throwe("multiple fields named %s", name);
+        map_add(ret, name, &type);
+        ast = next;
+    }
+
+    return ret;
 }

@@ -2,5 +2,13 @@
 struct Vec {
     alloc: word,
     used: word,
-    ptr: word,
+    addr: ptr,
+}
+
+@generic(T)
+impl Vec {
+    fn __init__() {
+        self.alloc = self.used = 0;
+        self.addr = 0;
+    }
 }

@@ -9,6 +9,7 @@ GLOBALS -> GLOBAL GLOBALS 'globals_rec | EPSILON 'globals_null
 GLOBAL -> DECLARATION semicolon 'global_decl
 GLOBAL -> FUNCTION 'global_func
 GLOBAL -> STRUCT 'global_struct
+GLOBAL -> IMPL 'global_impl
 
 ANNOTATIONS -> ANNOTATION ANNOTATIONS 'annot_rec
 ANNOTATIONS -> EPSILON 'annot_null
@@ -96,8 +97,13 @@ DECLARATION -> let TYPED_ID eq EXPRESSION 'decl_let_typed
 DECLARATION -> let plus TYPED_ID eq EXPRESSION 'decl_let_p_typed
 
 TYPED_ID -> id colon TYPE 'typed
-TYPE -> id lt TYPES gt 'type_typed
+TYPE -> kbool 'type_bool
+TYPE -> kfloat 'type_float
+TYPE -> kptr 'type_ptr
+TYPE -> kstring 'type_string
+TYPE -> kword 'type_word
 TYPE -> id 'type_direct
+TYPE -> id lt TYPES gt 'type_typed
 TYPES -> TYPE comma TYPES 'types_rec
 TYPES -> TYPE 'types_direct
 
@@ -147,6 +153,13 @@ WHILE -> while EXPRESSION STATEMENT 'while
 STRUCT -> ANNOTATIONS struct id obraces STRUCT_DEF cbraces 'struct
 STRUCT_DEF -> TYPED_ID comma STRUCT_DEF 'struct_def
 STRUCT_DEF -> EPSILON 'struct_def_null
+
+
+
+# ---------- IMPL ----------
+IMPL -> ANNOTATIONS impl id obraces IMPL_DEF cbraces 'impl
+IMPL_DEF -> FUNCTION IMPL_DEF 'impl_def
+IMPL_DEF -> EPSILON 'impl_def_null
 
 
 

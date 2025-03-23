@@ -33,12 +33,16 @@ static size_t _match(const char **cur, const char *target) {
 
 /* Call _match, maybe call OK_TOKEN */
 #define MATCH_REST(P, T)                                                       \
-    if (_match(&cur, P))                                                       \
+    if (_match(&cur, P)) {                                                     \
+        --cur;                                                                 \
         OK_TOKEN(T);                                                           \
+    }                                                                          \
     break;
 #define MATCH_REST_INFO(P, T, I)                                               \
-    if (_match(&cur, P))                                                       \
+    if (_match(&cur, P)) {                                                     \
+        --cur;                                                                 \
         OK_TOKEN_INFO(T, I);                                                   \
+    }                                                                          \
     break;
 
 size_t match_keyword(Capture *ret, const char *cur) {
@@ -48,8 +52,15 @@ size_t match_keyword(Capture *ret, const char *cur) {
         /* a: and */
         MATCH_REST("nd", T_AND);
     case 'b':
-        /* b: break */
-        MATCH_REST("reak", T_BREAK);
+        /* b: bool, break */
+        switch (*cur++) {
+        case 'o':
+            /* bo: bool */
+            MATCH_REST("ol", T_KBOOL);
+        case 'r':
+            /* br: break */
+            MATCH_REST("eak", T_BREAK);
+        }
     case 'c':
         /* c: case, continue */
         switch (*cur++) {
@@ -77,7 +88,7 @@ size_t match_keyword(Capture *ret, const char *cur) {
             }
         }
     case 'f':
-        /* f: fall, false, fn, for */
+        /* f: fall, false, float, fn, for */
         switch (*cur++) {
         case 'a':
             /* fa: fall, false */
@@ -91,6 +102,9 @@ size_t match_keyword(Capture *ret, const char *cur) {
                     MATCH_REST_INFO("e", T_BOOL, 0);
                 }
             }
+        case 'l':
+            /* fl: float */
+            MATCH_REST("oat", T_KFLOAT);
         case 'n':
             /* fn: fn */
             MAYBE_KEYWORD(T_FN);
@@ -99,8 +113,10 @@ size_t match_keyword(Capture *ret, const char *cur) {
             MATCH_REST("r", T_FOR);
         }
     case 'i':
-        /* i: in, if */
+        /* i: impl, in, if */
         switch (*cur++) {
+        case 'm':
+            MATCH_REST("pl", T_IMPL);
         case 'n':
             MAYBE_KEYWORD(T_IN);
         case 'f':
@@ -115,12 +131,24 @@ size_t match_keyword(Capture *ret, const char *cur) {
     case 'o':
         /* o: or */
         MATCH_REST("r", T_OR);
+    case 'p':
+        /* p: ptr */
+        MATCH_REST("tr", T_KPTR);
     case 'r':
         /* r: return */
         MATCH_REST("turn", T_RETURN);
     case 's':
-        /* s: struct */
-        MATCH_REST("truct", T_STRUCT);
+        /* s: string, struct */
+        if (*cur++ == 't') {
+            if (*cur++ == 'r') {
+                switch (*cur++) {
+                case 'i':
+                    MATCH_REST("ng", T_KSTRING);
+                case 'u':
+                    MATCH_REST("ct", T_STRUCT);
+                }
+            }
+        }
     case 't':
         /* t: true */
         MATCH_REST_INFO("rue", T_BOOL, 1);
@@ -128,8 +156,15 @@ size_t match_keyword(Capture *ret, const char *cur) {
         /* u: use */
         MATCH_REST("se", T_USE);
     case 'w':
-        /* w: while */
-        MATCH_REST("hile", T_WHILE);
+        /* w: while, word */
+        switch (*cur++) {
+        case 'h':
+            /* wh: while */
+            MATCH_REST("ile", T_WHILE);
+        case 'o':
+            /* wo: word */
+            MATCH_REST("rd", T_KWORD);
+        }
     }
 
     return 0;

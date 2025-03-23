@@ -2,6 +2,7 @@
 #include "block/decl/decl.h"
 #include "expr/expr.h"
 #include "func/func.h"
+#include "impl/impl.h"
 #include "struct/struct.h"
 #include <stdio.h>
 #include <tokens.h>
@@ -59,9 +60,23 @@ void walk_global(AST *ast, const char **names, Symbols *syms) {
         assert(IS_NAME("function"));
         walk_function(ast, names, syms);
     } else if (IS_NAME("global_struct")) {
+        ObjStruct *x;
+        Declaration decl;
+
         ast = SUB_AST(0);
         assert(IS_NAME("struct"));
-        walk_struct(ast, names, syms);
+        x = malloc(sizeof(ObjStruct));
+        *x = walk_struct(ast, names, syms);
+
+        decl.lineno = x->lineno;
+        decl.type.id = TYPE_STRUCT_DEF;
+        decl.type.data = x;
+        decl.mut = false;
+        PUSH_TO_SCOPE(x->name, decl);
+    } else if (IS_NAME("global_impl")) {
+        ast = SUB_AST(0);
+        assert(IS_NAME("impl"));
+        walk_impl(ast, names, syms);
     } else
         UNREACHABLE;
 }

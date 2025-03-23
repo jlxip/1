@@ -3,6 +3,13 @@
 
 #include "../walk.h"
 
-void walk_struct(AST *ast, const char **names, Symbols *syms);
+typedef struct {
+    size_t lineno;
+    const char *name;    /* This will change to char* */
+    map fields;          /* map<const char*, Type> */
+    /*buffer generics;*/ /* buffer<const char*> */
+} ObjStruct;
+
+ObjStruct walk_struct(AST *ast, const char **names, Symbols *syms);
 
 #endif

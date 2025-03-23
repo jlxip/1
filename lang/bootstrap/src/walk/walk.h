@@ -13,14 +13,16 @@
 #define IS_NAME(X) (strcmp(names[ast->prod], X) == 0)
 
 typedef enum {
+    /* Atomic types */
     TYPE_BOOL,
-    TYPE_WORD,
     TYPE_FLOAT,
+    TYPE_PTR,
     TYPE_STRING,
-    /*TYPE_LIST,*/
-    /*TYPE_DICT,*/
-    TYPE_FUNC
-    /*TYPE_STRUCT,*/
+    TYPE_WORD,
+    /* Others */
+    TYPE_FUNC,
+    TYPE_STRUCT_DEF,
+    TYPE_STRUCT_INST
 } TypeId;
 
 typedef struct {
