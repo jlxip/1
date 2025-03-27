@@ -13,7 +13,16 @@ ObjStruct walk_struct(AST *ast, const char **names, Symbols *syms) {
     map fields;
 
     anns = walk_annotations(SUB_AST(0), names, syms);
-    (void)anns;
+    if (anns) {
+        if (map_has(anns, "generic")) {
+            ObjAnnotation *generic = map_get(anns, "generic", ObjAnnotation);
+            ret.generic = generic->args;
+        } else {
+            ret.generic = NULL;
+        }
+    } else {
+        ret.generic = NULL;
+    }
 
     id = (Capture *)SUB_AST(2);
     name = (const char *)(id->info);

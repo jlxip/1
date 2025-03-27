@@ -69,6 +69,7 @@ void walk_global(AST *ast, const char **names, Symbols *syms) {
         *x = walk_struct(ast, names, syms);
 
         decl.lineno = x->lineno;
+        decl.name = x->name;
         decl.type.id = TYPE_STRUCT_DEF;
         decl.type.data = x;
         decl.mut = false;

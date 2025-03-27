@@ -110,6 +110,10 @@ AST Grammar_parse(Grammar *g, const StreamElement *stream) {
             assert(entry->type == ENTRY_GOTO);
             buffer_push(stack, &entry->info);
 
+#ifdef DEBUG
+            printf("Reduce\n");
+#endif
+
             /* Output (create AST element) */
             ast = malloc(sizeof(AST));
             ast->prod = prodidx - 1;
@@ -119,6 +123,11 @@ AST Grammar_parse(Grammar *g, const StreamElement *stream) {
         }
         case ENTRY_SHIFT:
             assert(stream->sym != 0);
+#ifdef DEBUG
+            printf("Shift: ");
+            print_symbol(g, sym);
+            printf("\n");
+#endif
             buffer_push(stack, &entry->info);
             buffer_push(valstack, &stream->data);
             ++stream;

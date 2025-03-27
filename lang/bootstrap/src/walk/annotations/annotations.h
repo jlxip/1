@@ -6,10 +6,10 @@
 typedef struct {
     size_t lineno;
     const char *name;
-    buffer args; /* buffer<ObjPrimary> */
+    buffer args; /* buffer<void*> */
 } ObjAnnotation;
 
-typedef buffer ObjAnnotations; /* buffer<ObjAnnotation> */
+typedef map ObjAnnotations; /* map<char*, ObjAnnotation> */
 
 ObjAnnotations walk_annotations(AST *ast, const char **names, Symbols *syms);
 

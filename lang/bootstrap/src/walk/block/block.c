@@ -1,5 +1,6 @@
 #include "block.h"
 #include "../expr/expr.h"
+#include "ctrl/ctrl.h"
 #include "decl/decl.h"
 #include <tokens.h>
 
@@ -37,7 +38,8 @@ void walk_statement(AST *ast, const char **names, Symbols *syms) {
         ast = SUB_AST(0);
         (void)walk_expr(ast, names, syms);
     } else if (IS_NAME("stmt_ctrl")) {
-        todo();
+        ast = SUB_AST(0);
+        walk_ctrl(ast, names, syms);
     } else if (IS_NAME("stmt_cond")) {
         todo();
     } else if (IS_NAME("stmt_loop")) {

@@ -12,6 +12,12 @@
 #define SUB_AST(N) (*buffer_get(ast->sub, N, AST *))
 #define IS_NAME(X) (strcmp(names[ast->prod], X) == 0)
 
+/* Useful for debugging */
+#define PRINT_NAME                                                             \
+    do {                                                                       \
+        printf("name: %s\n", names[ast->prod]);                                \
+    } while (0)
+
 typedef enum {
     /* Atomic types */
     TYPE_BOOL,
@@ -22,6 +28,7 @@ typedef enum {
     /* Others */
     TYPE_FUNC,
     TYPE_STRUCT_DEF,
+    TYPE_STRUCT_SPECIFIC,
     TYPE_STRUCT_INST
 } TypeId;
 
@@ -32,6 +39,7 @@ typedef struct {
 
 typedef struct {
     size_t lineno;
+    const char *name;
     Type type;
     bool mut;
 } Declaration;
@@ -46,28 +54,18 @@ typedef buffer Symbols;  /* buffer<SymbolTable> */
         buffer_push(*syms, &_x);                                               \
     } while (0)
 
+#define TOP_SCOPE (*buffer_back(*syms, SymbolTable))
+
 #define PUSH_TO_SCOPE(NAME, DECL)                                              \
     do {                                                                       \
-        SymbolTable st = *buffer_back(*syms, SymbolTable);                     \
+        SymbolTable st = TOP_SCOPE;                                            \
         map_remove_if_there(st, NAME);                                         \
         map_add(st, NAME, &DECL);                                              \
     } while (0)
 
-#define LOOKUP(X, NAME)                                                        \
+#define POP_SCOPE                                                              \
     do {                                                                       \
-        bool found = false;                                                    \
-        size_t _nsyms = buffer_num(*syms);                                     \
-        size_t _i;                                                             \
-        for (_i = 0; _i < _nsyms; ++_i) {                                      \
-            SymbolTable st = *buffer_get(*syms, _nsyms - _i - 1, SymbolTable); \
-            if (map_has(st, NAME)) {                                           \
-                X = map_get(st, NAME, Declaration);                            \
-                found = true;                                                  \
-                break;                                                         \
-            }                                                                  \
-        }                                                                      \
-        if (!found)                                                            \
-            throwe("undeclared symbol: %s", NAME);                             \
+        buffer_pop(*syms);                                                     \
     } while (0)
 
 #endif

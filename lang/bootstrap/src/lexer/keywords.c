@@ -136,7 +136,7 @@ size_t match_keyword(Capture *ret, const char *cur) {
         MATCH_REST("tr", T_KPTR);
     case 'r':
         /* r: return */
-        MATCH_REST("turn", T_RETURN);
+        MATCH_REST("eturn", T_RETURN);
     case 's':
         /* s: string, struct */
         if (*cur++ == 't') {

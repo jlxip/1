@@ -5,10 +5,15 @@
 
 typedef struct {
     size_t lineno;
-    const char *name;    /* This will change to char* */
-    map fields;          /* map<const char*, Type> */
-    /*buffer generics;*/ /* buffer<const char*> */
+    const char *name; /* This will change to char* */
+    map fields;       /* map<const char*, Type> */
+    buffer generic;   /* buffer<const char*> */
 } ObjStruct;
+
+typedef struct {
+    Declaration *struct_def;
+    buffer specific; /* buffer<Type> */
+} ObjSpecificStruct;
 
 ObjStruct walk_struct(AST *ast, const char **names, Symbols *syms);
 

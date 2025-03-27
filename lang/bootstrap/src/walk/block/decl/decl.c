@@ -5,22 +5,21 @@
 Declaration walk_decl(AST *ast, const char **names, Symbols *syms) {
     bool typed = false;
     AST *lhs, *rhs;
-    char *name = NULL;
     ObjExpression expr;
-    Declaration decl;
+    Declaration ret;
 
     /* Check mutability and get lhs and rhs */
     if (IS_NAME("decl_let_id")) {
-        decl.mut = false;
+        ret.mut = false;
         typed = false;
     } else if (IS_NAME("decl_let_p_id")) {
-        decl.mut = true;
+        ret.mut = true;
         typed = false;
     } else if (IS_NAME("decl_let_typed")) {
-        decl.mut = false;
+        ret.mut = false;
         typed = true;
     } else if (IS_NAME("decl_let_p_typed")) {
-        decl.mut = true;
+        ret.mut = true;
         typed = true;
     } else
         UNREACHABLE;
@@ -29,7 +28,7 @@ Declaration walk_decl(AST *ast, const char **names, Symbols *syms) {
         todo();
 
     /* Assumed untyped */
-    if (!decl.mut) {
+    if (!ret.mut) {
         lhs = SUB_AST(1);
         rhs = SUB_AST(3);
     } else {
@@ -40,14 +39,14 @@ Declaration walk_decl(AST *ast, const char **names, Symbols *syms) {
     do {
         Capture *id = (Capture *)lhs;
         assert(id->token == T_ID);
-        name = (char *)(id->info);
-        decl.lineno = id->lineno;
+        ret.name = (char *)(id->info);
+        ret.lineno = id->lineno;
     } while (0);
 
     /* Get rhs */
     expr = walk_expr(rhs, names, syms);
 
-    decl.type = expr.type;
-    PUSH_TO_SCOPE(name, decl);
-    return decl;
+    ret.type = expr.type;
+    PUSH_TO_SCOPE(ret.name, ret);
+    return ret;
 }

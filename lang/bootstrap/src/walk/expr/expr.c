@@ -1,13 +1,14 @@
 #include "expr.h"
 #include "assign/assign.h"
 #include "lit/lit.h"
+#include "struct_inst/struct_inst.h"
 
 ObjExpression walk_expr(AST *ast, const char **names, Symbols *syms) {
     ObjExpression ret;
 
     if (IS_NAME("expr_par")) {
         todo();
-    } else if (IS_NAME("expr_id")) {
+    } else if (IS_NAME("expr_primary")) {
         todo();
     } else if (IS_NAME("expr_lit")) {
         ObjLiteral lit;
@@ -51,6 +52,9 @@ ObjExpression walk_expr(AST *ast, const char **names, Symbols *syms) {
         todo();
     } else if (IS_NAME("expr_or2")) {
         todo();
+    } else if (IS_NAME("expr_struct_inst")) {
+        ast = SUB_AST(0);
+        walk_struct_inst(ast, names, syms);
     } else if (IS_NAME("expr_assign")) {
         ObjAssign assign;
         ast = SUB_AST(0);

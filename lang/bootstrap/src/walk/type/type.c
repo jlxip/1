@@ -24,8 +24,6 @@ Type walk_type(AST *ast, const char **names, Symbols *syms) {
     } else if (IS_NAME("type_direct")) {
         /*Capture *id = (Capture *)(SUB_AST(0));*/
         todo();
-    } else if (IS_NAME("type_typed")) {
-        todo();
     } else
         UNREACHABLE;
 

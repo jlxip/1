@@ -11,6 +11,8 @@ GLOBAL -> FUNCTION 'global_func
 GLOBAL -> STRUCT 'global_struct
 GLOBAL -> IMPL 'global_impl
 
+# TODO: extern
+
 ANNOTATIONS -> ANNOTATION ANNOTATIONS 'annot_rec
 ANNOTATIONS -> EPSILON 'annot_null
 ANNOTATION -> atsymbol id 'annot
@@ -19,17 +21,18 @@ ANNOTATION -> atsymbol id opar PRIMARY_LIST cpar 'annot_args
 PRIMARY_LIST -> PRIMARY comma PRIMARY_LIST 'primary_list_rec
 PRIMARY_LIST -> PRIMARY 'primary_list_direct
 
-FUNCTION -> ANNOTATIONS fn id opar TYPED_IDS cpar BLOCK 'function
-TYPED_IDS -> TYPED_ID comma TYPED_IDS 'typed_ids_rec
-TYPED_IDS -> EPSILON 'typed_ids_null
+FUNCTION -> ANNOTATIONS fn id opar FUNC_ARGS cpar BLOCK 'function
+FUNC_ARGS -> TYPED_ID comma FUNC_ARGS 'typed_ids_rec
+FUNC_ARGS -> EPSILON 'typed_ids_null
 
 
 
 # ---------- EXPRESSIONS ----------
 EXPRESSION -> opar EXPRESSION cpar 'expr_par
 
-%left id
-EXPRESSION -> id 'expr_id
+%left obraces opar
+%hint id
+EXPRESSION -> PRIMARY 'expr_primary
 
 EXPRESSION -> LITERAL 'expr_lit
 LITERAL -> bool 'lit_bool
@@ -71,6 +74,12 @@ EXPRESSION -> EXPRESSION damp EXPRESSION 'expr_and2
 EXPRESSION -> EXPRESSION or EXPRESSION 'expr_or
 EXPRESSION -> EXPRESSION dbar EXPRESSION 'expr_or2
 
+# Struct instantiation
+EXPRESSION -> STRUCT_INST 'expr_struct_inst
+STRUCT_INST -> PRIMARY obraces STRUCT_FIELD_INST cbraces 'struct_inst
+STRUCT_FIELD_INST -> id eq EXPRESSION comma STRUCT_FIELD_INST 'struct_field_inst_rec
+STRUCT_FIELD_INST -> EPSILON 'strict_field_inst_null
+
 # Assignments
 EXPRESSION -> ASSIGNMENT 'expr_assign
 %right eq
@@ -84,8 +93,12 @@ ASSIGNMENT -> PRIMARY hateq EXPRESSION 'assign_hat
 ASSIGNMENT -> PRIMARY ampeq EXPRESSION 'assign_amp
 ASSIGNMENT -> PRIMARY bareq EXPRESSION 'assign_bar
 
-PRIMARY -> id 'primary_direct
-PRIMARY -> id dot PRIMARY 'primary_rec
+# Due to 'lt' having lower precedence than 'id', this part of
+# the grammar must be non-ambiguous
+%left dot id
+PRIMARY -> PRIMARY dot id 'primary_dot
+PRIMARY -> PRIMARY lt TYPES gt 'primary_typed
+PRIMARY -> id 'primary_id
 # TODO: id[]
 
 
@@ -102,8 +115,7 @@ TYPE -> kfloat 'type_float
 TYPE -> kptr 'type_ptr
 TYPE -> kstring 'type_string
 TYPE -> kword 'type_word
-TYPE -> id 'type_direct
-TYPE -> id lt TYPES gt 'type_typed
+TYPE -> PRIMARY 'type_direct
 TYPES -> TYPE comma TYPES 'types_rec
 TYPES -> TYPE 'types_direct
 
@@ -157,7 +169,7 @@ STRUCT_DEF -> EPSILON 'struct_def_null
 
 
 # ---------- IMPL ----------
-IMPL -> ANNOTATIONS impl id obraces IMPL_DEF cbraces 'impl
+IMPL -> ANNOTATIONS impl PRIMARY obraces IMPL_DEF cbraces 'impl
 IMPL_DEF -> FUNCTION IMPL_DEF 'impl_def
 IMPL_DEF -> EPSILON 'impl_def_null
 

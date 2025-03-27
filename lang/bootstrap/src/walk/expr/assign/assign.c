@@ -1,21 +1,19 @@
 #include "assign.h"
+#include "../../lookup/lookup.h"
 #include "../expr.h"
-#include "../primary/primary.h"
 
 ObjAssign walk_assign(AST *ast, const char **names, Symbols *syms) {
     ObjAssign ret;
-    ObjPrimary lhs;
     Declaration *decl;
     ObjExpression rhs;
 
-    lhs = walk_primary(SUB_AST(0), names, syms);
-    LOOKUP(decl, lhs.name);
+    decl = lookup(SUB_AST(0), names, syms);
     if (!decl->mut)
-        throwe("tried to assign to immutable symbol: %s", lhs.name);
+        throwe("tried to assign to immutable symbol: %s", decl->name);
 
     rhs = walk_expr(SUB_AST(2), names, syms);
     if (decl->type.id != rhs.type.id)
-        throwe("type error in assignment to: %s", lhs.name);
+        throwe("type error in assignment to: %s", decl->name);
 
     switch (decl->type.id) {
     case TYPE_BOOL:
@@ -46,7 +44,7 @@ ObjAssign walk_assign(AST *ast, const char **names, Symbols *syms) {
     } else
     UNREACHABLE;*/
 
-    ret.lineno = lhs.lineno;
+    ret.lineno = rhs.lineno;
     ret.type = rhs.type;
     return ret;
 }
