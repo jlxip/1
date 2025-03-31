@@ -33,9 +33,9 @@ ASTRoot parse(const Tokens tokens) {
     /* Create stream of TokenData */
     stream = malloc((buffer_num(tokens) + 1) * sizeof(TokenData));
     for (i = 0; i < buffer_num(tokens); ++i) {
-        /* data is Capture in this implementation */
-        stream[i].sym = buffer_get(tokens, i, Capture)->token;
-        stream[i].data = buffer_get(tokens, i, Capture);
+        /* data is Token in this implementation */
+        stream[i].sym = buffer_get(tokens, i, Token)->id;
+        stream[i].data = buffer_get(tokens, i, Token);
     }
     stream[buffer_num(tokens)].sym = 0;
     stream[buffer_num(tokens)].data = NULL;

@@ -32,7 +32,7 @@ int main(int argc, const char *argv[]) {
     /* Parse */
     ast = parse(tokens);
 
-    /* Walk the AST, this frees Capture objects */
+    /* Walk the AST */
     walk(ast);
 
     buffer_out(&tokens);

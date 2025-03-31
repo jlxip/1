@@ -15,6 +15,7 @@ size_t match_string(Capture *ret, const char *cur) {
         case '\\':
             /* Escape */
             todo(); /* not feeling like it */
+            break;
         case '"':
             /* End */
             len = --cur - begin;
@@ -24,7 +25,7 @@ size_t match_string(Capture *ret, const char *cur) {
 
             --begin; /* Include first quote now */
             ++cur;   /* As well as last one */
-            OK_TOKEN_INFO(T_STRING, (size_t)buf);
+            OK_TOKEN_DATA(T_STRING, str, buf);
         case '\0':
             /* Unfinished string */
             todo();

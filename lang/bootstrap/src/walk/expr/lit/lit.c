@@ -3,13 +3,13 @@
 
 ObjLiteral walk_lit(AST *ast, const char **names, Symbols *syms) {
     ObjLiteral ret;
-    Capture *capture = (Capture *)SUB_AST(0); /* applies to all */
+    Token *capture = (Token *)SUB_AST(0); /* applies to all */
     (void)syms;
 
     if (IS_NAME("lit_bool")) {
         todo();
     } else if (IS_NAME("lit_word")) {
-        assert(capture->token == T_WORD);
+        assert(capture->id == T_WORD);
         ret.lineno = capture->lineno;
         ret.type.id = TYPE_WORD;
         ret.type.data = NULL;

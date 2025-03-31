@@ -4,25 +4,23 @@
 #include <common.h>
 #include <tokens.h>
 
-/* This applies for all switches in this folder */
-#ifdef __GNUC__
-#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
-#endif
+typedef struct {
+    size_t consumed;
+    Token token;
+} Capture;
 
 #define OK_TOKEN(X)                                                            \
     do {                                                                       \
-        ret->ok = 1;                                                           \
         ret->consumed = cur - begin;                                           \
-        ret->token = X;                                                        \
+        ret->token.id = X;                                                     \
         return 1;                                                              \
     } while (0)
 
-#define OK_TOKEN_INFO(X, Y)                                                    \
+#define OK_TOKEN_DATA(X, T, Y)                                                 \
     do {                                                                       \
-        ret->ok = 1;                                                           \
         ret->consumed = cur - begin;                                           \
-        ret->token = X;                                                        \
-        ret->info = Y;                                                         \
+        ret->token.id = X;                                                     \
+        ret->token.data.T = Y;                                                 \
         return 1;                                                              \
     } while (0)
 

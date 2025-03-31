@@ -66,7 +66,7 @@ static map walk_sfinst(AST *ast, const char **names, Symbols *syms) {
     assert(IS_NAME("struct_field_inst_rec"));
 
     for (;;) {
-        Capture *id;
+        Token *id;
         const char *name;
         ObjExpression expr;
 
@@ -74,9 +74,9 @@ static map walk_sfinst(AST *ast, const char **names, Symbols *syms) {
             break;
         assert(IS_NAME("struct_field_inst_rec"));
 
-        id = (Capture *)SUB_AST(0);
-        assert(id->token == T_ID);
-        name = (const char *)(id->info);
+        id = (Token *)SUB_AST(0);
+        assert(id->id == T_ID);
+        name = id->data.str;
 
         expr = walk_expr(SUB_AST(2), names, syms);
 

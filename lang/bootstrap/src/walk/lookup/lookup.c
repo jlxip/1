@@ -35,15 +35,15 @@ Declaration *lookup(AST *ast, const char **names, Symbols *syms) {
         ret->type.data = specific;
         ret->mut = false;
     } else if (IS_NAME("primary_id")) {
-        Capture *id;
+        Token *id;
         const char *name;
         bool found;
         size_t nsyms;
         size_t i;
 
-        id = (Capture *)SUB_AST(0);
-        assert(id->token == T_ID);
-        name = (const char *)(id->info);
+        id = (Token *)SUB_AST(0);
+        assert(id->id == T_ID);
+        name = id->data.str;
 
         found = false;
         nsyms = buffer_num(*syms);

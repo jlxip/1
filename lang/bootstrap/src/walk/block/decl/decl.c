@@ -37,9 +37,9 @@ Declaration walk_decl(AST *ast, const char **names, Symbols *syms) {
     }
 
     do {
-        Capture *id = (Capture *)lhs;
-        assert(id->token == T_ID);
-        ret.name = (char *)(id->info);
+        Token *id = (Token *)lhs;
+        assert(id->id == T_ID);
+        ret.name = id->data.str;
         ret.lineno = id->lineno;
     } while (0);
 

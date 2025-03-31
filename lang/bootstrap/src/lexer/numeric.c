@@ -16,10 +16,20 @@
     case '8':                                                                  \
     case '9'
 
+static size_t atow(const char *str, size_t len) {
+    size_t i;
+    size_t ret = 0;
+    for (i = 0; i < len; ++i) {
+        ret *= 10;
+        ret += str[i] - '0';
+    }
+    return ret;
+}
+
 size_t match_numeric(Capture *ret, const char *cur) {
     const char *begin = cur;
-    char *buf = NULL;   /* In case of word */
-    double *val = NULL; /* In case of float */
+    char *buf = NULL;
+    double val;
     size_t len = 0;
 
     /* State 0: only numbers */
@@ -34,10 +44,7 @@ size_t match_numeric(Capture *ret, const char *cur) {
         default:
             /* It's a word! */
             len = --cur - begin;
-            buf = malloc(len + 1);
-            memcpy(buf, begin, len);
-            buf[len] = '\0';
-            OK_TOKEN_INFO(T_WORD, (size_t)buf);
+            OK_TOKEN_DATA(T_WORD, word, atow(begin, len));
         }
     }
 
@@ -55,10 +62,9 @@ state1:
             buf = malloc(len + 1);
             memcpy(buf, begin, len);
             buf[len] = '\0';
-            val = malloc(sizeof(double));
-            *val = atof(buf);
+            val = atof(buf);
             free(buf);
-            OK_TOKEN_INFO(T_FLOAT, (size_t)val);
+            OK_TOKEN_DATA(T_FLOAT, d, val);
         }
     }
 
@@ -74,10 +80,9 @@ state2:
             buf = malloc(len + 1);
             memcpy(buf, begin, len);
             buf[len] = '\0';
-            val = malloc(sizeof(double));
-            *val = atof(buf);
+            val = atof(buf);
             free(buf);
-            OK_TOKEN_INFO(T_FLOAT, (size_t)val);
+            OK_TOKEN_DATA(T_FLOAT, d, val);
         }
     }
 }

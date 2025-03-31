@@ -24,7 +24,7 @@ buffer walk_params(AST *ast, const char **names, Symbols *syms) {
 
 Declaration *walk_param(AST *ast, const char **names, Symbols *syms) {
     Declaration *ret;
-    Capture *id;
+    Token *id;
     ret = malloc(sizeof(Declaration));
 
     if (IS_NAME("param_copy")) {
@@ -45,10 +45,10 @@ Declaration *walk_param(AST *ast, const char **names, Symbols *syms) {
         UNREACHABLE;
 
     assert(IS_NAME("typed"));
-    id = (Capture *)SUB_AST(0);
-    assert(id->token == T_ID);
+    id = (Token *)SUB_AST(0);
+    assert(id->id == T_ID);
     ret->lineno = id->lineno;
-    ret->name = (const char *)(id->info);
+    ret->name = id->data.str;
     ret->type = walk_type(SUB_AST(2), names, syms);
 
     return ret;

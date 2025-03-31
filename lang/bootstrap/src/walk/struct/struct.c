@@ -8,7 +8,7 @@ static map walk_struct_def(AST *ast, const char **names, Symbols *syms);
 ObjStruct walk_struct(AST *ast, const char **names, Symbols *syms) {
     ObjStruct ret;
     ObjAnnotations anns;
-    Capture *id;
+    Token *id;
     const char *name;
     map fields;
 
@@ -26,8 +26,8 @@ ObjStruct walk_struct(AST *ast, const char **names, Symbols *syms) {
         ret.generic = NULL;
     }
 
-    id = (Capture *)SUB_AST(2);
-    name = (const char *)(id->info);
+    id = (Token *)SUB_AST(2);
+    name = id->data.str;
 
     ast = SUB_AST(4);
     fields = walk_struct_def(ast, names, syms);
@@ -57,7 +57,7 @@ static map walk_struct_def(AST *ast, const char **names, Symbols *syms) {
         next = SUB_AST(2);
         ast = SUB_AST(0);
 
-        name = (const char *)(((Capture *)SUB_AST(0))->info);
+        name = ((Token *)SUB_AST(0))->data.str;
         type = walk_type(SUB_AST(2), names, syms);
 
         if (map_has(ret, name))

@@ -27,7 +27,7 @@ Type walk_type(AST *ast, const char **names, Symbols *syms) {
         ret.id = TYPE_WORD;
         ret.data = NULL;
     } else if (IS_NAME("type_direct")) {
-        /*Capture *id = (Capture *)(SUB_AST(0));*/
+        /*Token *id = (Token *)(SUB_AST(0));*/
         todo();
     } else if (IS_NAME("type_tuple")) {
         ret.id = TYPE_TUPLE;
@@ -35,7 +35,7 @@ Type walk_type(AST *ast, const char **names, Symbols *syms) {
     } else if (IS_NAME("type_tuple_star")) {
         ObjTupleDef *td = walk_tupledef(SUB_AST(0), names, syms);
         todo();
-        td->rep = (size_t)(((Capture *)SUB_AST(2))->info);
+        /* td->rep run constant-time expression */
         ret.id = TYPE_TUPLE;
         ret.data = td;
     } else
@@ -50,7 +50,7 @@ static ObjTupleDef *walk_tupledef(AST *ast, const char **names, Symbols *syms) {
     assert(IS_NAME("tupledef_one") || IS_NAME("tupledef_many"));
 
     ret = malloc(sizeof(ObjTupleDef));
-    ret->lineno = ((Capture *)SUB_AST(0))->lineno;
+    ret->lineno = ((Token *)SUB_AST(0))->lineno;
     ret->fields = NULL;
     buffer_new(&ret->fields, sizeof(Type));
     ret->rep = 1;

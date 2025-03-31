@@ -31,15 +31,15 @@ static size_t _match(const char **cur, const char *target) {
 }
 
 /* Call _match, maybe call OK_TOKEN */
-#define MATCH_REST(P, T)                                                       \
+#define MATCH_REST(P, X)                                                       \
     if (_match(&cur, P)) {                                                     \
         --cur;                                                                 \
-        OK_TOKEN(T);                                                           \
+        OK_TOKEN(X);                                                           \
     }
-#define MATCH_REST_INFO(P, T, I)                                               \
+#define MATCH_REST_DATA(P, X, T, I)                                            \
     if (_match(&cur, P)) {                                                     \
         --cur;                                                                 \
-        OK_TOKEN_INFO(T, I);                                                   \
+        OK_TOKEN_DATA(X, T, I);                                                \
     }
 
 size_t match_keyword(Capture *ret, const char *cur) {
@@ -118,7 +118,7 @@ size_t match_keyword(Capture *ret, const char *cur) {
                     MAYBE_KEYWORD(T_FALL);
                     return 0;
                 case 's':
-                    MATCH_REST_INFO("e", T_BOOL, 0);
+                    MATCH_REST_DATA("e", T_BOOL, word, 0);
                     return 0;
                 }
                 return 0;
@@ -191,7 +191,7 @@ size_t match_keyword(Capture *ret, const char *cur) {
         return 0;
     case 't':
         /* t: true */
-        MATCH_REST_INFO("rue", T_BOOL, 1);
+        MATCH_REST_DATA("rue", T_BOOL, word, 1);
         return 0;
     case 'u':
         /* u: use */

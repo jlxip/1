@@ -5,14 +5,14 @@
 
 ObjFunction walk_function(AST *ast, const char **names, Symbols *syms) {
     ObjFunction ret;
-    Capture *id;
+    Token *id;
 
     /* TODO: annotations */
 
     /* Get the name */
-    id = (Capture *)SUB_AST(2);
-    assert(id->token == T_ID);
-    ret.name = (char *)(id->info);
+    id = (Token *)SUB_AST(2);
+    assert(id->id == T_ID);
+    ret.name = id->data.str;
     ret.lineno = id->lineno;
 
     /* Parameters */

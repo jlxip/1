@@ -21,7 +21,7 @@ size_t match_id(Capture *ret, const char *cur) {
             buf = malloc(len + 1);
             memcpy(buf, begin, len);
             buf[len] = '\0';
-            OK_TOKEN_INFO(T_ID, (size_t)buf);
+            OK_TOKEN_DATA(T_ID, str, buf);
         }
     }
 }

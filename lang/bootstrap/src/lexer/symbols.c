@@ -42,6 +42,8 @@ size_t match_symbol(Capture *ret, const char *cur) {
             /* != */
             OK_TOKEN(T_NEQ);
         }
+
+        break;
     case '+':
         /* +: +, += */
         if (*cur == '=') {

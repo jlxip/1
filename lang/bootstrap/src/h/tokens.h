@@ -85,7 +85,7 @@ typedef enum {
     T_CBRACES,   /* } */
 
     T_NTOKENS
-} Token;
+} TokenId;
 
 #ifdef GET_TOKEN_STRINGS
 static const char *token_strings[] = {"NULL", "id", "and", "arrow", "assert",
@@ -100,11 +100,16 @@ static const char *token_strings[] = {"NULL", "id", "and", "arrow", "assert",
 #endif
 
 typedef struct {
-    size_t ok;
-    size_t consumed;
     size_t lineno;
-    Token token; /* if ok */
-    size_t info; /* if ok */
-} Capture;
+    TokenId id;
+    union {
+        size_t word;
+        char *str;
+        double d;
+    } data;
+} Token;
+
+typedef buffer Tokens; /* buffer<Token> */
+typedef size_t TokenIdx; /* position in Tokens */
 
 #endif

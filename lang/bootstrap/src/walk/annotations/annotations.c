@@ -30,15 +30,15 @@ ObjAnnotations walk_annotations(AST *ast, const char **names, Symbols *syms) {
 
 static ObjAnnotation walk_annotation(
     AST *ast, const char **names, Symbols *syms) {
-    Capture *id;
+    Token *id;
     ObjAnnotation ret;
 
     (void)syms;
 
-    id = (Capture *)SUB_AST(1);
-    assert(id->token == T_ID);
+    id = (Token *)SUB_AST(1);
+    assert(id->id == T_ID);
     ret.lineno = id->lineno;
-    ret.name = (const char *)(id->info);
+    ret.name = id->data.str;
     ret.args = NULL;
 
     if (IS_NAME("annot")) {
@@ -59,16 +59,16 @@ static ObjAnnotation walk_annotation(
 
 static buffer walk_generic(AST *ast, const char **names) {
     buffer ret = NULL; /* buffer<char*> */
-    Capture *id;
+    Token *id;
 
     assert(IS_NAME("primary_list_direct"));
     ast = SUB_AST(0); /* PRIMARY */
     assert(IS_NAME("primary_id"));
-    id = (Capture *)SUB_AST(0);
-    assert(id->token == T_ID);
+    id = (Token *)SUB_AST(0);
+    assert(id->id == T_ID);
 
     buffer_new(&ret, sizeof(char *));
-    buffer_push(ret, &id->info);
+    buffer_push(ret, &id->data.str);
 
     return ret;
 }

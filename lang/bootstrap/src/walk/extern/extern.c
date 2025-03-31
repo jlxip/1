@@ -5,13 +5,13 @@
 
 ObjExtern walk_extern(AST *ast, const char **names, Symbols *syms) {
     ObjExtern ret;
-    Capture *id;
+    Token *id;
 
     /* Get the name */
-    id = (Capture *)(SUB_AST(1));
-    assert(id->token == T_ID);
+    id = (Token *)(SUB_AST(1));
+    assert(id->id == T_ID);
     ret.lineno = id->lineno;
-    ret.name = (const char *)(id->info);
+    ret.name = id->data.str;
 
     /* Parameters */
     if (IS_NAME("extern_void") || IS_NAME("extern_typed"))

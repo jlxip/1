@@ -1,9 +1,8 @@
 #ifndef COMPILER_H
 #define COMPILER_H
 
-#include <ds/buffer.h>
+#include <tokens.h>
 
-typedef buffer Tokens; /* buffer<Capture> */
 Tokens get_tokens(const char *code);
 
 #ifndef AST_TYPEDEF
