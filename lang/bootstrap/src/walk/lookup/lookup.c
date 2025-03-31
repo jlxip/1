@@ -58,7 +58,8 @@ Declaration *lookup(AST *ast, const char **names, Symbols *syms) {
 
         if (!found)
             throwe("undeclared: %s", name);
-    }
+    } else
+        UNREACHABLE;
 
     return ret;
 }
@@ -66,6 +67,8 @@ Declaration *lookup(AST *ast, const char **names, Symbols *syms) {
 static buffer walk_types(AST *ast, const char **names, Symbols *syms) {
     buffer ret = NULL; /* buffer<Type> */
     buffer_new(&ret, sizeof(Type));
+
+    assert(IS_NAME("types_direct") || IS_NAME("types_rec"));
 
     for (;;) {
         Type t;

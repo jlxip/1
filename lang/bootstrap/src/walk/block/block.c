@@ -10,10 +10,12 @@ void walk_statement(AST *ast, const char **names, Symbols *syms);
 ObjBlock walk_block(AST *ast, const char **names, Symbols *syms) {
     ObjBlock ret;
 
+    assert(IS_NAME("block"));
+    ret.lineno = ((Capture *)SUB_AST(0))->lineno;
+
     ast = SUB_AST(1);
     walk_statements(ast, names, syms);
 
-    ret.lineno = ((Capture *)SUB_AST(0))->lineno;
     return ret;
 }
 

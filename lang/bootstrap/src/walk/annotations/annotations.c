@@ -12,6 +12,7 @@ ObjAnnotations walk_annotations(AST *ast, const char **names, Symbols *syms) {
 
     if (IS_NAME("annot_null"))
         return ret;
+    assert(IS_NAME("annot_rec"));
 
     map_new_string(&ret, sizeof(ObjAnnotation), NULL, NULL, NULL, NULL);
     for (;;) {
@@ -21,6 +22,7 @@ ObjAnnotations walk_annotations(AST *ast, const char **names, Symbols *syms) {
         ast = SUB_AST(1);
         if (IS_NAME("annot_null"))
             break;
+        assert(IS_NAME("annot_rec"));
     }
 
     return ret;

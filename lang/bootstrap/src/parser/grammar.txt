@@ -10,8 +10,7 @@ GLOBAL -> DECLARATION semicolon 'global_decl
 GLOBAL -> FUNCTION 'global_func
 GLOBAL -> STRUCT 'global_struct
 GLOBAL -> IMPL 'global_impl
-
-# TODO: extern
+GLOBAL -> EXTERN 'global_extern
 
 ANNOTATIONS -> ANNOTATION ANNOTATIONS 'annot_rec
 ANNOTATIONS -> EPSILON 'annot_null
@@ -21,9 +20,16 @@ ANNOTATION -> atsymbol id opar PRIMARY_LIST cpar 'annot_args
 PRIMARY_LIST -> PRIMARY comma PRIMARY_LIST 'primary_list_rec
 PRIMARY_LIST -> PRIMARY 'primary_list_direct
 
-FUNCTION -> ANNOTATIONS fn id opar FUNC_ARGS cpar BLOCK 'function
-FUNC_ARGS -> TYPED_ID comma FUNC_ARGS 'typed_ids_rec
-FUNC_ARGS -> EPSILON 'typed_ids_null
+FUNCTION -> ANNOTATIONS fn id BLOCK 'function_noargs_void
+FUNCTION -> ANNOTATIONS fn id arrow TYPE BLOCK 'function_noargs_typed
+FUNCTION -> ANNOTATIONS fn id opar PARAMS cpar BLOCK 'function_void
+FUNCTION -> ANNOTATIONS fn id opar PARAMS cpar arrow TYPE BLOCK 'function_typed
+PARAMS -> PARAM comma PARAMS 'params_rec
+PARAMS -> PARAM 'params_one
+PARAM -> TYPED_ID 'param_copy
+PARAM -> amp TYPED_ID 'param_ref
+PARAM -> plus TYPED_ID 'param_mut
+PARAM -> amp plus TYPED_ID 'param_mutref
 
 
 
@@ -34,11 +40,20 @@ EXPRESSION -> opar EXPRESSION cpar 'expr_par
 %hint id
 EXPRESSION -> PRIMARY 'expr_primary
 
+# Function call
+EXPRESSION -> PRIMARY opar EXPRESSION_LIST_OR_NONE cpar
+EXPRESSION_LIST_OR_NONE -> EPSILON 'expression_list_none
+EXPRESSION_LIST_OR_NONE -> EXPRESSION_LIST 'expression_list
+EXPRESSION_LIST -> EXPRESSION 'expression_list_one
+EXPRESSION_LIST -> EXPRESSION comma EXPRESSION_LIST 'expression_list_rec
+
 EXPRESSION -> LITERAL 'expr_lit
 LITERAL -> bool 'lit_bool
 LITERAL -> word 'lit_word
 LITERAL -> float 'lit_float
 LITERAL -> string 'lit_string
+LITERAL -> TUPLE 'lit_tuple
+TUPLE -> opar EXPRESSION comma EXPRESSION_LIST_OR_NONE cpar 'tuple
 
 # Bitwise: highest priority, it's grouped first
 # That means small chunks: 1 + 3 ^ 5 or 0 -> 1 + (3 ^ 5) or 0
@@ -78,7 +93,7 @@ EXPRESSION -> EXPRESSION dbar EXPRESSION 'expr_or2
 EXPRESSION -> STRUCT_INST 'expr_struct_inst
 STRUCT_INST -> PRIMARY obraces STRUCT_FIELD_INST cbraces 'struct_inst
 STRUCT_FIELD_INST -> id eq EXPRESSION comma STRUCT_FIELD_INST 'struct_field_inst_rec
-STRUCT_FIELD_INST -> EPSILON 'strict_field_inst_null
+STRUCT_FIELD_INST -> EPSILON 'struct_field_inst_null
 
 # Assignments
 EXPRESSION -> ASSIGNMENT 'expr_assign
@@ -110,12 +125,20 @@ DECLARATION -> let TYPED_ID eq EXPRESSION 'decl_let_typed
 DECLARATION -> let plus TYPED_ID eq EXPRESSION 'decl_let_p_typed
 
 TYPED_ID -> id colon TYPE 'typed
+
 TYPE -> kbool 'type_bool
+TYPE -> kbyte 'type_byte
 TYPE -> kfloat 'type_float
 TYPE -> kptr 'type_ptr
 TYPE -> kstring 'type_string
 TYPE -> kword 'type_word
 TYPE -> PRIMARY 'type_direct
+TYPE -> TUPLEDEF 'type_tuple
+TYPE -> TUPLEDEF star EXPRESSION 'type_tuple_star
+
+TUPLEDEF -> opar TYPE comma cpar 'tupledef_one
+TUPLEDEF -> opar TYPE comma TYPES cpar 'tupledef_many
+
 TYPES -> TYPE comma TYPES 'types_rec
 TYPES -> TYPE 'types_direct
 
@@ -132,9 +155,6 @@ CONTROL -> return EXPRESSION 'ctrl_retval
 
 
 # ---------- CONDITIONAL ----------
-CONDITIONAL -> IF 'cond_if
-CONDITIONAL -> SWITCH 'cond_switch
-
 # Dangling else problem, solve by shift
 %left else elif if
 IF -> if EXPRESSION STATEMENT 'if_only
@@ -153,14 +173,6 @@ SWITCH_CASE -> default colon STATEMENTS 'switch_default
 
 
 
-# ---------- LOOP ----------
-LOOP -> FOR 'loop_for
-LOOP -> WHILE 'loop_while
-FOR -> for id in EXPRESSION STATEMENT 'for
-WHILE -> while EXPRESSION STATEMENT 'while
-
-
-
 # ---------- STRUCT ----------
 STRUCT -> ANNOTATIONS struct id obraces STRUCT_DEF cbraces 'struct
 STRUCT_DEF -> TYPED_ID comma STRUCT_DEF 'struct_def
@@ -175,14 +187,31 @@ IMPL_DEF -> EPSILON 'impl_def_null
 
 
 
-# ---------- BLOCK ----------
-BLOCK -> obraces STATEMENTS cbraces 'block
-STATEMENTS -> STATEMENT semicolon STATEMENTS 'stmts_rec
-STATEMENTS -> EPSILON 'stmts_null
+# ---------- EXTERN ----------
+EXTERN -> extern id semicolon 'extern_noargs_void
+EXTERN -> extern id arrow TYPE semicolon 'extern_noargs_typed
+EXTERN -> extern id opar PARAMS cpar semicolon 'extern_void
+EXTERN -> extern id opar PARAMS cpar arrow TYPE semicolon 'extern_typed
 
+
+
+# ---------- BLOCK (STATEMENTS) ----------
+BLOCK -> obraces STATEMENTS cbraces 'block
+STATEMENTS -> STATEMENT STATEMENTS 'stmts_rec
+STATEMENTS -> EPSILON 'stmts_null
 STATEMENT -> BLOCK 'stmt_block
-STATEMENT -> DECLARATION 'stmt_decl
-STATEMENT -> EXPRESSION 'stmt_expr
-STATEMENT -> CONTROL 'stmt_ctrl
-STATEMENT -> CONDITIONAL 'stmt_cond
-STATEMENT -> LOOP 'stmt_loop
+STATEMENT -> DECLARATION semicolon 'stmt_decl
+STATEMENT -> EXPRESSION semicolon 'stmt_expr
+# --- CONTROL ---
+STATEMENT -> assert EXPRESSION semicolon 'stmt_assert
+STATEMENT -> break semicolon 'stmt_break
+STATEMENT -> continue semicolon 'stmt_continue
+STATEMENT -> fall semicolon 'stmt_fall
+STATEMENT -> return semicolon 'stmt_ret
+STATEMENT -> return EXPRESSION semicolon 'stmt_retval
+# --- CONDITIONAL ---
+STATEMENT -> IF 'stmt_if
+STATEMENT -> SWITCH 'stmt_switch
+# --- LOOP ---
+STATEMENT -> for id in EXPRESSION STATEMENT 'stmt_for
+STATEMENT -> while EXPRESSION STATEMENT 'stmt_while

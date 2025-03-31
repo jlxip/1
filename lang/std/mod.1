@@ -1,14 +1,54 @@
+@noreturn
+fn crash(msg: string) {}
+
+extern c_malloc(sz: word) -> ptr;
+
 @generic(T)
-struct Vec {
-    alloc: word,
-    used: word,
-    addr: ptr,
+struct Optional {
+    something: bool,
+    _x: (byte,) * sizeof(T),
 }
 
 @generic(T)
-impl Vec {
-    fn __init__() {
-        self.alloc = self.used = 0;
-        self.addr = 0;
+impl Optional {
+    @static
+    fn new_some(&x: T) -> Self {
+        return Self {
+            something = true,
+            _x = (0,) * sizeof(T),
+        };
     }
+
+    @static
+    fn new_none -> Self {
+        return Self {
+            something = false,
+            _x = (0,) * sizeof(T),
+        };
+    }
+
+    fn __bool__ -> bool {
+        return self.something;
+    }
+
+    fn __question__ -> T {
+        if not self.something
+            crash("questioned optional but got null");
+        return self._x;
+    }
+}
+
+@generic(T)
+struct Vec {
+    reserved: word,
+    used: word,
+    addr: Optional<ptr>,
+}
+
+fn new {
+    return Vec<word> {
+        reserved = 0,
+        used = 0,
+        addr = Optional.new_none(),
+    };
 }

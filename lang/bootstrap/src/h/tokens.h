@@ -11,13 +11,16 @@ typedef enum {
 
     /* --- KEYWORDS --- */
     T_AND,      /* and */
+    T_ARROW,    /* -> */
     T_ASSERT,   /* assert */
     T_BREAK,    /* break */
+    T_KBYTE,    /* byte */
     T_CASE,     /* case */
     T_CONTINUE, /* continue */
     T_DEFAULT,  /* default */
     T_ELIF,     /* elif */
     T_ELSE,     /* else */
+    T_EXTERN,   /* extern */
     T_FALL,     /* fall */
     T_FN,       /* fn */
     T_FOR,      /* for */
@@ -85,15 +88,15 @@ typedef enum {
 } Token;
 
 #ifdef GET_TOKEN_STRINGS
-static const char *token_strings[] = {"NULL", "id", "and", "assert", "break",
-    "case", "continue", "default", "elif", "else", "fall", "fn", "for", "if",
-    "impl", "in", "kbool", "kfloat", "kptr", "kstring", "kword", "let", "not",
-    "or", "return", "struct", "switch", "use", "while", "bool", "word", "float",
-    "string", "deq", "neq", "eq", "pluseq", "plus", "minuseq", "minus",
-    "stareq", "star", "slasheq", "slash", "hateq", "hat", "ampeq", "damp",
-    "ampplus", "amp", "bareq", "dbar", "bar", "leq", "lt", "geq", "gt", "dot",
-    "comma", "colon", "semicolon", "atsymbol", "opar", "cpar", "obracket",
-    "cbracket", "obraces", "cbraces", NULL};
+static const char *token_strings[] = {"NULL", "id", "and", "arrow", "assert",
+    "break", "kbyte", "case", "continue", "default", "elif", "else", "extern",
+    "fall", "fn", "for", "if", "impl", "in", "kbool", "kfloat", "kptr",
+    "kstring", "kword", "let", "not", "or", "return", "struct", "switch", "use",
+    "while", "bool", "word", "float", "string", "deq", "neq", "eq", "pluseq",
+    "plus", "minuseq", "minus", "stareq", "star", "slasheq", "slash", "hateq",
+    "hat", "ampeq", "damp", "ampplus", "amp", "bareq", "dbar", "bar", "leq",
+    "lt", "geq", "gt", "dot", "comma", "colon", "semicolon", "atsymbol", "opar",
+    "cpar", "obracket", "cbracket", "obraces", "cbraces", NULL};
 #endif
 
 typedef struct {

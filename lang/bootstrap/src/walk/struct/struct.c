@@ -12,6 +12,8 @@ ObjStruct walk_struct(AST *ast, const char **names, Symbols *syms) {
     const char *name;
     map fields;
 
+    assert(IS_NAME("struct"));
+
     anns = walk_annotations(SUB_AST(0), names, syms);
     if (anns) {
         if (map_has(anns, "generic")) {
@@ -40,7 +42,6 @@ static map walk_struct_def(AST *ast, const char **names, Symbols *syms) {
     map ret = NULL; /* map<const char*, Type> */
     if (IS_NAME("struct_def_null"))
         throw("empty struct");
-
     assert(IS_NAME("struct_def"));
     map_new_string(&ret, sizeof(Type), NULL, NULL, NULL, NULL);
 
@@ -51,6 +52,7 @@ static map walk_struct_def(AST *ast, const char **names, Symbols *syms) {
 
         if (IS_NAME("struct_def_null"))
             break;
+        assert(IS_NAME("struct_def"));
 
         next = SUB_AST(2);
         ast = SUB_AST(0);

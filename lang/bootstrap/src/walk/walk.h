@@ -19,12 +19,15 @@
     } while (0)
 
 typedef enum {
+    TYPE_NOTHING, /* only used in function returns */
     /* Atomic types */
     TYPE_BOOL,
+    TYPE_BYTE,
     TYPE_FLOAT,
     TYPE_PTR,
     TYPE_STRING,
     TYPE_WORD,
+    TYPE_TUPLE,
     /* Others */
     TYPE_FUNC,
     TYPE_STRUCT_DEF,
@@ -42,6 +45,7 @@ typedef struct {
     const char *name;
     Type type;
     bool mut;
+    bool ref;
 } Declaration;
 
 typedef map SymbolTable; /* map<char*, Declaration> */

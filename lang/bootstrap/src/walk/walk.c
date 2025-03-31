@@ -1,6 +1,7 @@
 #include "walk.h"
 #include "block/decl/decl.h"
 #include "expr/expr.h"
+#include "extern/extern.h"
 #include "func/func.h"
 #include "impl/impl.h"
 #include "struct/struct.h"
@@ -57,7 +58,6 @@ void walk_global(AST *ast, const char **names, Symbols *syms) {
         /* TODO: assert declaration's expression is KACT */
     } else if (IS_NAME("global_func")) {
         ast = SUB_AST(0);
-        assert(IS_NAME("function"));
         walk_function(ast, names, syms);
     } else if (IS_NAME("global_struct")) {
         ObjStruct *x;
@@ -78,6 +78,9 @@ void walk_global(AST *ast, const char **names, Symbols *syms) {
         ast = SUB_AST(0);
         assert(IS_NAME("impl"));
         walk_impl(ast, names, syms);
+    } else if (IS_NAME("global_extern")) {
+        ast = SUB_AST(0);
+        walk_extern(ast, names, syms);
     } else
         UNREACHABLE;
 }

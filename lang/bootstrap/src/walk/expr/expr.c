@@ -53,8 +53,12 @@ ObjExpression walk_expr(AST *ast, const char **names, Symbols *syms) {
     } else if (IS_NAME("expr_or2")) {
         todo();
     } else if (IS_NAME("expr_struct_inst")) {
+        ObjStructInst inst;
         ast = SUB_AST(0);
-        walk_struct_inst(ast, names, syms);
+        inst = walk_struct_inst(ast, names, syms);
+        ret.lineno = inst.lineno;
+        ret.type = inst.type;
+        /* inst.fills ignored for now */
     } else if (IS_NAME("expr_assign")) {
         ObjAssign assign;
         ast = SUB_AST(0);

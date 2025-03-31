@@ -53,11 +53,16 @@ size_t match_symbol(Capture *ret, const char *cur) {
         /* + */
         OK_TOKEN(T_PLUS);
     case '-':
-        /* -: -, -= */
-        if (*cur == '=') {
+        /* -: -, -=, -> */
+        switch (*cur) {
+        case '=':
             /* -= */
             ++cur;
             OK_TOKEN(T_MINUSEQ);
+        case '>':
+            /* -> */
+            ++cur;
+            OK_TOKEN(T_ARROW);
         }
 
         /* - */

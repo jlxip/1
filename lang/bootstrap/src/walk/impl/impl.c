@@ -4,9 +4,25 @@
 #include "../lookup/lookup.h"
 
 void walk_impl(AST *ast, const char **names, Symbols *syms) {
-    (void)ast;
-    (void)names;
-    (void)syms;
+    /* ANNOTATIONS impl PRIMARY obraces IMPL_DEF cbraces  */
+    Declaration *decl;
+
+    /* TODO: annotations */
+
+    decl = lookup(SUB_AST(2), names, syms);
+    if (decl->type.id == TYPE_STRUCT_DEF) {
+        todo();
+    } else if (decl->type.id == TYPE_STRUCT_SPECIFIC) {
+        todo();
+    } else {
+        throw("can only implement a struct");
+    }
+
+    NEW_SCOPE;
+    PUSH_TO_SCOPE("Self", decl);
+    POP_SCOPE;
+
+    /*walk_impl_def(SUB_AST(4), names, syms);*/
     todo();
 }
 

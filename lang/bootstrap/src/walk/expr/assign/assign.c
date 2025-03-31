@@ -22,7 +22,7 @@ ObjAssign walk_assign(AST *ast, const char **names, Symbols *syms) {
     case TYPE_STRING:
         break;
     default:
-        todo();
+        UNREACHABLE;
     }
 
     /*if (IS_NAME("assign_eq")) {
