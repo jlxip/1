@@ -1,12 +1,9 @@
 #include "type.h"
-#include <tokens.h>
 
-static ObjTupleDef *walk_tupledef(AST *ast, const char **names, Symbols *syms);
+static ObjTupleDef *walk_tupledef(WalkCtx *ctx, AST *ast);
 
-Type walk_type(AST *ast, const char **names, Symbols *syms) {
+Type walk_type(WalkCtx *ctx, AST *ast) {
     Type ret;
-
-    (void)syms;
 
     if (IS_NAME("type_bool")) {
         ret.id = TYPE_BOOL;
@@ -31,9 +28,9 @@ Type walk_type(AST *ast, const char **names, Symbols *syms) {
         todo();
     } else if (IS_NAME("type_tuple")) {
         ret.id = TYPE_TUPLE;
-        ret.data = walk_tupledef(SUB_AST(0), names, syms);
+        ret.data = walk_tupledef(ctx, SUB_AST(0));
     } else if (IS_NAME("type_tuple_star")) {
-        ObjTupleDef *td = walk_tupledef(SUB_AST(0), names, syms);
+        ObjTupleDef *td = walk_tupledef(ctx, SUB_AST(0));
         todo();
         /* td->rep run constant-time expression */
         ret.id = TYPE_TUPLE;
@@ -44,7 +41,7 @@ Type walk_type(AST *ast, const char **names, Symbols *syms) {
     return ret;
 }
 
-static ObjTupleDef *walk_tupledef(AST *ast, const char **names, Symbols *syms) {
+static ObjTupleDef *walk_tupledef(WalkCtx *ctx, AST *ast) {
     ObjTupleDef *ret;
     Type aux;
     assert(IS_NAME("tupledef_one") || IS_NAME("tupledef_many"));
@@ -55,13 +52,13 @@ static ObjTupleDef *walk_tupledef(AST *ast, const char **names, Symbols *syms) {
     buffer_new(&ret->fields, sizeof(Type));
     ret->rep = 1;
 
-    aux = walk_type(SUB_AST(1), names, syms);
+    aux = walk_type(ctx, SUB_AST(1));
     buffer_push(ret->fields, &aux);
     if (IS_NAME("tupledef_many")) {
         ast = SUB_AST(3);
         assert(IS_NAME("types_rec") || IS_NAME("types_direct"));
         for (;;) {
-            aux = walk_type(SUB_AST(0), names, syms);
+            aux = walk_type(ctx, SUB_AST(0));
             buffer_push(ret->fields, &aux);
             if (IS_NAME("types_direct"))
                 break;

@@ -55,6 +55,9 @@ LITERAL -> string 'lit_string
 LITERAL -> TUPLE 'lit_tuple
 TUPLE -> opar EXPRESSION comma EXPRESSION_LIST_OR_NONE cpar 'tuple
 
+%left sizeof
+EXPRESSION -> sizeof EXPRESSION 'expr_sizeof
+
 # Bitwise: highest priority, it's grouped first
 # That means small chunks: 1 + 3 ^ 5 or 0 -> 1 + (3 ^ 5) or 0
 %left hat amp bar

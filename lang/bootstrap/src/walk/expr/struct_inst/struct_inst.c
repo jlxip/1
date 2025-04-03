@@ -2,11 +2,10 @@
 #include "../../lookup/lookup.h"
 #include "../../struct/struct.h"
 #include "../expr.h"
-#include <tokens.h>
 
-static map walk_sfinst(AST *ast, const char **names, Symbols *syms);
+static map walk_sfinst(WalkCtx *ctx, AST *ast);
 
-ObjStructInst walk_struct_inst(AST *ast, const char **names, Symbols *syms) {
+ObjStructInst walk_struct_inst(WalkCtx *ctx, AST *ast) {
     ObjStructInst ret;
     Declaration *struct_def;
     ObjStruct *sd;
@@ -14,7 +13,7 @@ ObjStructInst walk_struct_inst(AST *ast, const char **names, Symbols *syms) {
     map_iterator it;
 
     assert(IS_NAME("struct_inst"));
-    struct_def = lookup(SUB_AST(0), names, syms);
+    struct_def = lookup(ctx, SUB_AST(0));
     ret.type = struct_def->type;
     if (struct_def->type.id == TYPE_STRUCT_DEF) {
         sd = (ObjStruct *)(struct_def->type.data);
@@ -28,7 +27,7 @@ ObjStructInst walk_struct_inst(AST *ast, const char **names, Symbols *syms) {
         throw("can only instantiate a struct");
     }
 
-    fills = walk_sfinst(SUB_AST(2), names, syms);
+    fills = walk_sfinst(ctx, SUB_AST(2));
     if (map_num(fills) != map_num(sd->fields))
         throw("invalid number of fields in struct instantiation");
 
@@ -57,7 +56,7 @@ ObjStructInst walk_struct_inst(AST *ast, const char **names, Symbols *syms) {
     return ret;
 }
 
-static map walk_sfinst(AST *ast, const char **names, Symbols *syms) {
+static map walk_sfinst(WalkCtx *ctx, AST *ast) {
     map ret = NULL; /* map<char*, ObjExpression> */
     map_new_string(&ret, sizeof(ObjExpression), NULL, NULL, NULL, NULL);
 
@@ -78,7 +77,7 @@ static map walk_sfinst(AST *ast, const char **names, Symbols *syms) {
         assert(id->id == T_ID);
         name = id->data.str;
 
-        expr = walk_expr(SUB_AST(2), names, syms);
+        expr = walk_expr(ctx, SUB_AST(2));
 
         map_add(ret, name, &expr);
         ast = SUB_AST(4);

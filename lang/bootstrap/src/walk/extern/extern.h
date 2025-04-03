@@ -10,6 +10,6 @@ typedef struct {
     Type ret;
 } ObjExtern;
 
-ObjExtern walk_extern(AST *ast, const char **names, Symbols *syms);
+ObjExtern walk_extern(WalkCtx *ctx, AST *ast);
 
 #endif

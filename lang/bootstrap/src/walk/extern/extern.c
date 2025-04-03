@@ -1,9 +1,8 @@
 #include "extern.h"
 #include "../func/func.h"
 #include "../type/type.h"
-#include <tokens.h>
 
-ObjExtern walk_extern(AST *ast, const char **names, Symbols *syms) {
+ObjExtern walk_extern(WalkCtx *ctx, AST *ast) {
     ObjExtern ret;
     Token *id;
 
@@ -15,15 +14,15 @@ ObjExtern walk_extern(AST *ast, const char **names, Symbols *syms) {
 
     /* Parameters */
     if (IS_NAME("extern_void") || IS_NAME("extern_typed"))
-        ret.params = walk_params(SUB_AST(3), names, syms);
+        ret.params = walk_params(ctx, SUB_AST(3));
     else
         ret.params = NULL;
 
     /* Return type */
     if (IS_NAME("extern_noargs_typed")) {
-        ret.ret = walk_type(SUB_AST(3), names, syms);
+        ret.ret = walk_type(ctx, SUB_AST(3));
     } else if (IS_NAME("extern_typed")) {
-        ret.ret = walk_type(SUB_AST(6), names, syms);
+        ret.ret = walk_type(ctx, SUB_AST(6));
     } else {
         ret.ret.id = TYPE_NOTHING;
         ret.ret.data = NULL;

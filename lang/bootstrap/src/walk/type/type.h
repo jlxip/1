@@ -11,6 +11,6 @@ typedef struct {
     size_t rep;
 } ObjTupleDef;
 
-Type walk_type(AST *ast, const char **names, Symbols *syms);
+Type walk_type(WalkCtx *ctx, AST *ast);
 
 #endif

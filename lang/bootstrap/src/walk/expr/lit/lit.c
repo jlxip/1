@@ -1,10 +1,8 @@
 #include "lit.h"
-#include <tokens.h>
 
-ObjLiteral walk_lit(AST *ast, const char **names, Symbols *syms) {
+ObjLiteral walk_lit(WalkCtx *ctx, AST *ast) {
     ObjLiteral ret;
     Token *capture = (Token *)SUB_AST(0); /* applies to all */
-    (void)syms;
 
     if (IS_NAME("lit_bool")) {
         todo();

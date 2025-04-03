@@ -11,6 +11,6 @@ typedef struct {
     /* void* kact_val; */
 } ObjLiteral;
 
-ObjLiteral walk_lit(AST *ast, const char **names, Symbols *syms);
+ObjLiteral walk_lit(WalkCtx *ctx, AST *ast);
 
 #endif

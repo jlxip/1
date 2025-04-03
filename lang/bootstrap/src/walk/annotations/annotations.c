@@ -1,13 +1,11 @@
 #include "annotations.h"
 #include "../lookup/lookup.h"
-#include <tokens.h>
 
-static ObjAnnotation walk_annotation(
-    AST *ast, const char **names, Symbols *syms);
-static buffer walk_generic(AST *ast, const char **names);
-static buffer walk_primary_list(AST *ast, const char **names, Symbols *syms);
+static ObjAnnotation walk_annotation(WalkCtx *ctx, AST *ast);
+static buffer walk_generic(WalkCtx *ctx, AST *ast);
+static buffer walk_primary_list(WalkCtx *ctx, AST *ast);
 
-ObjAnnotations walk_annotations(AST *ast, const char **names, Symbols *syms) {
+ObjAnnotations walk_annotations(WalkCtx *ctx, AST *ast) {
     ObjAnnotations ret = NULL;
 
     if (IS_NAME("annot_null"))
@@ -16,7 +14,7 @@ ObjAnnotations walk_annotations(AST *ast, const char **names, Symbols *syms) {
 
     map_new_string(&ret, sizeof(ObjAnnotation), NULL, NULL, NULL, NULL);
     for (;;) {
-        ObjAnnotation ann = walk_annotation(SUB_AST(0), names, syms);
+        ObjAnnotation ann = walk_annotation(ctx, SUB_AST(0));
         map_add(ret, ann.name, &ann);
 
         ast = SUB_AST(1);
@@ -28,12 +26,9 @@ ObjAnnotations walk_annotations(AST *ast, const char **names, Symbols *syms) {
     return ret;
 }
 
-static ObjAnnotation walk_annotation(
-    AST *ast, const char **names, Symbols *syms) {
+static ObjAnnotation walk_annotation(WalkCtx *ctx, AST *ast) {
     Token *id;
     ObjAnnotation ret;
-
-    (void)syms;
 
     id = (Token *)SUB_AST(1);
     assert(id->id == T_ID);
@@ -46,10 +41,10 @@ static ObjAnnotation walk_annotation(
     } else if (IS_NAME("annot_args")) {
         if (0 == strcmp(ret.name, "generic")) {
             /* Args are undefined */
-            ret.args = walk_generic(SUB_AST(3), names);
+            ret.args = walk_generic(ctx, SUB_AST(3));
         } else {
             /* In all other cases args are expected to be defined */
-            ret.args = walk_primary_list(SUB_AST(3), names, syms);
+            ret.args = walk_primary_list(ctx, SUB_AST(3));
         }
     } else
         UNREACHABLE;
@@ -57,7 +52,7 @@ static ObjAnnotation walk_annotation(
     return ret;
 }
 
-static buffer walk_generic(AST *ast, const char **names) {
+static buffer walk_generic(WalkCtx *ctx, AST *ast) {
     buffer ret = NULL; /* buffer<char*> */
     Token *id;
 
@@ -73,12 +68,12 @@ static buffer walk_generic(AST *ast, const char **names) {
     return ret;
 }
 
-static buffer walk_primary_list(AST *ast, const char **names, Symbols *syms) {
+static buffer walk_primary_list(WalkCtx *ctx, AST *ast) {
     buffer ret = NULL; /* buffer<Declaration*> */
     buffer_new(&ret, sizeof(Declaration *));
 
     for (;;) {
-        Declaration *decl = lookup(SUB_AST(0), names, syms);
+        Declaration *decl = lookup(ctx, SUB_AST(0));
         buffer_push(ret, &decl);
 
         if (IS_NAME("primary_list_direct")) {

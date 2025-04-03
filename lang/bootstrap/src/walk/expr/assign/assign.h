@@ -9,6 +9,6 @@ typedef struct {
     /* string code; */
 } ObjAssign;
 
-ObjAssign walk_assign(AST *ast, const char **names, Symbols *syms);
+ObjAssign walk_assign(WalkCtx *ctx, AST *ast);
 
 #endif

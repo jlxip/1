@@ -15,6 +15,6 @@ typedef struct {
     buffer specific; /* buffer<Type> */
 } ObjSpecificStruct;
 
-ObjStruct walk_struct(AST *ast, const char **names, Symbols *syms);
+ObjStruct walk_struct(WalkCtx *ctx, AST *ast);
 
 #endif

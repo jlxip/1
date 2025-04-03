@@ -1,11 +1,10 @@
 #include "struct.h"
 #include "../annotations/annotations.h"
 #include "../type/type.h"
-#include <tokens.h>
 
-static map walk_struct_def(AST *ast, const char **names, Symbols *syms);
+static map walk_struct_def(WalkCtx *ctx, AST *ast);
 
-ObjStruct walk_struct(AST *ast, const char **names, Symbols *syms) {
+ObjStruct walk_struct(WalkCtx *ctx, AST *ast) {
     ObjStruct ret;
     ObjAnnotations anns;
     Token *id;
@@ -14,7 +13,7 @@ ObjStruct walk_struct(AST *ast, const char **names, Symbols *syms) {
 
     assert(IS_NAME("struct"));
 
-    anns = walk_annotations(SUB_AST(0), names, syms);
+    anns = walk_annotations(ctx, SUB_AST(0));
     if (anns) {
         if (map_has(anns, "generic")) {
             ObjAnnotation *generic = map_get(anns, "generic", ObjAnnotation);
@@ -30,7 +29,7 @@ ObjStruct walk_struct(AST *ast, const char **names, Symbols *syms) {
     name = id->data.str;
 
     ast = SUB_AST(4);
-    fields = walk_struct_def(ast, names, syms);
+    fields = walk_struct_def(ctx, ast);
 
     ret.lineno = id->lineno;
     ret.name = name;
@@ -38,7 +37,7 @@ ObjStruct walk_struct(AST *ast, const char **names, Symbols *syms) {
     return ret;
 }
 
-static map walk_struct_def(AST *ast, const char **names, Symbols *syms) {
+static map walk_struct_def(WalkCtx *ctx, AST *ast) {
     map ret = NULL; /* map<const char*, Type> */
     if (IS_NAME("struct_def_null"))
         throw("empty struct");
@@ -58,7 +57,7 @@ static map walk_struct_def(AST *ast, const char **names, Symbols *syms) {
         ast = SUB_AST(0);
 
         name = ((Token *)SUB_AST(0))->data.str;
-        type = walk_type(SUB_AST(2), names, syms);
+        type = walk_type(ctx, SUB_AST(2));
 
         if (map_has(ret, name))
             throwe("multiple fields named %s", name);

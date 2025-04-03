@@ -1,16 +1,15 @@
 #include "../type/type.h"
 #include "func.h"
-#include <tokens.h>
 
-static Declaration *walk_param(AST *ast, const char **names, Symbols *syms);
+static Declaration *walk_param(WalkCtx *ctx, AST *ast);
 
-buffer walk_params(AST *ast, const char **names, Symbols *syms) {
+buffer walk_params(WalkCtx *ctx, AST *ast) {
     buffer ret = NULL; /* buffer<Declaration*> */
     assert(IS_NAME("params_rec") || IS_NAME("params_one"));
     buffer_new(&ret, sizeof(Declaration));
 
     for (;;) {
-        Declaration *param = walk_param(SUB_AST(0), names, syms);
+        Declaration *param = walk_param(ctx, SUB_AST(0));
         buffer_push(ret, &param);
 
         if (IS_NAME("params_one"))
@@ -22,7 +21,7 @@ buffer walk_params(AST *ast, const char **names, Symbols *syms) {
     return ret;
 }
 
-Declaration *walk_param(AST *ast, const char **names, Symbols *syms) {
+static Declaration *walk_param(WalkCtx *ctx, AST *ast) {
     Declaration *ret;
     Token *id;
     ret = malloc(sizeof(Declaration));
@@ -49,7 +48,7 @@ Declaration *walk_param(AST *ast, const char **names, Symbols *syms) {
     assert(id->id == T_ID);
     ret->lineno = id->lineno;
     ret->name = id->data.str;
-    ret->type = walk_type(SUB_AST(2), names, syms);
+    ret->type = walk_type(ctx, SUB_AST(2));
 
     return ret;
 }

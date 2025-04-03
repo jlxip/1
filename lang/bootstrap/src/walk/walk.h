@@ -7,15 +7,13 @@
 #include <ds/map.h>
 #include <string.h>
 
-#define WALKFUNC(X) void walk_##X(AST *ast, const char **names, Symbols *syms)
-
 #define SUB_AST(N) (*buffer_get(ast->sub, N, AST *))
-#define IS_NAME(X) (strcmp(names[ast->prod], X) == 0)
+#define IS_NAME(X) (strcmp(ctx->names[ast->prod], X) == 0)
 
 /* Useful for debugging */
 #define PRINT_NAME                                                             \
     do {                                                                       \
-        printf("name: %s\n", names[ast->prod]);                                \
+        printf("name: %s\n", ctx->names[ast->prod]);                           \
     } while (0)
 
 typedef enum {
@@ -51,14 +49,20 @@ typedef struct {
 typedef map SymbolTable; /* map<char*, Declaration> */
 typedef buffer Symbols;  /* buffer<SymbolTable> */
 
+typedef struct {
+    Tokens tokens;
+    const char **names; /* name of productions */
+    Symbols syms;
+} WalkCtx;
+
 #define NEW_SCOPE                                                              \
     do {                                                                       \
         map _x = NULL;                                                         \
         map_new_string(&_x, sizeof(Declaration), NULL, NULL, NULL, NULL);      \
-        buffer_push(*syms, &_x);                                               \
+        buffer_push(ctx->syms, &_x);                                           \
     } while (0)
 
-#define TOP_SCOPE (*buffer_back(*syms, SymbolTable))
+#define TOP_SCOPE (*buffer_back(ctx->syms, SymbolTable))
 
 #define PUSH_TO_SCOPE(NAME, DECL)                                              \
     do {                                                                       \
@@ -69,7 +73,7 @@ typedef buffer Symbols;  /* buffer<SymbolTable> */
 
 #define POP_SCOPE                                                              \
     do {                                                                       \
-        buffer_pop(*syms);                                                     \
+        buffer_pop(ctx->syms);                                                 \
     } while (0)
 
 #endif

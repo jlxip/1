@@ -2,7 +2,7 @@
 
 ## 1 Bootstrap Compiler
 
-This is a compiler written in 100% portable C89. It translates 1 into C89.
+This is a compiler written in 100% portable ANSI C. It translates 1 into ANSI C.
 
 Even though this compiles perfectly fine with `-Werror -Wall -Wextra -pedantic`,
 you probably want to disable warnings when using an old compiler, in case of bugs.

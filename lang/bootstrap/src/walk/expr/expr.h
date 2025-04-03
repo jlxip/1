@@ -11,6 +11,6 @@ typedef struct {
     /* void* kact_val; */
 } ObjExpression;
 
-ObjExpression walk_expr(AST *ast, const char **names, Symbols *syms);
+ObjExpression walk_expr(WalkCtx *ctx, AST *ast);
 
 #endif

@@ -3,6 +3,6 @@
 
 #include "../../walk.h"
 
-Declaration walk_decl(AST *ast, const char **names, Symbols *syms);
+Declaration walk_decl(WalkCtx *ctx, AST *ast);
 
 #endif

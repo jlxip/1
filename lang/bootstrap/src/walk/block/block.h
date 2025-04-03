@@ -8,6 +8,6 @@ typedef struct {
     /* string code; */
 } ObjBlock;
 
-ObjBlock walk_block(AST *ast, const char **names, Symbols *syms);
+ObjBlock walk_block(WalkCtx *ctx, AST *ast);
 
 #endif

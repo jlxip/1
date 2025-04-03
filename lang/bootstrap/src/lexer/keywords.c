@@ -173,8 +173,14 @@ size_t match_keyword(Capture *ret, const char *cur) {
         MATCH_REST("eturn", T_RETURN);
         return 0;
     case 's':
-        /* s: string, struct */
-        if (*cur++ == 't') {
+        /* s: sizeof, string, struct */
+        switch (*cur++) {
+        case 'i':
+            /* si: sizeof */
+            MATCH_REST("zeof", T_SIZEOF);
+            return 0;
+        case 't':
+            /* st: string, struct */
             if (*cur++ == 'r') {
                 switch (*cur++) {
                 case 'i':

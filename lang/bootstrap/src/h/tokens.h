@@ -36,6 +36,7 @@ typedef enum {
     T_NOT,      /* not */
     T_OR,       /* or */
     T_RETURN,   /* return */
+    T_SIZEOF,   /* sizeof */
     T_STRUCT,   /* struct */
     T_SWITCH,   /* switch */
     T_USE,      /* use */
@@ -91,12 +92,13 @@ typedef enum {
 static const char *token_strings[] = {"NULL", "id", "and", "arrow", "assert",
     "break", "kbyte", "case", "continue", "default", "elif", "else", "extern",
     "fall", "fn", "for", "if", "impl", "in", "kbool", "kfloat", "kptr",
-    "kstring", "kword", "let", "not", "or", "return", "struct", "switch", "use",
-    "while", "bool", "word", "float", "string", "deq", "neq", "eq", "pluseq",
-    "plus", "minuseq", "minus", "stareq", "star", "slasheq", "slash", "hateq",
-    "hat", "ampeq", "damp", "ampplus", "amp", "bareq", "dbar", "bar", "leq",
-    "lt", "geq", "gt", "dot", "comma", "colon", "semicolon", "atsymbol", "opar",
-    "cpar", "obracket", "cbracket", "obraces", "cbraces", NULL};
+    "kstring", "kword", "let", "not", "or", "return", "sizeof", "struct",
+    "switch", "use", "while", "bool", "word", "float", "string", "deq", "neq",
+    "eq", "pluseq", "plus", "minuseq", "minus", "stareq", "star", "slasheq",
+    "slash", "hateq", "hat", "ampeq", "damp", "ampplus", "amp", "bareq", "dbar",
+    "bar", "leq", "lt", "geq", "gt", "dot", "comma", "colon", "semicolon",
+    "atsymbol", "opar", "cpar", "obracket", "cbracket", "obraces", "cbraces",
+    NULL};
 #endif
 
 typedef struct {

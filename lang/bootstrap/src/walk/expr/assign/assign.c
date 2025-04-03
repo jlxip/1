@@ -2,16 +2,16 @@
 #include "../../lookup/lookup.h"
 #include "../expr.h"
 
-ObjAssign walk_assign(AST *ast, const char **names, Symbols *syms) {
+ObjAssign walk_assign(WalkCtx *ctx, AST *ast) {
     ObjAssign ret;
     Declaration *decl;
     ObjExpression rhs;
 
-    decl = lookup(SUB_AST(0), names, syms);
+    decl = lookup(ctx, SUB_AST(0));
     if (!decl->mut)
         throwe("tried to assign to immutable symbol: %s", decl->name);
 
-    rhs = walk_expr(SUB_AST(2), names, syms);
+    rhs = walk_expr(ctx, SUB_AST(2));
     if (decl->type.id != rhs.type.id)
         throwe("type error in assignment to: %s", decl->name);
 

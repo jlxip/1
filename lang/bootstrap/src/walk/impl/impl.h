@@ -3,6 +3,6 @@
 
 #include "../walk.h"
 
-void walk_impl(AST *ast, const char **names, Symbols *syms);
+void walk_impl(WalkCtx *ctx, AST *ast);
 
 #endif

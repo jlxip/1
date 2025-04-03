@@ -22,6 +22,6 @@ typedef struct {
 #endif
 
 ASTRoot parse(const Tokens tokens);
-void walk(ASTRoot ast);
+void walk(ASTRoot ast, Tokens tokens);
 
 #endif

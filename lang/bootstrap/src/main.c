@@ -33,7 +33,7 @@ int main(int argc, const char *argv[]) {
     ast = parse(tokens);
 
     /* Walk the AST */
-    walk(ast);
+    walk(ast, tokens);
 
     buffer_out(&tokens);
     return 0;

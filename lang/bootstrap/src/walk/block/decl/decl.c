@@ -1,8 +1,7 @@
 #include "decl.h"
 #include "../../expr/expr.h"
-#include <tokens.h>
 
-Declaration walk_decl(AST *ast, const char **names, Symbols *syms) {
+Declaration walk_decl(WalkCtx *ctx, AST *ast) {
     bool typed = false;
     AST *lhs, *rhs;
     ObjExpression expr;
@@ -44,7 +43,7 @@ Declaration walk_decl(AST *ast, const char **names, Symbols *syms) {
     } while (0);
 
     /* Get rhs */
-    expr = walk_expr(rhs, names, syms);
+    expr = walk_expr(ctx, rhs);
 
     ret.type = expr.type;
     PUSH_TO_SCOPE(ret.name, ret);

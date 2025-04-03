@@ -3,6 +3,6 @@
 
 #include "../walk.h"
 
-Declaration *lookup(AST *ast, const char **names, Symbols *syms);
+Declaration *lookup(WalkCtx *ctx, AST *ast);
 
 #endif

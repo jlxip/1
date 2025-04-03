@@ -1,11 +1,10 @@
 #include "lookup.h"
 #include "../struct/struct.h"
 #include "../type/type.h"
-#include <tokens.h>
 
-static buffer walk_types(AST *ast, const char **names, Symbols *syms);
+static buffer walk_types(WalkCtx *ctx, AST *ast);
 
-Declaration *lookup(AST *ast, const char **names, Symbols *syms) {
+Declaration *lookup(WalkCtx *ctx, AST *ast) {
     Declaration *ret;
 
     if (IS_NAME("primary_dot")) {
@@ -14,7 +13,7 @@ Declaration *lookup(AST *ast, const char **names, Symbols *syms) {
         ObjStruct *sd;
         ObjSpecificStruct *specific;
 
-        ret = lookup(SUB_AST(0), names, syms);
+        ret = lookup(ctx, SUB_AST(0));
         if (ret->type.id != TYPE_STRUCT_DEF)
             throw("tried to specify a non-struct");
         sd = (ObjStruct *)(ret->type.data);
@@ -23,7 +22,7 @@ Declaration *lookup(AST *ast, const char **names, Symbols *syms) {
 
         specific = malloc(sizeof(ObjSpecificStruct));
         specific->struct_def = ret;
-        specific->specific = walk_types(SUB_AST(2), names, syms);
+        specific->specific = walk_types(ctx, SUB_AST(2));
 
         if (buffer_num(sd->generic) != buffer_num(specific->specific))
             throw("incorrect number of types in specification");
@@ -46,9 +45,9 @@ Declaration *lookup(AST *ast, const char **names, Symbols *syms) {
         name = id->data.str;
 
         found = false;
-        nsyms = buffer_num(*syms);
+        nsyms = buffer_num(ctx->syms);
         for (i = 0; i < nsyms; ++i) {
-            SymbolTable st = *buffer_get(*syms, nsyms - i - 1, SymbolTable);
+            SymbolTable st = *buffer_get(ctx->syms, nsyms - i - 1, SymbolTable);
             if (map_has(st, name)) {
                 ret = map_get(st, name, Declaration);
                 found = true;
@@ -64,7 +63,7 @@ Declaration *lookup(AST *ast, const char **names, Symbols *syms) {
     return ret;
 }
 
-static buffer walk_types(AST *ast, const char **names, Symbols *syms) {
+static buffer walk_types(WalkCtx *ctx, AST *ast) {
     buffer ret = NULL; /* buffer<Type> */
     buffer_new(&ret, sizeof(Type));
 
@@ -72,7 +71,7 @@ static buffer walk_types(AST *ast, const char **names, Symbols *syms) {
 
     for (;;) {
         Type t;
-        t = walk_type(SUB_AST(0), names, syms);
+        t = walk_type(ctx, SUB_AST(0));
         buffer_push(ret, &t);
 
         if (IS_NAME("types_direct"))

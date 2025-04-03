@@ -3,7 +3,7 @@
 #include "lit/lit.h"
 #include "struct_inst/struct_inst.h"
 
-ObjExpression walk_expr(AST *ast, const char **names, Symbols *syms) {
+ObjExpression walk_expr(WalkCtx *ctx, AST *ast) {
     ObjExpression ret;
 
     if (IS_NAME("expr_par")) {
@@ -13,7 +13,7 @@ ObjExpression walk_expr(AST *ast, const char **names, Symbols *syms) {
     } else if (IS_NAME("expr_lit")) {
         ObjLiteral lit;
         ast = SUB_AST(0);
-        lit = walk_lit(ast, names, syms);
+        lit = walk_lit(ctx, ast);
         ret.lineno = lit.lineno;
         ret.type = lit.type;
     } else if (IS_NAME("expr_hat")) {
@@ -55,14 +55,14 @@ ObjExpression walk_expr(AST *ast, const char **names, Symbols *syms) {
     } else if (IS_NAME("expr_struct_inst")) {
         ObjStructInst inst;
         ast = SUB_AST(0);
-        inst = walk_struct_inst(ast, names, syms);
+        inst = walk_struct_inst(ctx, ast);
         ret.lineno = inst.lineno;
         ret.type = inst.type;
         /* inst.fills ignored for now */
     } else if (IS_NAME("expr_assign")) {
         ObjAssign assign;
         ast = SUB_AST(0);
-        assign = walk_assign(ast, names, syms);
+        assign = walk_assign(ctx, ast);
         ret.lineno = assign.lineno;
         ret.type = assign.type;
     } else

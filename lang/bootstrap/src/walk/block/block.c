@@ -1,47 +1,43 @@
 #include "block.h"
 #include "../expr/expr.h"
-#include "ctrl/ctrl.h"
 #include "decl/decl.h"
-#include <tokens.h>
 
-void walk_statements(AST *ast, const char **names, Symbols *syms);
-void walk_statement(AST *ast, const char **names, Symbols *syms);
+static void walk_statements(WalkCtx *ctx, AST *ast);
+static void walk_statement(WalkCtx *ctx, AST *ast);
 
-ObjBlock walk_block(AST *ast, const char **names, Symbols *syms) {
+ObjBlock walk_block(WalkCtx *ctx, AST *ast) {
     ObjBlock ret;
 
     assert(IS_NAME("block"));
     ret.lineno = ((Token *)SUB_AST(0))->lineno;
 
     ast = SUB_AST(1);
-    walk_statements(ast, names, syms);
+    walk_statements(ctx, ast);
 
     return ret;
 }
 
-void walk_statements(AST *ast, const char **names, Symbols *syms) {
+static void walk_statements(WalkCtx *ctx, AST *ast) {
     if (IS_NAME("stmts_null"))
         return;
     assert(IS_NAME("stmts_rec"));
 
-    walk_statement(SUB_AST(0), names, syms);
-    walk_statements(SUB_AST(2), names, syms);
+    walk_statement(ctx, SUB_AST(0));
+    walk_statements(ctx, SUB_AST(2));
 }
 
-void walk_statement(AST *ast, const char **names, Symbols *syms) {
-    (void)syms;
-
+static void walk_statement(WalkCtx *ctx, AST *ast) {
     if (IS_NAME("stmt_block")) {
         todo();
     } else if (IS_NAME("stmt_decl")) {
         ast = SUB_AST(0);
-        (void)walk_decl(ast, names, syms);
+        (void)walk_decl(ctx, ast);
     } else if (IS_NAME("stmt_expr")) {
         ast = SUB_AST(0);
-        (void)walk_expr(ast, names, syms);
-    } else if (IS_NAME("stmt_ctrl")) {
+        (void)walk_expr(ctx, ast);
+        /*} else if (IS_NAME("stmt_ctrl")) {
         ast = SUB_AST(0);
-        walk_ctrl(ast, names, syms);
+        walk_ctrl(ctx, ast);*/
     } else if (IS_NAME("stmt_cond")) {
         todo();
     } else if (IS_NAME("stmt_loop")) {

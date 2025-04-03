@@ -11,6 +11,6 @@ typedef struct {
 
 typedef map ObjAnnotations; /* map<char*, ObjAnnotation> */
 
-ObjAnnotations walk_annotations(AST *ast, const char **names, Symbols *syms);
+ObjAnnotations walk_annotations(WalkCtx *ctx, AST *ast);
 
 #endif

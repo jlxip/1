@@ -9,6 +9,6 @@ typedef struct {
     map fills; /* map<char*, ObjExpression> */
 } ObjStructInst;
 
-ObjStructInst walk_struct_inst(AST *ast, const char **names, Symbols *syms);
+ObjStructInst walk_struct_inst(WalkCtx *ctx, AST *ast);
 
 #endif

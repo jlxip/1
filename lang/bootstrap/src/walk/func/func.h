@@ -12,7 +12,7 @@ typedef struct {
     /* bool kact; */
 } ObjFunction;
 
-ObjFunction walk_function(AST *ast, const char **names, Symbols *syms);
-buffer walk_params(AST *ast, const char **names, Symbols *syms);
+ObjFunction walk_function(WalkCtx *ctx, AST *ast);
+buffer walk_params(WalkCtx *ctx, AST *ast);
 
 #endif

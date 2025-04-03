@@ -1,9 +1,8 @@
 #include "func.h"
 #include "../block/block.h"
 #include "../type/type.h"
-#include <tokens.h>
 
-ObjFunction walk_function(AST *ast, const char **names, Symbols *syms) {
+ObjFunction walk_function(WalkCtx *ctx, AST *ast) {
     ObjFunction ret;
     Token *id;
 
@@ -17,15 +16,15 @@ ObjFunction walk_function(AST *ast, const char **names, Symbols *syms) {
 
     /* Parameters */
     if (IS_NAME("function_void") || IS_NAME("function_typed"))
-        ret.params = walk_params(SUB_AST(4), names, syms);
+        ret.params = walk_params(ctx, SUB_AST(4));
     else
         ret.params = NULL;
 
     /* Return type */
     if (IS_NAME("function_noargs_typed")) {
-        ret.ret = walk_type(SUB_AST(4), names, syms);
+        ret.ret = walk_type(ctx, SUB_AST(4));
     } else if (IS_NAME("function_typed")) {
-        ret.ret = walk_type(SUB_AST(7), names, syms);
+        ret.ret = walk_type(ctx, SUB_AST(7));
     } else {
         ret.ret.id = TYPE_NOTHING;
         ret.ret.data = NULL;
@@ -44,7 +43,7 @@ ObjFunction walk_function(AST *ast, const char **names, Symbols *syms) {
         UNREACHABLE;
 
     assert(IS_NAME("block"));
-    walk_block(ast, names, syms);
+    walk_block(ctx, ast);
 
     return ret;
 }

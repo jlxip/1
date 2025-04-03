@@ -6,36 +6,52 @@ extern c_malloc(sz: word) -> ptr;
 @generic(T)
 struct Optional {
     something: bool,
-    _x: (byte,) * sizeof(T),
+    _x: (byte,) * sizeof T,
 }
 
 @generic(T)
 impl Optional {
     @static
+    @inline
     fn new_some(&x: T) -> Self {
         return Self {
             something = true,
-            _x = (0,) * sizeof(T),
+            _x = (0,) * sizeof T,
         };
     }
 
     @static
+    @inline
     fn new_none -> Self {
         return Self {
             something = false,
-            _x = (0,) * sizeof(T),
+            _x = (0,) * sizeof T,
         };
     }
 
+    @inline
     fn __bool__ -> bool {
         return self.something;
     }
 
+    @inline
     fn __question__ -> T {
         if not self.something
             crash("questioned optional but got null");
         return self._x;
     }
+}
+
+@generic(T)
+@inline
+fn some(&x: T) -> Optional<T> {
+    return Optional<T>.new_some(x);
+}
+
+@generic(T)
+@inline
+fn none -> Optional<T> {
+    return Optional<T>.new_none();
 }
 
 @generic(T)
@@ -45,10 +61,15 @@ struct Vec {
     addr: Optional<ptr>,
 }
 
-fn new {
-    return Vec<word> {
-        reserved = 0,
-        used = 0,
-        addr = Optional.new_none(),
-    };
+@generic(T)
+impl Vec {
+    @static
+    @inline
+    fn new -> Self {
+        return Self {
+            reserved = 0,
+            used = 0,
+            addr = none<ptr>(),
+        };
+    }
 }

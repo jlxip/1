@@ -3,13 +3,13 @@
 #include "../func/func.h"
 #include "../lookup/lookup.h"
 
-void walk_impl(AST *ast, const char **names, Symbols *syms) {
+void walk_impl(WalkCtx *ctx, AST *ast) {
     /* ANNOTATIONS impl PRIMARY obraces IMPL_DEF cbraces  */
     Declaration *decl;
 
     /* TODO: annotations */
 
-    decl = lookup(SUB_AST(2), names, syms);
+    decl = lookup(ctx, SUB_AST(2));
     if (decl->type.id == TYPE_STRUCT_DEF) {
         todo();
     } else if (decl->type.id == TYPE_STRUCT_SPECIFIC) {
