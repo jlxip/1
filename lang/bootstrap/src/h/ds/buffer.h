@@ -3,9 +3,6 @@
 
 #include <stddef.h>
 
-/* Thanks Applus for this */
-#define BUFFER_SIGNATURE 0xFABADAC0C1D0
-
 typedef struct {
     volatile size_t signature;
     size_t datasize;

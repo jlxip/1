@@ -14,7 +14,6 @@ void buffer_new(buffer *buf, size_t datasize) {
     if (*buf != NULL)
         throw("buffer_new called on non-NULL buffer");
     *buf = (buffer)malloc(sizeof(_buffer_t));
-    (*buf)->signature = BUFFER_SIGNATURE;
     (*buf)->datasize = datasize;
     buffer_reset(*buf);
 }
@@ -25,7 +24,7 @@ static void buffer_2x(buffer buf) {
 }
 
 #define buffer_assert(X)                                                       \
-    if ((X) == NULL || (X)->signature != BUFFER_SIGNATURE)                     \
+    if ((X) == NULL)                                                           \
         throw("called on uninitialized buffer");
 
 static void buffer_set_nocheck(buffer buf, size_t idx, const void *element) {
@@ -95,12 +94,11 @@ void buffer_shrink(buffer buf) {
 }
 
 void buffer_out(buffer *buf) {
-    if (*buf == NULL || (*buf)->signature != BUFFER_SIGNATURE)
+    if (*buf == NULL)
         return; /* Fail quietly */
 
     free((*buf)->a);
     buffer_reset(*buf);
-    (*buf)->signature = 0;
     free(*buf);
     *buf = NULL;
 }
