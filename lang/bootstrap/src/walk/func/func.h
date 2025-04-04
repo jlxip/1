@@ -4,8 +4,7 @@
 #include "../walk.h"
 
 typedef struct {
-    size_t lineno;
-    char *name;
+    TokenIdx name;
     buffer params; /* buffer<Declaration*> */
     Type ret;
     /* string code; */

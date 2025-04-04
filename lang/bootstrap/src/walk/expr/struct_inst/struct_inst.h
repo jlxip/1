@@ -4,7 +4,7 @@
 #include "../../walk.h"
 
 typedef struct {
-    size_t lineno;
+    TokenIdx mst;
     Type type;
     map fills; /* map<char*, ObjExpression> */
 } ObjStructInst;

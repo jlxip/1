@@ -9,11 +9,14 @@ ObjAssign walk_assign(WalkCtx *ctx, AST *ast) {
 
     decl = lookup(ctx, SUB_AST(0));
     if (!decl->mut)
-        throwe("tried to assign to immutable symbol: %s", decl->name);
+        throwe("tried to assign to immutable symbol: %s",
+            TOKEN(decl->name)->data.str);
+
+    ret.mst = (TokenIdx)SUB_AST(1);
 
     rhs = walk_expr(ctx, SUB_AST(2));
     if (decl->type.id != rhs.type.id)
-        throwe("type error in assignment to: %s", decl->name);
+        throwe("type error in assignment to: %s", TOKEN(decl->name)->data.str);
 
     switch (decl->type.id) {
     case TYPE_BOOL:
@@ -44,7 +47,6 @@ ObjAssign walk_assign(WalkCtx *ctx, AST *ast) {
     } else
     UNREACHABLE;*/
 
-    ret.lineno = rhs.lineno;
     ret.type = rhs.type;
     return ret;
 }

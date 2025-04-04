@@ -15,7 +15,7 @@ ObjAnnotations walk_annotations(WalkCtx *ctx, AST *ast) {
     map_new_string(&ret, sizeof(ObjAnnotation), NULL, NULL, NULL, NULL);
     for (;;) {
         ObjAnnotation ann = walk_annotation(ctx, SUB_AST(0));
-        map_add(ret, ann.name, &ann);
+        map_add(ret, TOKEN(ann.name)->data.str, &ann);
 
         ast = SUB_AST(1);
         if (IS_NAME("annot_null"))
@@ -27,19 +27,14 @@ ObjAnnotations walk_annotations(WalkCtx *ctx, AST *ast) {
 }
 
 static ObjAnnotation walk_annotation(WalkCtx *ctx, AST *ast) {
-    Token *id;
     ObjAnnotation ret;
-
-    id = (Token *)SUB_AST(1);
-    assert(id->id == T_ID);
-    ret.lineno = id->lineno;
-    ret.name = id->data.str;
+    ret.name = (TokenIdx)SUB_AST(1);
     ret.args = NULL;
 
     if (IS_NAME("annot")) {
         /* Nothing to do here */
     } else if (IS_NAME("annot_args")) {
-        if (0 == strcmp(ret.name, "generic")) {
+        if (0 == strcmp(TOKEN(ret.name)->data.str, "generic")) {
             /* Args are undefined */
             ret.args = walk_generic(ctx, SUB_AST(3));
         } else {
@@ -54,16 +49,13 @@ static ObjAnnotation walk_annotation(WalkCtx *ctx, AST *ast) {
 
 static buffer walk_generic(WalkCtx *ctx, AST *ast) {
     buffer ret = NULL; /* buffer<char*> */
-    Token *id;
 
     assert(IS_NAME("primary_list_direct"));
     ast = SUB_AST(0); /* PRIMARY */
     assert(IS_NAME("primary_id"));
-    id = (Token *)SUB_AST(0);
-    assert(id->id == T_ID);
 
     buffer_new(&ret, sizeof(char *));
-    buffer_push(ret, &id->data.str);
+    buffer_push(ret, TOKEN((TokenIdx)SUB_AST(0))->data.str);
 
     return ret;
 }

@@ -3,7 +3,7 @@
 
 Declaration walk_decl(WalkCtx *ctx, AST *ast) {
     bool typed = false;
-    AST *lhs, *rhs;
+    AST *rhs;
     ObjExpression expr;
     Declaration ret;
 
@@ -28,24 +28,17 @@ Declaration walk_decl(WalkCtx *ctx, AST *ast) {
 
     /* Assumed untyped */
     if (!ret.mut) {
-        lhs = SUB_AST(1);
+        ret.name = (TokenIdx)SUB_AST(1);
         rhs = SUB_AST(3);
     } else {
-        lhs = SUB_AST(2);
+        ret.name = (TokenIdx)SUB_AST(2);
         rhs = SUB_AST(4);
     }
-
-    do {
-        Token *id = (Token *)lhs;
-        assert(id->id == T_ID);
-        ret.name = id->data.str;
-        ret.lineno = id->lineno;
-    } while (0);
 
     /* Get rhs */
     expr = walk_expr(ctx, rhs);
 
     ret.type = expr.type;
-    PUSH_TO_SCOPE(ret.name, ret);
+    PUSH_TO_SCOPE(TOKEN(ret.name)->data.str, ret);
     return ret;
 }

@@ -15,9 +15,9 @@ const char *nts[] = {"S", "USES", "USE", "RELATIVE_PATH", "MODULE", "GLOBALS",
     "CONTROL", "CONDITIONAL", "IF", "ELIF", "ELSE", "SWITCH", "SWITCH_BODY",
     "SWITCH_CASE", "LOOP", "FOR", "WHILE", "STRUCT", "STRUCT_DEF", "IMPL",
     "IMPL_DEF", "EXTERN", "EXTERN_ARGS", "EXTERN_ARG", "BLOCK", "STATEMENTS",
-    "STATEMENT"};
+    "STATEMENT", NULL};
 
-ASTRoot parse(const Tokens tokens) {
+ASTRoot parse(Tokens tokens) {
     void *g;
     char *gtext;
     TokenData *stream;
@@ -35,7 +35,7 @@ ASTRoot parse(const Tokens tokens) {
     for (i = 0; i < buffer_num(tokens); ++i) {
         /* data is Token in this implementation */
         stream[i].sym = buffer_get(tokens, i, Token)->id;
-        stream[i].data = buffer_get(tokens, i, Token);
+        stream[i].data = (void *)i;
     }
     stream[buffer_num(tokens)].sym = 0;
     stream[buffer_num(tokens)].data = NULL;

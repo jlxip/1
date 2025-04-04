@@ -66,12 +66,11 @@ static void walk_global(WalkCtx *ctx, AST *ast) {
         x = malloc(sizeof(ObjStruct));
         *x = walk_struct(ctx, ast);
 
-        decl.lineno = x->lineno;
         decl.name = x->name;
         decl.type.id = TYPE_STRUCT_DEF;
         decl.type.data = x;
         decl.mut = false;
-        PUSH_TO_SCOPE(x->name, decl);
+        PUSH_TO_SCOPE(TOKEN(x->name)->data.str, decl);
     } else if (IS_NAME("global_impl")) {
         ast = SUB_AST(0);
         assert(IS_NAME("impl"));

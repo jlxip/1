@@ -39,8 +39,7 @@ typedef struct {
 } Type;
 
 typedef struct {
-    size_t lineno;
-    const char *name;
+    TokenIdx name;
     Type type;
     bool mut;
     bool ref;
@@ -54,6 +53,8 @@ typedef struct {
     const char **names; /* name of productions */
     Symbols syms;
 } WalkCtx;
+
+#define TOKEN(N) (buffer_get(ctx->tokens, N, Token))
 
 #define NEW_SCOPE                                                              \
     do {                                                                       \

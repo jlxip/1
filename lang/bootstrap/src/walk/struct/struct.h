@@ -4,10 +4,9 @@
 #include "../walk.h"
 
 typedef struct {
-    size_t lineno;
-    const char *name; /* This will change to char* */
-    map fields;       /* map<const char*, Type> */
-    buffer generic;   /* buffer<const char*> */
+    TokenIdx name;
+    map fields;     /* map<const char*, Type> */
+    buffer generic; /* buffer<const char*> */
 } ObjStruct;
 
 typedef struct {

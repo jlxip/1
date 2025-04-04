@@ -9,7 +9,7 @@ ObjBlock walk_block(WalkCtx *ctx, AST *ast) {
     ObjBlock ret;
 
     assert(IS_NAME("block"));
-    ret.lineno = ((Token *)SUB_AST(0))->lineno;
+    ret.mst = (TokenIdx)SUB_AST(0);
 
     ast = SUB_AST(1);
     walk_statements(ctx, ast);

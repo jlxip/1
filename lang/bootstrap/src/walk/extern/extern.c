@@ -4,13 +4,9 @@
 
 ObjExtern walk_extern(WalkCtx *ctx, AST *ast) {
     ObjExtern ret;
-    Token *id;
 
     /* Get the name */
-    id = (Token *)(SUB_AST(1));
-    assert(id->id == T_ID);
-    ret.lineno = id->lineno;
-    ret.name = id->data.str;
+    ret.name = (TokenIdx)SUB_AST(1);
 
     /* Parameters */
     if (IS_NAME("extern_void") || IS_NAME("extern_typed"))

@@ -7,8 +7,6 @@ static map walk_struct_def(WalkCtx *ctx, AST *ast);
 ObjStruct walk_struct(WalkCtx *ctx, AST *ast) {
     ObjStruct ret;
     ObjAnnotations anns;
-    Token *id;
-    const char *name;
     map fields;
 
     assert(IS_NAME("struct"));
@@ -25,14 +23,10 @@ ObjStruct walk_struct(WalkCtx *ctx, AST *ast) {
         ret.generic = NULL;
     }
 
-    id = (Token *)SUB_AST(2);
-    name = id->data.str;
-
     ast = SUB_AST(4);
     fields = walk_struct_def(ctx, ast);
 
-    ret.lineno = id->lineno;
-    ret.name = name;
+    ret.name = (TokenIdx)SUB_AST(2);
     ret.fields = fields;
     return ret;
 }
@@ -56,7 +50,7 @@ static map walk_struct_def(WalkCtx *ctx, AST *ast) {
         next = SUB_AST(2);
         ast = SUB_AST(0);
 
-        name = ((Token *)SUB_AST(0))->data.str;
+        name = TOKEN((TokenIdx)SUB_AST(0))->data.str;
         type = walk_type(ctx, SUB_AST(2));
 
         if (map_has(ret, name))

@@ -13,6 +13,7 @@ ObjStructInst walk_struct_inst(WalkCtx *ctx, AST *ast) {
     map_iterator it;
 
     assert(IS_NAME("struct_inst"));
+    ret.mst = (TokenIdx)SUB_AST(1); /* { */
     struct_def = lookup(ctx, SUB_AST(0));
     ret.type = struct_def->type;
     if (struct_def->type.id == TYPE_STRUCT_DEF) {
@@ -65,7 +66,6 @@ static map walk_sfinst(WalkCtx *ctx, AST *ast) {
     assert(IS_NAME("struct_field_inst_rec"));
 
     for (;;) {
-        Token *id;
         const char *name;
         ObjExpression expr;
 
@@ -73,10 +73,7 @@ static map walk_sfinst(WalkCtx *ctx, AST *ast) {
             break;
         assert(IS_NAME("struct_field_inst_rec"));
 
-        id = (Token *)SUB_AST(0);
-        assert(id->id == T_ID);
-        name = id->data.str;
-
+        name = TOKEN((TokenIdx)SUB_AST(0))->data.str;
         expr = walk_expr(ctx, SUB_AST(2));
 
         map_add(ret, name, &expr);

@@ -14,7 +14,7 @@ ObjExpression walk_expr(WalkCtx *ctx, AST *ast) {
         ObjLiteral lit;
         ast = SUB_AST(0);
         lit = walk_lit(ctx, ast);
-        ret.lineno = lit.lineno;
+        ret.mst = lit.mst;
         ret.type = lit.type;
     } else if (IS_NAME("expr_hat")) {
         todo();
@@ -56,14 +56,14 @@ ObjExpression walk_expr(WalkCtx *ctx, AST *ast) {
         ObjStructInst inst;
         ast = SUB_AST(0);
         inst = walk_struct_inst(ctx, ast);
-        ret.lineno = inst.lineno;
+        ret.mst = inst.mst;
         ret.type = inst.type;
         /* inst.fills ignored for now */
     } else if (IS_NAME("expr_assign")) {
         ObjAssign assign;
         ast = SUB_AST(0);
         assign = walk_assign(ctx, ast);
-        ret.lineno = assign.lineno;
+        ret.mst = assign.mst;
         ret.type = assign.type;
     } else
         UNREACHABLE;

@@ -4,15 +4,11 @@
 
 ObjFunction walk_function(WalkCtx *ctx, AST *ast) {
     ObjFunction ret;
-    Token *id;
 
     /* TODO: annotations */
 
     /* Get the name */
-    id = (Token *)SUB_AST(2);
-    assert(id->id == T_ID);
-    ret.name = id->data.str;
-    ret.lineno = id->lineno;
+    ret.name = (TokenIdx)SUB_AST(2);
 
     /* Parameters */
     if (IS_NAME("function_void") || IS_NAME("function_typed"))

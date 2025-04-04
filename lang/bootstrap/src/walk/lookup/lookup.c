@@ -28,21 +28,17 @@ Declaration *lookup(WalkCtx *ctx, AST *ast) {
             throw("incorrect number of types in specification");
 
         ret = malloc(sizeof(Declaration));
-        ret->lineno = specific->struct_def->lineno;
         ret->name = specific->struct_def->name;
         ret->type.id = TYPE_STRUCT_SPECIFIC;
         ret->type.data = specific;
         ret->mut = false;
     } else if (IS_NAME("primary_id")) {
-        Token *id;
         const char *name;
         bool found;
         size_t nsyms;
         size_t i;
 
-        id = (Token *)SUB_AST(0);
-        assert(id->id == T_ID);
-        name = id->data.str;
+        name = TOKEN((TokenIdx)SUB_AST(0))->data.str;
 
         found = false;
         nsyms = buffer_num(ctx->syms);

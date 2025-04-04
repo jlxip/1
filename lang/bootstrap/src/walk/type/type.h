@@ -6,7 +6,7 @@
 /* Can't move Type definition here due to circular includes */
 
 typedef struct {
-    size_t lineno;
+    TokenIdx mst;
     buffer fields; /* buffer<Type> */
     size_t rep;
 } ObjTupleDef;

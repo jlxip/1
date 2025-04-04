@@ -23,7 +23,6 @@ buffer walk_params(WalkCtx *ctx, AST *ast) {
 
 static Declaration *walk_param(WalkCtx *ctx, AST *ast) {
     Declaration *ret;
-    Token *id;
     ret = malloc(sizeof(Declaration));
 
     if (IS_NAME("param_copy")) {
@@ -44,10 +43,7 @@ static Declaration *walk_param(WalkCtx *ctx, AST *ast) {
         UNREACHABLE;
 
     assert(IS_NAME("typed"));
-    id = (Token *)SUB_AST(0);
-    assert(id->id == T_ID);
-    ret->lineno = id->lineno;
-    ret->name = id->data.str;
+    ret->name = (TokenIdx)SUB_AST(0);
     ret->type = walk_type(ctx, SUB_AST(2));
 
     return ret;
