@@ -25,7 +25,7 @@ ASTRoot parse(Tokens tokens) {
     ASTRoot ret;
 
     /* Compile grammar */
-    gtext = read_whole_file("src/parser/grammar.txt");
+    gtext = read_whole_file("src/2-parser/grammar.txt");
     g = grammar(token_strings + 1, nts, gtext, "S");
     free(gtext);
     grammar_compile(g);
