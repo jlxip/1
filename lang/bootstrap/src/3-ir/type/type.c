@@ -47,7 +47,7 @@ static ObjTupleDef *walk_tupledef(WalkCtx *ctx, AST *ast) {
     assert(IS_NAME("tupledef_one") || IS_NAME("tupledef_many"));
 
     ret = malloc(sizeof(ObjTupleDef));
-    ret->mst = (TokenIdx)SUB_AST(0);
+    ret->mst = (iToken)SUB_AST(0);
     ret->fields = NULL;
     buffer_new(&ret->fields, sizeof(Type));
     ret->rep = 1;

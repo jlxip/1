@@ -4,7 +4,7 @@
 #include "../walk.h"
 
 typedef struct {
-    TokenIdx name;
+    iToken name;
     map fields;     /* map<const char*, Type> */
     buffer generic; /* buffer<const char*> */
 } ObjStruct;

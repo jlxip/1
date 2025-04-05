@@ -4,7 +4,7 @@
 #include "../walk.h"
 
 typedef struct {
-    TokenIdx name;
+    iToken name;
     buffer args; /* buffer<void*> */
 } ObjAnnotation;
 

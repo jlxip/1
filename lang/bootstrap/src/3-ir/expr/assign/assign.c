@@ -12,7 +12,7 @@ ObjAssign walk_assign(WalkCtx *ctx, AST *ast) {
         throwe("tried to assign to immutable symbol: %s",
             TOKEN(decl->name)->data.str);
 
-    ret.mst = (TokenIdx)SUB_AST(1);
+    ret.mst = (iToken)SUB_AST(1);
 
     rhs = walk_expr(ctx, SUB_AST(2));
     if (decl->type.id != rhs.type.id)

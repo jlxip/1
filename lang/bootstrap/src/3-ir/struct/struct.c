@@ -26,7 +26,7 @@ ObjStruct walk_struct(WalkCtx *ctx, AST *ast) {
     ast = SUB_AST(4);
     fields = walk_struct_def(ctx, ast);
 
-    ret.name = (TokenIdx)SUB_AST(2);
+    ret.name = (iToken)SUB_AST(2);
     ret.fields = fields;
     return ret;
 }
@@ -50,7 +50,7 @@ static map walk_struct_def(WalkCtx *ctx, AST *ast) {
         next = SUB_AST(2);
         ast = SUB_AST(0);
 
-        name = TOKEN((TokenIdx)SUB_AST(0))->data.str;
+        name = TOKEN((iToken)SUB_AST(0))->data.str;
         type = walk_type(ctx, SUB_AST(2));
 
         if (map_has(ret, name))

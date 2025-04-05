@@ -39,7 +39,7 @@ typedef struct {
 } Type;
 
 typedef struct {
-    TokenIdx name;
+    iToken name;
     Type type;
     bool mut;
     bool ref;

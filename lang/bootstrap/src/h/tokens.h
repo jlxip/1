@@ -112,6 +112,6 @@ typedef struct {
 } Token;
 
 typedef buffer Tokens; /* buffer<Token> */
-typedef size_t TokenIdx; /* position in Tokens */
+typedef size_t iToken; /* position in Tokens */
 
 #endif

@@ -43,7 +43,7 @@ static Declaration *walk_param(WalkCtx *ctx, AST *ast) {
         UNREACHABLE;
 
     assert(IS_NAME("typed"));
-    ret->name = (TokenIdx)SUB_AST(0);
+    ret->name = (iToken)SUB_AST(0);
     ret->type = walk_type(ctx, SUB_AST(2));
 
     return ret;

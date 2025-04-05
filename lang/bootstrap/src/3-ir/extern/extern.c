@@ -6,7 +6,7 @@ ObjExtern walk_extern(WalkCtx *ctx, AST *ast) {
     ObjExtern ret;
 
     /* Get the name */
-    ret.name = (TokenIdx)SUB_AST(1);
+    ret.name = (iToken)SUB_AST(1);
 
     /* Parameters */
     if (IS_NAME("extern_void") || IS_NAME("extern_typed"))

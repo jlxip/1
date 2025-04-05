@@ -28,7 +28,7 @@ ObjAnnotations walk_annotations(WalkCtx *ctx, AST *ast) {
 
 static ObjAnnotation walk_annotation(WalkCtx *ctx, AST *ast) {
     ObjAnnotation ret;
-    ret.name = (TokenIdx)SUB_AST(1);
+    ret.name = (iToken)SUB_AST(1);
     ret.args = NULL;
 
     if (IS_NAME("annot")) {
@@ -55,7 +55,7 @@ static buffer walk_generic(WalkCtx *ctx, AST *ast) {
     assert(IS_NAME("primary_id"));
 
     buffer_new(&ret, sizeof(char *));
-    buffer_push(ret, TOKEN((TokenIdx)SUB_AST(0))->data.str);
+    buffer_push(ret, TOKEN((iToken)SUB_AST(0))->data.str);
 
     return ret;
 }

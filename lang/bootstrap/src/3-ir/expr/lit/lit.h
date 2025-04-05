@@ -4,7 +4,7 @@
 #include "../expr.h"
 
 typedef struct {
-    TokenIdx mst;
+    iToken mst;
     Type type;
     /*string code;*/
     /* bool kact; */

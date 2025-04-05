@@ -8,7 +8,7 @@ ObjFunction walk_function(WalkCtx *ctx, AST *ast) {
     /* TODO: annotations */
 
     /* Get the name */
-    ret.name = (TokenIdx)SUB_AST(2);
+    ret.name = (iToken)SUB_AST(2);
 
     /* Parameters */
     if (IS_NAME("function_void") || IS_NAME("function_typed"))

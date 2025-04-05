@@ -28,10 +28,10 @@ Declaration walk_decl(WalkCtx *ctx, AST *ast) {
 
     /* Assumed untyped */
     if (!ret.mut) {
-        ret.name = (TokenIdx)SUB_AST(1);
+        ret.name = (iToken)SUB_AST(1);
         rhs = SUB_AST(3);
     } else {
-        ret.name = (TokenIdx)SUB_AST(2);
+        ret.name = (iToken)SUB_AST(2);
         rhs = SUB_AST(4);
     }
 

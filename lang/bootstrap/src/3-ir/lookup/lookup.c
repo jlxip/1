@@ -38,7 +38,7 @@ Declaration *lookup(WalkCtx *ctx, AST *ast) {
         size_t nsyms;
         size_t i;
 
-        name = TOKEN((TokenIdx)SUB_AST(0))->data.str;
+        name = TOKEN((iToken)SUB_AST(0))->data.str;
 
         found = false;
         nsyms = buffer_num(ctx->syms);

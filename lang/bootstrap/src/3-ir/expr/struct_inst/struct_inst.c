@@ -13,7 +13,7 @@ ObjStructInst walk_struct_inst(WalkCtx *ctx, AST *ast) {
     map_iterator it;
 
     assert(IS_NAME("struct_inst"));
-    ret.mst = (TokenIdx)SUB_AST(1); /* { */
+    ret.mst = (iToken)SUB_AST(1); /* { */
     struct_def = lookup(ctx, SUB_AST(0));
     ret.type = struct_def->type;
     if (struct_def->type.id == TYPE_STRUCT_DEF) {
@@ -73,7 +73,7 @@ static map walk_sfinst(WalkCtx *ctx, AST *ast) {
             break;
         assert(IS_NAME("struct_field_inst_rec"));
 
-        name = TOKEN((TokenIdx)SUB_AST(0))->data.str;
+        name = TOKEN((iToken)SUB_AST(0))->data.str;
         expr = walk_expr(ctx, SUB_AST(2));
 
         map_add(ret, name, &expr);

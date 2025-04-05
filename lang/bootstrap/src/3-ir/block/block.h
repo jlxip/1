@@ -4,7 +4,7 @@
 #include "../walk.h"
 
 typedef struct {
-    TokenIdx mst;
+    iToken mst;
     /* string code; */
 } ObjBlock;
 
