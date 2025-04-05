@@ -7,7 +7,7 @@
 /* Incredibly common stuff */
 
 typedef unsigned char uint8_t;
-typedef size_t bool;
+typedef uint8_t bool;
 enum _bool_values { false, true };
 
 #define _throw_show_header                                                     \
