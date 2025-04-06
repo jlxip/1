@@ -13,7 +13,7 @@ Declaration *lookup(WalkCtx *ctx, AST *ast) {
         ObjStruct *sd;
         ObjSpecificStruct *specific;
 
-        ret = lookup(ctx, SUB_AST(0));
+        ret = lookup(ctx, AST(SUB(0)));
         if (ret->type.id != TYPE_STRUCT_DEF)
             throw("tried to specify a non-struct");
         sd = (ObjStruct *)(ret->type.data);
@@ -22,7 +22,7 @@ Declaration *lookup(WalkCtx *ctx, AST *ast) {
 
         specific = malloc(sizeof(ObjSpecificStruct));
         specific->struct_def = ret;
-        specific->specific = walk_types(ctx, SUB_AST(2));
+        specific->specific = walk_types(ctx, AST(SUB(2)));
 
         if (buffer_num(sd->generic) != buffer_num(specific->specific))
             throw("incorrect number of types in specification");
@@ -38,7 +38,7 @@ Declaration *lookup(WalkCtx *ctx, AST *ast) {
         size_t nsyms;
         size_t i;
 
-        name = TOKEN((iToken)SUB_AST(0))->data.str;
+        name = TOKEN(SUB(0))->data.str;
 
         found = false;
         nsyms = buffer_num(ctx->syms);
@@ -67,13 +67,13 @@ static buffer walk_types(WalkCtx *ctx, AST *ast) {
 
     for (;;) {
         Type t;
-        t = walk_type(ctx, SUB_AST(0));
+        t = walk_type(ctx, AST(SUB(0)));
         buffer_push(ret, &t);
 
         if (IS_NAME("types_direct"))
             break;
         assert(IS_NAME("types_rec"));
-        ast = SUB_AST(2);
+        ast = AST(SUB(2));
     }
 
     return ret;

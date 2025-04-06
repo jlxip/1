@@ -126,10 +126,12 @@ typedef struct {
 #define AST_TYPEDEF
 typedef struct {
     size_t prod;
-    buffer sub; /* buffer<void*> */
+    buffer sub; /* buffer<size_t (iToken/iAST)> */
 } AST;
+typedef size_t iAST;
+typedef buffer ASTs; /* buffer<AST> */
 #endif
 
-AST Grammar_parse(Grammar *g, const StreamElement *stream);
+ASTs Grammar_parse(Grammar *g, const StreamElement *stream);
 
 #endif

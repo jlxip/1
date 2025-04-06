@@ -28,9 +28,9 @@ Type walk_type(WalkCtx *ctx, AST *ast) {
         todo();
     } else if (IS_NAME("type_tuple")) {
         ret.id = TYPE_TUPLE;
-        ret.data = walk_tupledef(ctx, SUB_AST(0));
+        ret.data = walk_tupledef(ctx, AST(SUB(0)));
     } else if (IS_NAME("type_tuple_star")) {
-        ObjTupleDef *td = walk_tupledef(ctx, SUB_AST(0));
+        ObjTupleDef *td = walk_tupledef(ctx, AST(SUB(0)));
         todo();
         /* td->rep run constant-time expression */
         ret.id = TYPE_TUPLE;
@@ -47,22 +47,22 @@ static ObjTupleDef *walk_tupledef(WalkCtx *ctx, AST *ast) {
     assert(IS_NAME("tupledef_one") || IS_NAME("tupledef_many"));
 
     ret = malloc(sizeof(ObjTupleDef));
-    ret->mst = (iToken)SUB_AST(0);
+    ret->mst = SUB(0);
     ret->fields = NULL;
     buffer_new(&ret->fields, sizeof(Type));
     ret->rep = 1;
 
-    aux = walk_type(ctx, SUB_AST(1));
+    aux = walk_type(ctx, AST(SUB(1)));
     buffer_push(ret->fields, &aux);
     if (IS_NAME("tupledef_many")) {
-        ast = SUB_AST(3);
+        ast = AST(SUB(3));
         assert(IS_NAME("types_rec") || IS_NAME("types_direct"));
         for (;;) {
-            aux = walk_type(ctx, SUB_AST(0));
+            aux = walk_type(ctx, AST(SUB(0)));
             buffer_push(ret->fields, &aux);
             if (IS_NAME("types_direct"))
                 break;
-            ast = SUB_AST(3);
+            ast = AST(SUB(3));
         }
     }
 

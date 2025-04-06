@@ -8,19 +8,19 @@ ObjFunction walk_function(WalkCtx *ctx, AST *ast) {
     /* TODO: annotations */
 
     /* Get the name */
-    ret.name = (iToken)SUB_AST(2);
+    ret.name = SUB(2);
 
     /* Parameters */
     if (IS_NAME("function_void") || IS_NAME("function_typed"))
-        ret.params = walk_params(ctx, SUB_AST(4));
+        ret.params = walk_params(ctx, AST(SUB(4)));
     else
         ret.params = NULL;
 
     /* Return type */
     if (IS_NAME("function_noargs_typed")) {
-        ret.ret = walk_type(ctx, SUB_AST(4));
+        ret.ret = walk_type(ctx, AST(SUB(4)));
     } else if (IS_NAME("function_typed")) {
-        ret.ret = walk_type(ctx, SUB_AST(7));
+        ret.ret = walk_type(ctx, AST(SUB(7)));
     } else {
         ret.ret.id = TYPE_NOTHING;
         ret.ret.data = NULL;
@@ -28,13 +28,13 @@ ObjFunction walk_function(WalkCtx *ctx, AST *ast) {
 
     /* Walk the block */
     if (IS_NAME("function_noargs_void")) {
-        ast = SUB_AST(3);
+        ast = AST(SUB(3));
     } else if (IS_NAME("function_noargs_typed")) {
-        ast = SUB_AST(5);
+        ast = AST(SUB(5));
     } else if (IS_NAME("function_void")) {
-        ast = SUB_AST(6);
+        ast = AST(SUB(6));
     } else if (IS_NAME("function_typed")) {
-        ast = SUB_AST(8);
+        ast = AST(SUB(8));
     } else
         UNREACHABLE;
 

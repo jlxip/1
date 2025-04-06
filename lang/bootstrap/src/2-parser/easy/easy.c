@@ -275,15 +275,15 @@ void grammar_out(void *ptr) {
 
 /* --- */
 
-ASTRoot grammar_parse(void *ptr, const TokenData *stream) {
+ASTPack grammar_parse(void *ptr, const TokenData *stream) {
     Grammar *g = (Grammar *)ptr;
-    AST root;
-    ASTRoot ret;
+    ASTs asts;
+    ASTPack ret;
 
     /* Note that TokenData = StreamElement */
-    root = Grammar_parse(g, (StreamElement *)stream);
+    asts = Grammar_parse(g, (StreamElement *)stream);
 
     ret.names = g->names;
-    ret.ast = root;
+    ret.asts = asts;
     return ret;
 }

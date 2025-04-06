@@ -9,19 +9,21 @@ Tokens get_tokens(const char *code);
 #define AST_TYPEDEF
 typedef struct {
     size_t prod;
-    buffer sub; /* buffer<void*> */
+    buffer sub; /* buffer<size_t (iToken/iAST)> */
 } AST;
+typedef size_t iAST;
+typedef buffer ASTs; /* buffer<AST> */
 #endif
 
-#ifndef ASTROOT_TYPEDEF
-#define ASTROOT_TYPEDEF
+#ifndef ASTPACK_TYPEDEF
+#define ASTPACK_TYPEDEF
 typedef struct {
     char **names;
-    AST ast;
-} ASTRoot;
+    ASTs asts;
+} ASTPack;
 #endif
 
-ASTRoot parse(Tokens tokens);
-void walk(ASTRoot ast, Tokens tokens);
+ASTPack parse(Tokens tokens);
+void walk(ASTPack ast, Tokens tokens);
 
 #endif

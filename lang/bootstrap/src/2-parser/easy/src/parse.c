@@ -34,9 +34,10 @@ static void unexpected_token(const Grammar *g, const map *row, symbol sym) {
     exit(2);
 }
 
-AST Grammar_parse(Grammar *g, const StreamElement *stream) {
+ASTs Grammar_parse(Grammar *g, const StreamElement *stream) {
+    ASTs ret = NULL;
     buffer stack = NULL;    /* buffer<state> */
-    buffer valstack = NULL; /* buffer<void*> */
+    buffer valstack = NULL; /* buffer<size_t (iToken/iAST)> */
 
 #ifdef DEBUG
     const StreamElement *dbgtokens = stream;
@@ -56,9 +57,11 @@ AST Grammar_parse(Grammar *g, const StreamElement *stream) {
         Grammar_compile(g);
 
     Grammar_clean(g);
+    buffer_new(&ret, sizeof(AST));
     buffer_new(&stack, sizeof(state));
-    buffer_new(&valstack, sizeof(void *));
+    buffer_new(&valstack, sizeof(size_t));
     buffer_push(stack, &ZERO);
+
     for (;;) {
         symbol sym;
         state st;
@@ -78,7 +81,6 @@ AST Grammar_parse(Grammar *g, const StreamElement *stream) {
         entry = map_get(*row, &sym, Entry);
         switch (entry->type) {
         case ENTRY_ACCEPT: {
-            AST ret = **buffer_back(valstack, AST *);
             buffer_out(&valstack);
             buffer_out(&stack);
             return ret;
@@ -87,17 +89,18 @@ AST Grammar_parse(Grammar *g, const StreamElement *stream) {
             size_t prodidx;
             const Production *prod;
             size_t x;
-            buffer sub = NULL; /* buffer<void*> */
-            AST *ast;
+            buffer sub = NULL; /* buffer<size_t (iToken/iAST)> */
+            AST ast;
+            iAST iast;
 
             /* Pop production while constructing sub */
             prodidx = entry->info;
             prod = buffer_get(g->g, prodidx, Production);
             x = buffer_num(prod->rhs);
-            buffer_new(&sub, sizeof(void *));
+            buffer_new(&sub, sizeof(size_t));
             while (x--) {
                 buffer_pop(stack);
-                buffer_push(sub, buffer_back(valstack, void *));
+                buffer_push(sub, buffer_back(valstack, size_t));
                 buffer_pop(valstack);
             }
             buffer_reverse(sub);
@@ -115,10 +118,11 @@ AST Grammar_parse(Grammar *g, const StreamElement *stream) {
 #endif
 
             /* Output (create AST element) */
-            ast = malloc(sizeof(AST));
-            ast->prod = prodidx - 1;
-            ast->sub = sub;
-            buffer_push(valstack, &ast);
+            ast.prod = prodidx - 1;
+            ast.sub = sub;
+            iast = buffer_num(ret);
+            buffer_push(ret, &ast);
+            buffer_push(valstack, &iast);
             break;
         }
         case ENTRY_SHIFT:

@@ -17,12 +17,12 @@ const char *nts[] = {"S", "USES", "USE", "RELATIVE_PATH", "MODULE", "GLOBALS",
     "IMPL_DEF", "EXTERN", "EXTERN_ARGS", "EXTERN_ARG", "BLOCK", "STATEMENTS",
     "STATEMENT", NULL};
 
-ASTRoot parse(Tokens tokens) {
+ASTPack parse(Tokens tokens) {
     void *g;
     char *gtext;
     TokenData *stream;
     size_t i;
-    ASTRoot ret;
+    ASTPack ret;
 
     /* Compile grammar */
     gtext = read_whole_file("src/2-parser/grammar.txt");
@@ -33,12 +33,12 @@ ASTRoot parse(Tokens tokens) {
     /* Create stream of TokenData */
     stream = malloc((buffer_num(tokens) + 1) * sizeof(TokenData));
     for (i = 0; i < buffer_num(tokens); ++i) {
-        /* data is Token in this implementation */
+        /* data is iToken in this implementation */
         stream[i].sym = buffer_get(tokens, i, Token)->id;
-        stream[i].data = (void *)i;
+        stream[i].data = i;
     }
     stream[buffer_num(tokens)].sym = 0;
-    stream[buffer_num(tokens)].data = NULL;
+    stream[buffer_num(tokens)].data = 0;
 
     /* Parse token */
     ret = grammar_parse(g, stream);

@@ -9,7 +9,7 @@ void walk_impl(WalkCtx *ctx, AST *ast) {
 
     /* TODO: annotations */
 
-    decl = lookup(ctx, SUB_AST(2));
+    decl = lookup(ctx, AST(SUB(2)));
     if (decl->type.id == TYPE_STRUCT_DEF) {
         todo();
     } else if (decl->type.id == TYPE_STRUCT_SPECIFIC) {

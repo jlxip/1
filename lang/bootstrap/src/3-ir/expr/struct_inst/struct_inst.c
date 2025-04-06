@@ -13,8 +13,8 @@ ObjStructInst walk_struct_inst(WalkCtx *ctx, AST *ast) {
     map_iterator it;
 
     assert(IS_NAME("struct_inst"));
-    ret.mst = (iToken)SUB_AST(1); /* { */
-    struct_def = lookup(ctx, SUB_AST(0));
+    ret.mst = SUB(1); /* { */
+    struct_def = lookup(ctx, AST(SUB(0)));
     ret.type = struct_def->type;
     if (struct_def->type.id == TYPE_STRUCT_DEF) {
         sd = (ObjStruct *)(struct_def->type.data);
@@ -28,7 +28,7 @@ ObjStructInst walk_struct_inst(WalkCtx *ctx, AST *ast) {
         throw("can only instantiate a struct");
     }
 
-    fills = walk_sfinst(ctx, SUB_AST(2));
+    fills = walk_sfinst(ctx, AST(SUB(2)));
     if (map_num(fills) != map_num(sd->fields))
         throw("invalid number of fields in struct instantiation");
 
@@ -73,11 +73,11 @@ static map walk_sfinst(WalkCtx *ctx, AST *ast) {
             break;
         assert(IS_NAME("struct_field_inst_rec"));
 
-        name = TOKEN((iToken)SUB_AST(0))->data.str;
-        expr = walk_expr(ctx, SUB_AST(2));
+        name = TOKEN(SUB(0))->data.str;
+        expr = walk_expr(ctx, AST(SUB(2)));
 
         map_add(ret, name, &expr);
-        ast = SUB_AST(4);
+        ast = AST(SUB(4));
     }
 
     return ret;

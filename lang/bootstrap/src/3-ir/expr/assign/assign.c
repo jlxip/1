@@ -7,14 +7,14 @@ ObjAssign walk_assign(WalkCtx *ctx, AST *ast) {
     Declaration *decl;
     ObjExpression rhs;
 
-    decl = lookup(ctx, SUB_AST(0));
+    decl = lookup(ctx, AST(SUB(0)));
     if (!decl->mut)
         throwe("tried to assign to immutable symbol: %s",
             TOKEN(decl->name)->data.str);
 
-    ret.mst = (iToken)SUB_AST(1);
+    ret.mst = SUB(1);
 
-    rhs = walk_expr(ctx, SUB_AST(2));
+    rhs = walk_expr(ctx, AST(SUB(2)));
     if (decl->type.id != rhs.type.id)
         throwe("type error in assignment to: %s", TOKEN(decl->name)->data.str);
 

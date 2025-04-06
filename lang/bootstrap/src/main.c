@@ -9,7 +9,7 @@ void test_lalr(void);
 int main(int argc, const char *argv[]) {
     char *code = NULL;
     Tokens tokens;
-    ASTRoot ast;
+    ASTPack ast;
 
 #ifdef DEBUG
     printf("Testing LALR implementation\n");

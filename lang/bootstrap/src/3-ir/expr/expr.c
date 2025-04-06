@@ -12,7 +12,7 @@ ObjExpression walk_expr(WalkCtx *ctx, AST *ast) {
         todo();
     } else if (IS_NAME("expr_lit")) {
         ObjLiteral lit;
-        ast = SUB_AST(0);
+        ast = AST(SUB(0));
         lit = walk_lit(ctx, ast);
         ret.mst = lit.mst;
         ret.type = lit.type;
@@ -54,14 +54,14 @@ ObjExpression walk_expr(WalkCtx *ctx, AST *ast) {
         todo();
     } else if (IS_NAME("expr_struct_inst")) {
         ObjStructInst inst;
-        ast = SUB_AST(0);
+        ast = AST(SUB(0));
         inst = walk_struct_inst(ctx, ast);
         ret.mst = inst.mst;
         ret.type = inst.type;
         /* inst.fills ignored for now */
     } else if (IS_NAME("expr_assign")) {
         ObjAssign assign;
-        ast = SUB_AST(0);
+        ast = AST(SUB(0));
         assign = walk_assign(ctx, ast);
         ret.mst = assign.mst;
         ret.type = assign.type;

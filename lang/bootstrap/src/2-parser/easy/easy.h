@@ -11,25 +11,27 @@ void grammar_out(void *g);
 
 typedef struct {
     size_t sym;
-    void *data;
+    size_t data;
 } TokenData;
 
 #ifndef AST_TYPEDEF
 #define AST_TYPEDEF
 typedef struct {
     size_t prod;
-    buffer sub; /* buffer<void*> */
+    buffer sub; /* buffer<size_t (iToken/iAST)> */
 } AST;
+typedef size_t iAST;
+typedef buffer ASTs; /* buffer<AST> */
 #endif
 
-#ifndef ASTROOT_TYPEDEF
-#define ASTROOT_TYPEDEF
+#ifndef ASTPACK_TYPEDEF
+#define ASTPACK_TYPEDEF
 typedef struct {
     char **names;
-    AST ast;
-} ASTRoot;
+    ASTs asts;
+} ASTPack;
 #endif
 
-ASTRoot grammar_parse(void *g, const TokenData *stream);
+ASTPack grammar_parse(void *g, const TokenData *stream);
 
 #endif

@@ -7,9 +7,6 @@
 #include <ds/map.h>
 #include <string.h>
 
-#define SUB_AST(N) (*buffer_get(ast->sub, N, AST *))
-#define IS_NAME(X) (strcmp(ctx->names[ast->prod], X) == 0)
-
 /* Useful for debugging */
 #define PRINT_NAME                                                             \
     do {                                                                       \
@@ -51,9 +48,13 @@ typedef buffer Symbols;  /* buffer<SymbolTable> */
 typedef struct {
     Tokens tokens;
     const char **names; /* name of productions */
+    ASTs asts;
     Symbols syms;
 } WalkCtx;
 
+#define SUB(N) (*buffer_get(ast->sub, N, iAST))
+#define AST(N) (buffer_get(ctx->asts, N, AST))
+#define IS_NAME(X) (strcmp(ctx->names[ast->prod], X) == 0)
 #define TOKEN(N) (buffer_get(ctx->tokens, N, Token))
 
 #define NEW_SCOPE                                                              \

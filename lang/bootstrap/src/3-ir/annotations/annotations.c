@@ -14,10 +14,10 @@ ObjAnnotations walk_annotations(WalkCtx *ctx, AST *ast) {
 
     map_new_string(&ret, sizeof(ObjAnnotation), NULL, NULL, NULL, NULL);
     for (;;) {
-        ObjAnnotation ann = walk_annotation(ctx, SUB_AST(0));
+        ObjAnnotation ann = walk_annotation(ctx, AST(SUB(0)));
         map_add(ret, TOKEN(ann.name)->data.str, &ann);
 
-        ast = SUB_AST(1);
+        ast = AST(SUB(1));
         if (IS_NAME("annot_null"))
             break;
         assert(IS_NAME("annot_rec"));
@@ -28,7 +28,7 @@ ObjAnnotations walk_annotations(WalkCtx *ctx, AST *ast) {
 
 static ObjAnnotation walk_annotation(WalkCtx *ctx, AST *ast) {
     ObjAnnotation ret;
-    ret.name = (iToken)SUB_AST(1);
+    ret.name = SUB(1);
     ret.args = NULL;
 
     if (IS_NAME("annot")) {
@@ -36,10 +36,10 @@ static ObjAnnotation walk_annotation(WalkCtx *ctx, AST *ast) {
     } else if (IS_NAME("annot_args")) {
         if (0 == strcmp(TOKEN(ret.name)->data.str, "generic")) {
             /* Args are undefined */
-            ret.args = walk_generic(ctx, SUB_AST(3));
+            ret.args = walk_generic(ctx, AST(SUB(3)));
         } else {
             /* In all other cases args are expected to be defined */
-            ret.args = walk_primary_list(ctx, SUB_AST(3));
+            ret.args = walk_primary_list(ctx, AST(SUB(3)));
         }
     } else
         UNREACHABLE;
@@ -51,11 +51,11 @@ static buffer walk_generic(WalkCtx *ctx, AST *ast) {
     buffer ret = NULL; /* buffer<char*> */
 
     assert(IS_NAME("primary_list_direct"));
-    ast = SUB_AST(0); /* PRIMARY */
+    ast = AST(SUB(0)); /* PRIMARY */
     assert(IS_NAME("primary_id"));
 
     buffer_new(&ret, sizeof(char *));
-    buffer_push(ret, TOKEN((iToken)SUB_AST(0))->data.str);
+    buffer_push(ret, TOKEN(SUB(0))->data.str);
 
     return ret;
 }
@@ -65,13 +65,13 @@ static buffer walk_primary_list(WalkCtx *ctx, AST *ast) {
     buffer_new(&ret, sizeof(Declaration *));
 
     for (;;) {
-        Declaration *decl = lookup(ctx, SUB_AST(0));
+        Declaration *decl = lookup(ctx, AST(SUB(0)));
         buffer_push(ret, &decl);
 
         if (IS_NAME("primary_list_direct")) {
             break;
         } else if (IS_NAME("primary_list_rec")) {
-            ast = SUB_AST(2);
+            ast = AST(SUB(2));
         } else
             UNREACHABLE;
     }

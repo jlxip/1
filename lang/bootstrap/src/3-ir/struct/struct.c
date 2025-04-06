@@ -11,7 +11,7 @@ ObjStruct walk_struct(WalkCtx *ctx, AST *ast) {
 
     assert(IS_NAME("struct"));
 
-    anns = walk_annotations(ctx, SUB_AST(0));
+    anns = walk_annotations(ctx, AST(SUB(0)));
     if (anns) {
         if (map_has(anns, "generic")) {
             ObjAnnotation *generic = map_get(anns, "generic", ObjAnnotation);
@@ -23,10 +23,10 @@ ObjStruct walk_struct(WalkCtx *ctx, AST *ast) {
         ret.generic = NULL;
     }
 
-    ast = SUB_AST(4);
+    ast = AST(SUB(4));
     fields = walk_struct_def(ctx, ast);
 
-    ret.name = (iToken)SUB_AST(2);
+    ret.name = SUB(2);
     ret.fields = fields;
     return ret;
 }
@@ -47,11 +47,11 @@ static map walk_struct_def(WalkCtx *ctx, AST *ast) {
             break;
         assert(IS_NAME("struct_def"));
 
-        next = SUB_AST(2);
-        ast = SUB_AST(0);
+        next = AST(SUB(2));
+        ast = AST(SUB(0));
 
-        name = TOKEN((iToken)SUB_AST(0))->data.str;
-        type = walk_type(ctx, SUB_AST(2));
+        name = TOKEN(SUB(0))->data.str;
+        type = walk_type(ctx, AST(SUB(2)));
 
         if (map_has(ret, name))
             throwe("multiple fields named %s", name);
