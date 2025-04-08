@@ -14,10 +14,13 @@
 const char *tokens_forfirst[6] = {"+", "*", "(", ")", "id", NULL};
 const char *nts_forfirst[6] = {"E", "Ep", "T", "Tp", "F", NULL};
 const char *grammar_forfirst = "E  -> T Ep\n"
-                               "Ep -> + T Ep | EPSILON\n"
+                               "Ep -> + T Ep\n"
+                               "Ep -> EPSILON\n"
                                "T  -> F Tp\n"
-                               "Tp -> * F Tp | EPSILON\n"
-                               "F  -> ( E ) | id\n";
+                               "Tp -> * F Tp\n"
+                               "Tp -> EPSILON\n"
+                               "F  -> ( E )\n"
+                               "F -> id\n";
 
 /*
     forfirst2: special case with epsilon #1
@@ -30,7 +33,8 @@ const char *grammar_forfirst = "E  -> T Ep\n"
 const char *tokens_forfirst2[3] = {"a", "b", NULL};
 const char *nts_forfirst2[4] = {"E", "A", "B", NULL};
 const char *grammar_forfirst2 = "E -> A B\n"
-                                "A -> a | EPSILON\n"
+                                "A -> a\n"
+                                "A -> EPSILON\n"
                                 "B -> b\n";
 
 /*
@@ -45,8 +49,10 @@ const char *grammar_forfirst2 = "E -> A B\n"
 const char *tokens_forfirst3[3] = {"a", "b", NULL};
 const char *nts_forfirst3[4] = {"E", "A", "B", NULL};
 const char *grammar_forfirst3 = "E -> A B\n"
-                                "A -> a | EPSILON\n"
-                                "B -> b | EPSILON\n";
+                                "A -> a\n"
+                                "A -> EPSILON\n"
+                                "B -> b\n"
+                                "B -> EPSILON\n";
 
 /*
     basic: the ONLY reference example for LALR
@@ -60,7 +66,8 @@ const char *grammar_forfirst3 = "E -> A B\n"
 const char *tokens_basic[3] = {"c", "d", NULL};
 const char *nts_basic[3] = {"S", "C", NULL};
 const char *grammar_basic = "S -> C C\n"
-                            "C -> c C | d\n";
+                            "C -> c C\n"
+                            "C -> d\n";
 
 /*
     lr: a textbook left and right example
@@ -74,8 +81,10 @@ const char *grammar_basic = "S -> C C\n"
 */
 const char *tokens_lr[4] = {"=", "*", "id", NULL};
 const char *nts_lr[4] = {"S", "L", "R", NULL};
-const char *grammar_lr = "S -> L = R | R\n"
-                         "L -> * R | id\n"
+const char *grammar_lr = "S -> L = R\n"
+                         "S -> R\n"
+                         "L -> * R\n"
+                         "L -> id\n"
                          "R -> L\n";
 
 /*
@@ -90,9 +99,13 @@ const char *grammar_lr = "S -> L = R | R\n"
 */
 const char *tokens_random[5] = {"+", "*", "a", "b", NULL};
 const char *nts_random[4] = {"S", "T", "F", NULL};
-const char *grammar_random = "S -> S + T | T\n"
-                             "T -> T F | F\n"
-                             "F -> F * | a | b\n";
+const char *grammar_random = "S -> S + T\n"
+                             "S -> T\n"
+                             "T -> T F\n"
+                             "T -> F\n"
+                             "F -> F *\n"
+                             "F -> a\n"
+                             "F -> b\n";
 
 /*
     wtf: slightly difficult grammar
@@ -107,10 +120,14 @@ const char *grammar_random = "S -> S + T | T\n"
 */
 const char *tokens_wtf[7] = {"a", "b", "c", "d", "e", "x", NULL};
 const char *nts_wtf[5] = {"S", "A", "B", "C", NULL};
-const char *grammar_wtf = "S -> A B | C\n"
-                          "A -> a A | EPSILON\n"
-                          "B -> B b | x\n"
-                          "C -> c C d | e\n";
+const char *grammar_wtf = "S -> A B\n"
+                          "S -> C\n"
+                          "A -> a A\n"
+                          "A -> EPSILON\n"
+                          "B -> B b\n"
+                          "B -> x\n"
+                          "C -> c C d\n"
+                          "C -> e\n";
 
 /*
     epsilon: a language based on silence

@@ -9,7 +9,7 @@ void test_lalr(void);
 int main(int argc, const char *argv[]) {
     char *code = NULL;
     Tokens tokens;
-    ASTPack ast;
+    IRs irs;
 
 #ifdef DEBUG
     printf("Testing LALR implementation\n");
@@ -30,11 +30,12 @@ int main(int argc, const char *argv[]) {
     free(code);
 
     /* Parse */
-    ast = parse(tokens);
+    irs = parse(tokens);
 
-    /* Walk the AST */
-    walk(ast, tokens);
+    /* Run modules */
+    modules_main(irs, tokens);
 
     buffer_out(&tokens);
+    printf("That's all for now folks!\n");
     return 0;
 }

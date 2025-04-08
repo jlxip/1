@@ -6,7 +6,8 @@
 /* As weirdly written as possible to test grammar() */
 static const char grammar_basic_weird[] = "    \n"
                                           "  S  ->  C C  \n"
-                                          "C->c C| d\n \n\n";
+                                          "C->c C\n"
+                                          "C->d\n \n\n";
 
 /* Check G is the grammar defined in test1 (and test2) */
 static void check(Grammar *g) {

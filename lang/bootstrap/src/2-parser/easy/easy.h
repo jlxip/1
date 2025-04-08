@@ -14,24 +14,18 @@ typedef struct {
     size_t data;
 } TokenData;
 
-#ifndef AST_TYPEDEF
-#define AST_TYPEDEF
+#ifndef IR_TYPEDEF
+#define IR_TYPEDEF
+/* We're going full data-oriented design for this one */
 typedef struct {
-    size_t prod;
-    buffer sub; /* buffer<size_t (iToken/iAST)> */
-} AST;
-typedef size_t iAST;
-typedef buffer ASTs; /* buffer<AST> */
+    /* Types and data of children */
+    buffer types; /* buffer<size_t (IRType)> */
+    buffer ids;   /* buffer<size_t (iToken/iIR)> */
+} IR;
+typedef size_t iIR;
+typedef buffer IRs; /* buffer<IR> */
 #endif
 
-#ifndef ASTPACK_TYPEDEF
-#define ASTPACK_TYPEDEF
-typedef struct {
-    char **names;
-    ASTs asts;
-} ASTPack;
-#endif
-
-ASTPack grammar_parse(void *g, const TokenData *stream);
+IRs grammar_parse(void *g, const TokenData *stream);
 
 #endif

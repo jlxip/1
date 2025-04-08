@@ -1,6 +1,7 @@
 #include "internal.h"
 
-static const state ZERO = 0;
+static const size_t ZERO = 0;
+static const IR IR_token = {NULL, NULL};
 
 static void unexpected_token(const Grammar *g, const map *row, symbol sym) {
     size_t i;
@@ -34,10 +35,11 @@ static void unexpected_token(const Grammar *g, const map *row, symbol sym) {
     exit(2);
 }
 
-ASTs Grammar_parse(Grammar *g, const StreamElement *stream) {
-    ASTs ret = NULL;
+IRs Grammar_parse(Grammar *g, const StreamElement *stream) {
+    IRs ret = NULL;
     buffer stack = NULL;    /* buffer<state> */
-    buffer valstack = NULL; /* buffer<size_t (iToken/iAST)> */
+    buffer valstack = NULL; /* buffer<size_t (iToken/iIR)> */
+    buffer irstack = NULL;  /* buffer<iIR> */
 
 #ifdef DEBUG
     const StreamElement *dbgtokens = stream;
@@ -57,9 +59,11 @@ ASTs Grammar_parse(Grammar *g, const StreamElement *stream) {
         Grammar_compile(g);
 
     Grammar_clean(g);
-    buffer_new(&ret, sizeof(AST));
+    buffer_new(&ret, sizeof(IR));
     buffer_new(&stack, sizeof(state));
     buffer_new(&valstack, sizeof(size_t));
+    buffer_new(&irstack, sizeof(iIR));
+    buffer_push(ret, &IR_token);
     buffer_push(stack, &ZERO);
 
     for (;;) {
@@ -80,30 +84,47 @@ ASTs Grammar_parse(Grammar *g, const StreamElement *stream) {
 
         entry = map_get(*row, &sym, Entry);
         switch (entry->type) {
-        case ENTRY_ACCEPT: {
+        case ENTRY_ACCEPT:
+            buffer_shrink(ret);
             buffer_out(&valstack);
             buffer_out(&stack);
+            buffer_out(&irstack);
             return ret;
-        }
         case ENTRY_REDUCE: {
             size_t prodidx;
             const Production *prod;
             size_t x;
-            buffer sub = NULL; /* buffer<size_t (iToken/iAST)> */
-            AST ast;
-            iAST iast;
+            IR ir = {NULL, NULL};
+            iIR iir;
 
-            /* Pop production while constructing sub */
+            /* Pop production while constructing ir */
             prodidx = entry->info;
             prod = buffer_get(g->g, prodidx, Production);
             x = buffer_num(prod->rhs);
-            buffer_new(&sub, sizeof(size_t));
+            buffer_new(&ir.types, sizeof(size_t));
+            buffer_new(&ir.ids, sizeof(size_t));
             while (x--) {
-                buffer_pop(stack);
-                buffer_push(sub, buffer_back(valstack, size_t));
+                iIR child;
+                size_t childval;
+                child = *buffer_back(irstack, size_t);
+                buffer_pop(irstack);
+                childval = *buffer_back(valstack, size_t);
                 buffer_pop(valstack);
+                buffer_pop(stack);
+
+                if (child == 0) {
+                    /* This is a token */
+                    buffer_push(ir.types, &ZERO);
+                    buffer_push(ir.ids, &childval);
+                } else {
+                    /* This is a NT */
+                    buffer_push(ir.types, &childval);
+                    buffer_push(ir.ids, &child);
+                }
             }
-            buffer_reverse(sub);
+
+            buffer_reverse(ir.types);
+            buffer_reverse(ir.ids);
 
             /* Perform GOTO */
             st = *buffer_back(stack, state);
@@ -117,12 +138,10 @@ ASTs Grammar_parse(Grammar *g, const StreamElement *stream) {
             printf("Reduce\n");
 #endif
 
-            /* Output (create AST element) */
-            ast.prod = prodidx - 1;
-            ast.sub = sub;
-            iast = buffer_num(ret);
-            buffer_push(ret, &ast);
-            buffer_push(valstack, &iast);
+            buffer_push(valstack, &prodidx);
+            iir = buffer_num(ret);
+            buffer_push(ret, &ir);
+            buffer_push(irstack, &iir);
             break;
         }
         case ENTRY_SHIFT:
@@ -134,6 +153,7 @@ ASTs Grammar_parse(Grammar *g, const StreamElement *stream) {
 #endif
             buffer_push(stack, &entry->info);
             buffer_push(valstack, &stream->data);
+            buffer_push(irstack, &ZERO);
             ++stream;
             break;
         default:

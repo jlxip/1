@@ -17,12 +17,12 @@ const char *nts[] = {"S", "USES", "USE", "RELATIVE_PATH", "MODULE", "GLOBALS",
     "IMPL_DEF", "EXTERN", "EXTERN_ARGS", "EXTERN_ARG", "BLOCK", "STATEMENTS",
     "STATEMENT", NULL};
 
-ASTPack parse(Tokens tokens) {
+IRs parse(Tokens tokens) {
     void *g;
     char *gtext;
     TokenData *stream;
     size_t i;
-    ASTPack ret;
+    IRs ret;
 
     /* Compile grammar */
     gtext = read_whole_file("src/2-parser/grammar.txt");

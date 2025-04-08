@@ -2,10 +2,8 @@
 
 ## 1 Bootstrap Compiler
 
-This is a compiler written in 100% portable ANSI C. It translates 1 into ANSI C.
-
-Even though this compiles perfectly fine with `-Werror -Wall -Wextra -pedantic`,
-you probably want to disable warnings when using an old compiler, in case of bugs.
+A modular transpiler written in architecture agnostic ANSI C.
+Modules take cache-efficient peeks at specific structures and mutate them.
 
 ## Status
 - [x] Data structures
@@ -13,7 +11,9 @@ you probably want to disable warnings when using an old compiler, in case of bug
 - [x] LALR parser generator
 - [x] Lexer (second thought)
 - [x] Parser
-- [ ] Full semantic analysis *IN PROGRESS*
-- [ ] Free memory
-- [ ] Compile-time interpreter
-- [ ] Code generation
+- [x] Intermediate Representation
+- [ ] Simplify (module) *IN PROGRESS*
+- [ ] Type-check (module)
+- [ ] Generics (module)
+- [ ] Code generation (module)
+- [ ] Compile-time interpreter (module)

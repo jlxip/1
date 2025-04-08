@@ -2,8 +2,7 @@
 
 ## easy
 
-easy is a C89 implementation of an LALR parsing table generator used in the 1 bootstrap compiler.
-
-It compiles a grammar written in text and parses an input stream of tokens, generating a walkable AST as output.
+easy is a architecture-agnostic ANSI C implementation of an LALR parsing table generator.
+It compiles a grammar written in text and parses an input stream of tokens, generating a walkable IR as output.
 
 The name is satiric since this is the hardest thing I've written in years.

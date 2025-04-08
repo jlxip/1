@@ -66,8 +66,6 @@ typedef struct {
     buffer gotos;      /* buffer<map<symbol, state>> */
     buffer table;      /* buffer<map<symbol, Entry>> */
 
-    char **names; /* Not handled */
-
     /* Debugging (showing errors) */
     const char **strtokens;
     const char **strnts;
@@ -122,16 +120,18 @@ typedef struct {
     void *data; /* Anything you want! */
 } StreamElement;
 
-#ifndef AST_TYPEDEF
-#define AST_TYPEDEF
+#ifndef IR_TYPEDEF
+#define IR_TYPEDEF
+/* We're going full data-oriented design for this one */
 typedef struct {
-    size_t prod;
-    buffer sub; /* buffer<size_t (iToken/iAST)> */
-} AST;
-typedef size_t iAST;
-typedef buffer ASTs; /* buffer<AST> */
+    /* Types and data of children */
+    buffer types; /* buffer<size_t (IRType)> */
+    buffer ids;   /* buffer<size_t (iToken/iIR)> */
+} IR;
+typedef size_t iIR;
+typedef buffer IRs; /* buffer<IR> */
 #endif
 
-ASTs Grammar_parse(Grammar *g, const StreamElement *stream);
+IRs Grammar_parse(Grammar *g, const StreamElement *stream);
 
 #endif

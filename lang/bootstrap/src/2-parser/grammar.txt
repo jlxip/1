@@ -1,220 +1,214 @@
 # ---------- GLOBAL SCOPE -----------
-S -> USES GLOBALS 'program
-USES -> USE USES 'uses_rec | EPSILON 'uses_null
-USE -> use RELATIVE_PATH semicolon 'use
-RELATIVE_PATH -> dot RELATIVE_PATH 'relpath_dot | MODULE 'relpath_direct
-MODULE -> id dot MODULE 'module_dot | id 'module_direct
+S -> USES GLOBALS #program
+USES -> USE USES #uses_rec
+USES -> EPSILON #uses_null
+USE -> use RELATIVE_PATH semicolon #use
+RELATIVE_PATH -> dot RELATIVE_PATH #relpath_dot
+RELATIVE_PATH -> MODULE #relpath_direct
+MODULE -> id dot MODULE #module_dot
+MODULE -> id #module_direct
 
-GLOBALS -> GLOBAL GLOBALS 'globals_rec | EPSILON 'globals_null
-GLOBAL -> DECLARATION semicolon 'global_decl
-GLOBAL -> FUNCTION 'global_func
-GLOBAL -> STRUCT 'global_struct
-GLOBAL -> IMPL 'global_impl
-GLOBAL -> EXTERN 'global_extern
+GLOBALS -> GLOBAL GLOBALS #globals_rec
+GLOBALS -> EPSILON #globals_null
+GLOBAL -> DECLARATION semicolon #global_decl
+GLOBAL -> FUNCTION #global_func
+GLOBAL -> STRUCT #global_struct
+GLOBAL -> IMPL #global_impl
+GLOBAL -> EXTERN #global_extern
 
-ANNOTATIONS -> ANNOTATION ANNOTATIONS 'annot_rec
-ANNOTATIONS -> EPSILON 'annot_null
-ANNOTATION -> atsymbol id 'annot
-ANNOTATION -> atsymbol id opar PRIMARY_LIST cpar 'annot_args
+ANNOTATIONS -> ANNOTATION ANNOTATIONS #annot_rec
+ANNOTATIONS -> EPSILON #annot_null
+ANNOTATION -> atsymbol id #annot
+ANNOTATION -> atsymbol id opar PRIMARY_LIST cpar #annot_args
 
-PRIMARY_LIST -> PRIMARY comma PRIMARY_LIST 'primary_list_rec
-PRIMARY_LIST -> PRIMARY 'primary_list_direct
+PRIMARY_LIST -> PRIMARY comma PRIMARY_LIST #primary_list_rec
+PRIMARY_LIST -> PRIMARY #primary_list_direct
 
-FUNCTION -> ANNOTATIONS fn id BLOCK 'function_noargs_void
-FUNCTION -> ANNOTATIONS fn id arrow TYPE BLOCK 'function_noargs_typed
-FUNCTION -> ANNOTATIONS fn id opar PARAMS cpar BLOCK 'function_void
-FUNCTION -> ANNOTATIONS fn id opar PARAMS cpar arrow TYPE BLOCK 'function_typed
-PARAMS -> PARAM comma PARAMS 'params_rec
-PARAMS -> PARAM 'params_one
-PARAM -> TYPED_ID 'param_copy
-PARAM -> amp TYPED_ID 'param_ref
-PARAM -> plus TYPED_ID 'param_mut
-PARAM -> amp plus TYPED_ID 'param_mutref
+FUNCTION -> ANNOTATIONS fn id BLOCK #function_noargs_void
+FUNCTION -> ANNOTATIONS fn id arrow TYPE BLOCK #function_noargs_typed
+FUNCTION -> ANNOTATIONS fn id opar PARAMS cpar BLOCK #function_void
+FUNCTION -> ANNOTATIONS fn id opar PARAMS cpar arrow TYPE BLOCK #function_typed
+PARAMS -> PARAM comma PARAMS #params_rec
+PARAMS -> PARAM #params_one
+PARAM -> TYPED_ID #param_copy
+PARAM -> amp TYPED_ID #param_ref
+PARAM -> plus TYPED_ID #param_mut
+PARAM -> amp plus TYPED_ID #param_mutref
 
 
 
 # ---------- EXPRESSIONS ----------
-EXPRESSION -> opar EXPRESSION cpar 'expr_par
+EXPRESSION -> opar EXPRESSION cpar #expr_par
 
 %left obraces opar
 %hint id
-EXPRESSION -> PRIMARY 'expr_primary
+EXPRESSION -> PRIMARY #expr_primary
 
 # Function call
-EXPRESSION -> PRIMARY opar EXPRESSION_LIST_OR_NONE cpar
-EXPRESSION_LIST_OR_NONE -> EPSILON 'expression_list_none
-EXPRESSION_LIST_OR_NONE -> EXPRESSION_LIST 'expression_list
-EXPRESSION_LIST -> EXPRESSION 'expression_list_one
-EXPRESSION_LIST -> EXPRESSION comma EXPRESSION_LIST 'expression_list_rec
+EXPRESSION -> PRIMARY opar EXPRESSION_LIST_OR_NONE cpar #expr_call
+EXPRESSION_LIST_OR_NONE -> EPSILON #expression_list_none
+EXPRESSION_LIST_OR_NONE -> EXPRESSION_LIST #expression_list
+EXPRESSION_LIST -> EXPRESSION #expression_list_one
+EXPRESSION_LIST -> EXPRESSION comma EXPRESSION_LIST #expression_list_rec
 
-EXPRESSION -> LITERAL 'expr_lit
-LITERAL -> bool 'lit_bool
-LITERAL -> word 'lit_word
-LITERAL -> float 'lit_float
-LITERAL -> string 'lit_string
-LITERAL -> TUPLE 'lit_tuple
-TUPLE -> opar EXPRESSION comma EXPRESSION_LIST_OR_NONE cpar 'tuple
+EXPRESSION -> LITERAL #expr_lit
+LITERAL -> bool #lit_bool
+LITERAL -> word #lit_word
+LITERAL -> float #lit_float
+LITERAL -> string #lit_string
+LITERAL -> TUPLE #lit_tuple
+TUPLE -> opar EXPRESSION comma EXPRESSION_LIST_OR_NONE cpar #tuple
 
 %left sizeof
-EXPRESSION -> sizeof EXPRESSION 'expr_sizeof
+EXPRESSION -> sizeof EXPRESSION #expr_sizeof
 
-# Bitwise: highest priority, it's grouped first
+# Bitwise: highest priority, it#s grouped first
 # That means small chunks: 1 + 3 ^ 5 or 0 -> 1 + (3 ^ 5) or 0
 %left hat amp bar
-EXPRESSION -> EXPRESSION hat EXPRESSION 'expr_hat
-EXPRESSION -> EXPRESSION amp EXPRESSION 'expr_amp
-EXPRESSION -> EXPRESSION bar EXPRESSION 'expr_bar
+EXPRESSION -> EXPRESSION hat EXPRESSION #expr_hat
+EXPRESSION -> EXPRESSION amp EXPRESSION #expr_amp
+EXPRESSION -> EXPRESSION bar EXPRESSION #expr_bar
 
 # Arithmetic
 # 1 + 2 * 3 * 4 / 4 -> 1 + (((2 * 3) * 4) / 4)
 %left star slash plus minus
-EXPRESSION -> EXPRESSION star EXPRESSION 'expr_star
-EXPRESSION -> EXPRESSION slash EXPRESSION 'expr_slash
-EXPRESSION -> EXPRESSION plus EXPRESSION 'expr_plus
-EXPRESSION -> EXPRESSION minus EXPRESSION 'expr_minus
+EXPRESSION -> EXPRESSION star EXPRESSION #expr_star
+EXPRESSION -> EXPRESSION slash EXPRESSION #expr_slash
+EXPRESSION -> EXPRESSION plus EXPRESSION #expr_plus
+EXPRESSION -> EXPRESSION minus EXPRESSION #expr_minus
 
 # Comparison
 # 2 + 1 == 3 -> (2 + 1) == (3)
 %nonassoc deq neq lt leq gt geq
-EXPRESSION -> EXPRESSION deq EXPRESSION 'expr_deq
-EXPRESSION -> EXPRESSION neq EXPRESSION 'expr_neq
-EXPRESSION -> EXPRESSION lt EXPRESSION 'expr_lt
-EXPRESSION -> EXPRESSION leq EXPRESSION 'expr_leq
-EXPRESSION -> EXPRESSION gt EXPRESSION 'expr_gt
-EXPRESSION -> EXPRESSION geq EXPRESSION 'expr_geq
+EXPRESSION -> EXPRESSION deq EXPRESSION #expr_deq
+EXPRESSION -> EXPRESSION neq EXPRESSION #expr_neq
+EXPRESSION -> EXPRESSION lt EXPRESSION #expr_lt
+EXPRESSION -> EXPRESSION leq EXPRESSION #expr_leq
+EXPRESSION -> EXPRESSION gt EXPRESSION #expr_gt
+EXPRESSION -> EXPRESSION geq EXPRESSION #expr_geq
 
 # Logic: lowest priority, grouped at the end
 # This means bigger chunks: 1 + 3 or 0 -> (1 + 3) or (0)
 %left not and damp or dbar
-EXPRESSION -> not EXPRESSION 'expr_not
-EXPRESSION -> EXPRESSION and EXPRESSION 'expr_and
-EXPRESSION -> EXPRESSION damp EXPRESSION 'expr_and2
-EXPRESSION -> EXPRESSION or EXPRESSION 'expr_or
-EXPRESSION -> EXPRESSION dbar EXPRESSION 'expr_or2
+EXPRESSION -> not EXPRESSION #expr_not
+EXPRESSION -> EXPRESSION and EXPRESSION #expr_and
+EXPRESSION -> EXPRESSION damp EXPRESSION #expr_and2
+EXPRESSION -> EXPRESSION or EXPRESSION #expr_or
+EXPRESSION -> EXPRESSION dbar EXPRESSION #expr_or2
 
 # Struct instantiation
-EXPRESSION -> STRUCT_INST 'expr_struct_inst
-STRUCT_INST -> PRIMARY obraces STRUCT_FIELD_INST cbraces 'struct_inst
-STRUCT_FIELD_INST -> id eq EXPRESSION comma STRUCT_FIELD_INST 'struct_field_inst_rec
-STRUCT_FIELD_INST -> EPSILON 'struct_field_inst_null
+EXPRESSION -> STRUCT_INST #expr_struct_inst
+STRUCT_INST -> PRIMARY obraces STRUCT_FIELD_INST cbraces #struct_inst
+STRUCT_FIELD_INST -> id eq EXPRESSION comma STRUCT_FIELD_INST #struct_field_inst_rec
+STRUCT_FIELD_INST -> EPSILON #struct_field_inst_null
 
 # Assignments
-EXPRESSION -> ASSIGNMENT 'expr_assign
+EXPRESSION -> ASSIGNMENT #expr_assign
 %right eq
-ASSIGNMENT -> PRIMARY eq EXPRESSION 'assign_eq
+ASSIGNMENT -> PRIMARY eq EXPRESSION #assign_eq
 %nonassoc pluseq minuseq stareq slasheq hateq ampeq bareq
-ASSIGNMENT -> PRIMARY pluseq EXPRESSION 'assign_plus
-ASSIGNMENT -> PRIMARY minuseq EXPRESSION 'assign_minus
-ASSIGNMENT -> PRIMARY stareq EXPRESSION 'assign_star
-ASSIGNMENT -> PRIMARY slasheq EXPRESSION 'assign_slash
-ASSIGNMENT -> PRIMARY hateq EXPRESSION 'assign_hat
-ASSIGNMENT -> PRIMARY ampeq EXPRESSION 'assign_amp
-ASSIGNMENT -> PRIMARY bareq EXPRESSION 'assign_bar
+ASSIGNMENT -> PRIMARY pluseq EXPRESSION #assign_plus
+ASSIGNMENT -> PRIMARY minuseq EXPRESSION #assign_minus
+ASSIGNMENT -> PRIMARY stareq EXPRESSION #assign_star
+ASSIGNMENT -> PRIMARY slasheq EXPRESSION #assign_slash
+ASSIGNMENT -> PRIMARY hateq EXPRESSION #assign_hat
+ASSIGNMENT -> PRIMARY ampeq EXPRESSION #assign_amp
+ASSIGNMENT -> PRIMARY bareq EXPRESSION #assign_bar
 
-# Due to 'lt' having lower precedence than 'id', this part of
+# Due to #lt# having lower precedence than #id#, this part of
 # the grammar must be non-ambiguous
 %left dot id
-PRIMARY -> PRIMARY dot id 'primary_dot
-PRIMARY -> PRIMARY lt TYPES gt 'primary_typed
-PRIMARY -> id 'primary_id
+PRIMARY -> PRIMARY dot id #primary_dot
+PRIMARY -> PRIMARY lt TYPES gt #primary_typed
+PRIMARY -> id #primary_id
 # TODO: id[]
 
 
 
 # ---------- DECLARATION ----------
-DECLARATION -> let id eq EXPRESSION 'decl_let_id
-DECLARATION -> let plus id eq EXPRESSION 'decl_let_p_id
-DECLARATION -> let TYPED_ID eq EXPRESSION 'decl_let_typed
-DECLARATION -> let plus TYPED_ID eq EXPRESSION 'decl_let_p_typed
+DECLARATION -> let id eq EXPRESSION #decl_let_id
+DECLARATION -> let plus id eq EXPRESSION #decl_let_p_id
+DECLARATION -> let TYPED_ID eq EXPRESSION #decl_let_typed
+DECLARATION -> let plus TYPED_ID eq EXPRESSION #decl_let_p_typed
 
-TYPED_ID -> id colon TYPE 'typed
+TYPED_ID -> id colon TYPE #typed
 
-TYPE -> kbool 'type_bool
-TYPE -> kbyte 'type_byte
-TYPE -> kfloat 'type_float
-TYPE -> kptr 'type_ptr
-TYPE -> kstring 'type_string
-TYPE -> kword 'type_word
-TYPE -> PRIMARY 'type_direct
-TYPE -> TUPLEDEF 'type_tuple
-TYPE -> TUPLEDEF star EXPRESSION 'type_tuple_star
+TYPE -> kbool #type_bool
+TYPE -> kbyte #type_byte
+TYPE -> kfloat #type_float
+TYPE -> kptr #type_ptr
+TYPE -> kstring #type_string
+TYPE -> kword #type_word
+TYPE -> PRIMARY #type_direct
+TYPE -> TUPLEDEF #type_tuple
+TYPE -> TUPLEDEF star EXPRESSION #type_tuple_star
 
-TUPLEDEF -> opar TYPE comma cpar 'tupledef_one
-TUPLEDEF -> opar TYPE comma TYPES cpar 'tupledef_many
+TUPLEDEF -> opar TYPE comma cpar #tupledef_one
+TUPLEDEF -> opar TYPE comma TYPES cpar #tupledef_many
 
-TYPES -> TYPE comma TYPES 'types_rec
-TYPES -> TYPE 'types_direct
-
-
-
-# ---------- CONTROL ----------
-CONTROL -> assert EXPRESSION 'ctrl_assert
-CONTROL -> break 'ctrl_break
-CONTROL -> continue 'ctrl_continue
-CONTROL -> fall 'ctrl_fall
-CONTROL -> return 'ctrl_ret
-CONTROL -> return EXPRESSION 'ctrl_retval
+TYPES -> TYPE comma TYPES #types_rec
+TYPES -> TYPE #types_direct
 
 
 
 # ---------- CONDITIONAL ----------
 # Dangling else problem, solve by shift
 %left else elif if
-IF -> if EXPRESSION STATEMENT 'if_only
-IF -> if EXPRESSION STATEMENT ELIF 'if_elif
-ELIF -> elif EXPRESSION STATEMENT 'elif_only
-ELIF -> elif EXPRESSION STATEMENT ELIF 'elif_rec
-ELIF -> ELSE 'elif_else
-ELSE -> else STATEMENT 'else
+IF -> if EXPRESSION STATEMENT #if_only
+IF -> if EXPRESSION STATEMENT ELIF #if_elif
+ELIF -> elif EXPRESSION STATEMENT #elif_only
+ELIF -> elif EXPRESSION STATEMENT ELIF #elif_rec
+ELIF -> ELSE #elif_else
+ELSE -> else STATEMENT #else
 
-SWITCH -> switch EXPRESSION obraces SWITCH_BODY cbraces 'switch
-SWITCH_BODY -> SWITCH_CASE SWITCH_BODY 'switch_rec
-SWITCH_BODY -> SWITCH_CASE 'switch_one
+SWITCH -> switch EXPRESSION obraces SWITCH_BODY cbraces #switch
+SWITCH_BODY -> SWITCH_CASE SWITCH_BODY #switch_rec
+SWITCH_BODY -> SWITCH_CASE #switch_one
 # TODO: case 'a', 'b', 'c':
-SWITCH_CASE -> case LITERAL colon STATEMENTS 'switch_case
-SWITCH_CASE -> default colon STATEMENTS 'switch_default
+SWITCH_CASE -> case LITERAL colon STATEMENTS #switch_case
+SWITCH_CASE -> default colon STATEMENTS #switch_default
 
 
 
 # ---------- STRUCT ----------
-STRUCT -> ANNOTATIONS struct id obraces STRUCT_DEF cbraces 'struct
-STRUCT_DEF -> TYPED_ID comma STRUCT_DEF 'struct_def
-STRUCT_DEF -> EPSILON 'struct_def_null
+STRUCT -> ANNOTATIONS struct id obraces STRUCT_DEF cbraces #struct
+STRUCT_DEF -> TYPED_ID comma STRUCT_DEF #struct_def
+STRUCT_DEF -> EPSILON #struct_def_null
 
 
 
 # ---------- IMPL ----------
-IMPL -> ANNOTATIONS impl PRIMARY obraces IMPL_DEF cbraces 'impl
-IMPL_DEF -> FUNCTION IMPL_DEF 'impl_def
-IMPL_DEF -> EPSILON 'impl_def_null
+IMPL -> ANNOTATIONS impl PRIMARY obraces IMPL_DEF cbraces #impl
+IMPL_DEF -> FUNCTION IMPL_DEF #impl_def
+IMPL_DEF -> EPSILON #impl_def_null
 
 
 
 # ---------- EXTERN ----------
-EXTERN -> extern id semicolon 'extern_noargs_void
-EXTERN -> extern id arrow TYPE semicolon 'extern_noargs_typed
-EXTERN -> extern id opar PARAMS cpar semicolon 'extern_void
-EXTERN -> extern id opar PARAMS cpar arrow TYPE semicolon 'extern_typed
+EXTERN -> extern id semicolon #extern_noargs_void
+EXTERN -> extern id arrow TYPE semicolon #extern_noargs_typed
+EXTERN -> extern id opar PARAMS cpar semicolon #extern_void
+EXTERN -> extern id opar PARAMS cpar arrow TYPE semicolon #extern_typed
 
 
 
 # ---------- BLOCK (STATEMENTS) ----------
-BLOCK -> obraces STATEMENTS cbraces 'block
-STATEMENTS -> STATEMENT STATEMENTS 'stmts_rec
-STATEMENTS -> EPSILON 'stmts_null
-STATEMENT -> BLOCK 'stmt_block
-STATEMENT -> DECLARATION semicolon 'stmt_decl
-STATEMENT -> EXPRESSION semicolon 'stmt_expr
+BLOCK -> obraces STATEMENTS cbraces #block
+STATEMENTS -> STATEMENT STATEMENTS #stmts_rec
+STATEMENTS -> EPSILON #stmts_null
+STATEMENT -> BLOCK #stmt_block
+STATEMENT -> DECLARATION semicolon #stmt_decl
+STATEMENT -> EXPRESSION semicolon #stmt_expr
 # --- CONTROL ---
-STATEMENT -> assert EXPRESSION semicolon 'stmt_assert
-STATEMENT -> break semicolon 'stmt_break
-STATEMENT -> continue semicolon 'stmt_continue
-STATEMENT -> fall semicolon 'stmt_fall
-STATEMENT -> return semicolon 'stmt_ret
-STATEMENT -> return EXPRESSION semicolon 'stmt_retval
+STATEMENT -> assert EXPRESSION semicolon #stmt_assert
+STATEMENT -> break semicolon #stmt_break
+STATEMENT -> continue semicolon #stmt_continue
+STATEMENT -> fall semicolon #stmt_fall
+STATEMENT -> return semicolon #stmt_ret
+STATEMENT -> return EXPRESSION semicolon #stmt_retval
 # --- CONDITIONAL ---
-STATEMENT -> IF 'stmt_if
-STATEMENT -> SWITCH 'stmt_switch
+STATEMENT -> IF #stmt_if
+STATEMENT -> SWITCH #stmt_switch
 # --- LOOP ---
-STATEMENT -> for id in EXPRESSION STATEMENT 'stmt_for
-STATEMENT -> while EXPRESSION STATEMENT 'stmt_while
+STATEMENT -> for id in EXPRESSION STATEMENT #stmt_for
+STATEMENT -> while EXPRESSION STATEMENT #stmt_while

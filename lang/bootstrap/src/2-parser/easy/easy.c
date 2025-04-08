@@ -34,6 +34,17 @@ static char *strip(char *str) {
     return ret;
 }
 
+static void remove_until(char *str, char c) {
+    while (*str) {
+        if (*str == c) {
+            *str = '\0';
+            return;
+        }
+
+        ++str;
+    }
+}
+
 static buffer split(char *str, const char *del) {
     buffer ret = NULL;
     buffer_new(&ret, sizeof(char *));
@@ -46,22 +57,11 @@ static buffer split(char *str, const char *del) {
     return ret;
 }
 
-static char *_strdup(const char *x) {
-    size_t len;
-    char *ret;
-
-    len = strlen(x);
-    ret = malloc(len + 1);
-    memcpy(ret, x, len + 1);
-    return ret;
-}
-
 void *grammar(const char **tokens, const char **nts, const char *cstr,
     const char *start) {
 
     const char **cur = NULL;
     map all_symbols = NULL; /* map<str, symbol> */
-    buffer names = NULL;    /* buffer<char*> */
     size_t i;
     size_t ntok;
     Grammar *ret;
@@ -89,9 +89,6 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
         ++i;
     }
 
-    /* Init names */
-    buffer_new(&names, sizeof(char *));
-
     /* Create grammar */
     ret = (Grammar *)malloc(sizeof(Grammar));
     if (!map_has(all_symbols, start))
@@ -104,23 +101,23 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
     strcpy(str, cstr);
     lines = split(str, "\n");
     for (lineno = 0; lineno < buffer_num(lines); ++lineno) {
-        /* Example: C -> c C 'prod1 | d 'prod2 */
+        /* Example: C -> c C */
         char *line;
         buffer sides;
         char *strlhs, *rhs;
         const symbol *lhs;
-        buffer options;
+        buffer symbols_named;
+        buffer symbols = NULL;
         size_t i;
 
         line = *buffer_get(lines, lineno, char *);
         assert(line);
+        remove_until(line, '#');
+        assert(line); /* unneeded */
         line = strip(line);
         assert(line);
         if (strlen(line) == 0)
             continue;
-
-        if (*line == '#')
-            continue; /* comment */
 
         if (*line == '%') {
             /* Precedence */
@@ -180,7 +177,7 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
 
         sides = split(line, "->");
         if (buffer_num(sides) != 2)
-            throwe("oops bad grammar, missed -> near line %lu", lineno + 1);
+            throwe("missed -> near line %lu", lineno + 1);
         strlhs = strip(*buffer_get(sides, 0, char *)); /* Example: C */
         rhs = *buffer_get(sides, 1, char *);           /* Example: c C */
         buffer_out(&sides);
@@ -188,73 +185,38 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
         lhs = map_get(all_symbols, strlhs, symbol);
         if (!lhs)
             throwe("inexistent lhs symbol: \"%s\"", strlhs);
+        rhs = strip(rhs);
+        if (strlen(rhs) == 0)
+            throw("no right-hand side in production");
 
-        options = split(rhs, "|");
-        for (i = 0; i < buffer_num(options); ++i) {
-            /* Example: c C 'prod1 */
-            char *option;
-            buffer namesep;
-            char *name;
-            buffer symbols;
-            buffer syms = NULL;
-            size_t j;
+        symbols_named = split(rhs, " ");
+        buffer_new(&symbols, sizeof(symbol));
+        for (i = 0; i < buffer_num(symbols_named); ++i) {
+            /* Example: c */
+            char *strsym;
+            const symbol *sym;
 
-            option = *buffer_get(options, i, char *);
-            option = strip(option);
-            if (strlen(option) == 0)
-                throw("oops bad grammar, no option");
+            strsym = *buffer_get(symbols_named, i, char *);
+            if (strlen(strsym) == 0)
+                throw("no symbol?");
 
-            /* Get name for this production (right of quote) */
-            namesep = split(option, "'");
-            if (buffer_num(namesep) != 2)
-                name = "???";
-            else
-                name = *buffer_get(namesep, 1, char *);
-            strip(name);
-            name = _strdup(name);
-            buffer_push(names, &name);
+            sym = map_get(all_symbols, strsym, symbol);
+            if (!sym)
+                throwe("inexistent rhs symbol: \"%s\"", strsym);
 
-            option = *buffer_get(namesep, 0, char *);
-            buffer_out(&namesep);
-            strip(option);
-            /* Example: c C */
+            if (*sym == 0)
+                break; /* Epsilon must be an empty buffer */
 
-            symbols = split(option, " ");
-
-            buffer_new(&syms, sizeof(symbol));
-            for (j = 0; j < buffer_num(symbols); ++j) {
-                /* Example: c */
-                char *strsym;
-                const symbol *sym;
-
-                strsym = *buffer_get(symbols, j, char *);
-                if (strlen(strsym) == 0)
-                    throw("oops bad grammar, no symbol?");
-
-                sym = map_get(all_symbols, strsym, symbol);
-                if (!sym)
-                    throwe("inexistent rhs symbol: \"%s\"", strsym);
-
-                if (*sym == 0)
-                    break; /* Epsilon must be an empty buffer */
-
-                buffer_push(syms, sym);
-            }
-
-            Grammar_add(ret, *lhs, syms);
-            if (hint)
-                Grammar_add_hint(ret, buffer_num(ret->g) - 1, hint);
-
-            buffer_out(&symbols);
+            buffer_push(symbols, sym);
         }
 
-        buffer_out(&options);
+        Grammar_add(ret, *lhs, symbols);
+        if (hint)
+            Grammar_add_hint(ret, buffer_num(ret->g) - 1, hint);
+
+        buffer_out(&symbols_named);
         hint = 0;
     }
-
-    /* Put names in g */
-    ret->names = buffer_get_raw(names, char *);
-    free(names); /* shallow free */
 
     map_out(&all_symbols);
     buffer_out(&lines);
@@ -275,15 +237,8 @@ void grammar_out(void *ptr) {
 
 /* --- */
 
-ASTPack grammar_parse(void *ptr, const TokenData *stream) {
-    Grammar *g = (Grammar *)ptr;
-    ASTs asts;
-    ASTPack ret;
-
+IRs grammar_parse(void *ptr, const TokenData *stream) {
     /* Note that TokenData = StreamElement */
-    asts = Grammar_parse(g, (StreamElement *)stream);
-
-    ret.names = g->names;
-    ret.asts = asts;
-    return ret;
+    Grammar *g = (Grammar *)ptr;
+    return Grammar_parse(g, (StreamElement *)stream);
 }

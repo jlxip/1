@@ -5,25 +5,19 @@
 
 Tokens get_tokens(const char *code);
 
-#ifndef AST_TYPEDEF
-#define AST_TYPEDEF
+#ifndef IR_TYPEDEF
+#define IR_TYPEDEF
+/* We're going full data-oriented design for this one */
 typedef struct {
-    size_t prod;
-    buffer sub; /* buffer<size_t (iToken/iAST)> */
-} AST;
-typedef size_t iAST;
-typedef buffer ASTs; /* buffer<AST> */
+    /* Types and data of children */
+    buffer types; /* buffer<size_t (IRType)> */
+    buffer ids;   /* buffer<size_t (iToken/iIR)> */
+} IR;
+typedef size_t iIR;
+typedef buffer IRs; /* buffer<IR> */
 #endif
 
-#ifndef ASTPACK_TYPEDEF
-#define ASTPACK_TYPEDEF
-typedef struct {
-    char **names;
-    ASTs asts;
-} ASTPack;
-#endif
-
-ASTPack parse(Tokens tokens);
-void walk(ASTPack ast, Tokens tokens);
+IRs parse(Tokens tokens);
+void modules_main(IRs irs, Tokens tokens);
 
 #endif
