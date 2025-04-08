@@ -67,7 +67,6 @@ typedef enum {
     T_AMPPLUS,   /* &+ */
     T_AMP,       /* & */
     T_BAREQ,     /* |= */
-    T_DBAR,      /* || */
     T_BAR,       /* | */
     T_LEQ,       /* <= */
     T_LT,        /* < */
@@ -95,10 +94,9 @@ static const char *token_strings[] = {"NULL", "id", "and", "arrow", "assert",
     "kstring", "kword", "let", "not", "or", "return", "sizeof", "struct",
     "switch", "use", "while", "bool", "word", "float", "string", "deq", "neq",
     "eq", "pluseq", "plus", "minuseq", "minus", "stareq", "star", "slasheq",
-    "slash", "hateq", "hat", "ampeq", "damp", "ampplus", "amp", "bareq", "dbar",
-    "bar", "leq", "lt", "geq", "gt", "dot", "comma", "colon", "semicolon",
-    "atsymbol", "opar", "cpar", "obracket", "cbracket", "obraces", "cbraces",
-    NULL};
+    "slash", "hateq", "hat", "ampeq", "damp", "ampplus", "amp", "bareq", "bar",
+    "leq", "lt", "geq", "gt", "dot", "comma", "colon", "semicolon", "atsymbol",
+    "opar", "cpar", "obracket", "cbracket", "obraces", "cbraces", NULL};
 #endif
 
 typedef struct {

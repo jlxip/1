@@ -119,12 +119,8 @@ size_t match_symbol(Capture *ret, const char *cur) {
             OK_TOKEN(T_AMP);
         }
     case '|':
-        /* |: |, ||, |= */
+        /* |: |, |= */
         switch (*cur) {
-        case '|':
-            /* || */
-            ++cur;
-            OK_TOKEN(T_DBAR);
         case '=':
             /* |= */
             ++cur;

@@ -89,12 +89,10 @@ EXPRESSION -> EXPRESSION geq EXPRESSION #expr_geq
 
 # Logic: lowest priority, grouped at the end
 # This means bigger chunks: 1 + 3 or 0 -> (1 + 3) or (0)
-%left not and damp or dbar
+%left not and or
 EXPRESSION -> not EXPRESSION #expr_not
 EXPRESSION -> EXPRESSION and EXPRESSION #expr_and
-EXPRESSION -> EXPRESSION damp EXPRESSION #expr_and2
 EXPRESSION -> EXPRESSION or EXPRESSION #expr_or
-EXPRESSION -> EXPRESSION dbar EXPRESSION #expr_or2
 
 # Struct instantiation
 EXPRESSION -> STRUCT_INST #expr_struct_inst
