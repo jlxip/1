@@ -2,8 +2,7 @@
 
 ## 1 Bootstrap Compiler
 
-A modular transpiler written in architecture agnostic ANSI C.
-Modules take cache-efficient peeks at specific structures and mutate them.
+A transpiler written in architecture-agnostic ANSI C.
 
 ## Status
 - [x] Data structures
@@ -12,8 +11,7 @@ Modules take cache-efficient peeks at specific structures and mutate them.
 - [x] Lexer (second thought)
 - [x] Parser
 - [x] Intermediate Representation
-- [ ] Simplify (module) *IN PROGRESS*
-- [ ] Type-check (module)
-- [ ] Generics (module)
-- [ ] Code generation (module)
-- [ ] Compile-time interpreter (module)
+- [x] Begin semantics and code generation
+- [ ] Finish semantics and code generation *IN PROGRESS*
+- [ ] Generics
+- [ ] comptime

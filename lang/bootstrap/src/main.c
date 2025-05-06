@@ -7,9 +7,11 @@
 void test_lalr(void);
 
 int main(int argc, const char *argv[]) {
-    char *code = NULL;
+    char *code;
     Tokens tokens;
     IRs irs;
+    Types types;
+    char *emitted;
 
 #ifdef DEBUG
     printf("Testing LALR implementation\n");
@@ -32,10 +34,18 @@ int main(int argc, const char *argv[]) {
     /* Parse */
     irs = parse(tokens);
 
-    /* Run modules */
-    modules_main(irs, tokens);
+    /* Semantic analysis */
+    types = semantics(tokens, irs);
+
+    /* Emit */
+    emitted = emit(tokens, irs, types);
 
     buffer_out(&tokens);
-    printf("That's all for now folks!\n");
+    buffer_out(&irs);
+    buffer_out(&types);
+
+    printf("\n\n--- EMITTED CODE ---\n");
+    printf("%s", emitted);
+
     return 0;
 }

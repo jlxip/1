@@ -2,6 +2,7 @@
 #define COMPILER_H
 
 #include <tokens.h>
+#include <types.h>
 
 Tokens get_tokens(const char *code);
 
@@ -18,6 +19,7 @@ typedef buffer IRs; /* buffer<IR> */
 #endif
 
 IRs parse(Tokens tokens);
-void modules_main(IRs irs, Tokens tokens);
+Types semantics(Tokens tokens, IRs irs);
+char *emit(Tokens tokens, IRs irs, Types types);
 
 #endif

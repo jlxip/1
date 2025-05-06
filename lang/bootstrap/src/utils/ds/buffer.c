@@ -32,6 +32,12 @@ static void buffer_set_nocheck(buffer buf, size_t idx, const void *element) {
     memcpy(target, element, buf->datasize);
 }
 
+void buffer_zresize(buffer buf, size_t n) {
+    buf->a = realloc(buf->a, n * buf->datasize);
+    memset(buf->a, 0, n * buf->datasize);
+    buf->alloc = buf->used = n;
+}
+
 void buffer_push(buffer buf, const void *element) {
     buffer_assert(buf);
     if (buf->used == buf->alloc)

@@ -183,10 +183,10 @@ IMPL_DEF -> EPSILON #impl_def_null
 
 
 # ---------- EXTERN ----------
-EXTERN -> extern id semicolon #extern_noargs_void
-EXTERN -> extern id arrow TYPE semicolon #extern_noargs_typed
-EXTERN -> extern id opar PARAMS cpar semicolon #extern_void
-EXTERN -> extern id opar PARAMS cpar arrow TYPE semicolon #extern_typed
+EXTERN -> ANNOTATIONS extern id semicolon #extern_noargs_void
+EXTERN -> ANNOTATIONS extern id arrow TYPE semicolon #extern_noargs_typed
+EXTERN -> ANNOTATIONS extern id opar PARAMS cpar semicolon #extern_void
+EXTERN -> ANNOTATIONS extern id opar PARAMS cpar arrow TYPE semicolon #extern_typed
 
 
 

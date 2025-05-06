@@ -14,6 +14,7 @@ typedef struct {
 typedef _buffer_t *buffer;
 
 void buffer_new(buffer *buf, size_t datasize);
+void buffer_zresize(buffer buf, size_t n);
 void buffer_push(buffer buf, const void *element);
 void buffer_push_front(buffer buf, const void *element);
 void buffer_set(buffer buf, size_t idx, const void *element);

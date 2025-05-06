@@ -25,27 +25,40 @@ string sdup(string x) {
     return r;
 }
 
-void sappend(string x, string y) {
-    size_t sz = x.len;
-    x.len += y.len;
-    x.a = realloc(x.a, x.len + 1);
-    memcpy(x.a + sz, y.a, y.len + 1);
+void sadd(string *x, string y) {
+    size_t sz = x->len;
+    x->len += y.len;
+    x->a = realloc(x->a, x->len + 1);
+    memcpy(x->a + sz, y.a, y.len + 1);
 }
 
-void sappendc(string x, const char *y) {
-    size_t sz = x.len;
+void saddc(string *x, const char *y) {
+    size_t sz = x->len;
     size_t os = strlen(y);
-    x.len += os;
-    x.a = realloc(x.a, x.len + 1);
-    memcpy(x.a + sz, y, os + 1);
+    x->len += os;
+    x->a = realloc(x->a, x->len + 1);
+    memcpy(x->a + sz, y, os + 1);
 }
 
-const char *sget(string x) { return x.a; }
+/* MAYBE: CRLF vs LF? */
+void snewln(string *x) { saddc(x, "\n"); }
+
+void saddln(string *x, string y) {
+    sadd(x, y);
+    snewln(x);
+}
+
+void saddlnc(string *x, const char *y) {
+    saddc(x, y);
+    snewln(x);
+}
+
+char *sget(string x) { return x.a; }
 
 size_t slen(string x) { return x.len; }
 
-void sfree(string x) {
-    free(x.a);
-    x.a = NULL;
-    x.len = 0;
+void sfree(string *x) {
+    free(x->a);
+    x->a = NULL;
+    x->len = 0;
 }

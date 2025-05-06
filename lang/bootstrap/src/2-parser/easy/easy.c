@@ -34,7 +34,7 @@ static char *strip(char *str) {
     return ret;
 }
 
-static void remove_until(char *str, char c) {
+static void remove_upto(char *str, char c) {
     while (*str) {
         if (*str == c) {
             *str = '\0';
@@ -45,14 +45,34 @@ static void remove_until(char *str, char c) {
     }
 }
 
-static buffer split(char *str, const char *del) {
+static buffer split(char *begin, const char *del) {
+    char *cur = begin;
+    size_t matched = 0;
     buffer ret = NULL;
     buffer_new(&ret, sizeof(char *));
 
-    str = strtok(str, del);
-    do {
-        buffer_push(ret, &str);
-    } while ((str = strtok(NULL, del)));
+    /* strtok didn't do the trick, it's too greedy */
+    while (*cur) {
+        if (*cur == del[matched]) {
+            ++matched;
+            if (matched == strlen(del)) {
+                cur -= strlen(del) - 1;
+                *cur = '\0';
+                buffer_push(ret, &begin);
+                begin = cur + strlen(del);
+                cur = begin;
+                matched = 0;
+            } else {
+                ++cur;
+            }
+        } else {
+            matched = 0;
+            ++cur;
+        }
+    }
+
+    if (*begin)
+        buffer_push(ret, &begin);
 
     return ret;
 }
@@ -112,7 +132,7 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
 
         line = *buffer_get(lines, lineno, char *);
         assert(line);
-        remove_until(line, '#');
+        remove_upto(line, '#');
         assert(line); /* unneeded */
         line = strip(line);
         assert(line);

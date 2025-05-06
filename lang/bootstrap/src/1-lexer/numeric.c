@@ -16,16 +16,6 @@
     case '8':                                                                  \
     case '9'
 
-static size_t atow(const char *str, size_t len) {
-    size_t i;
-    size_t ret = 0;
-    for (i = 0; i < len; ++i) {
-        ret *= 10;
-        ret += str[i] - '0';
-    }
-    return ret;
-}
-
 size_t match_numeric(Capture *ret, const char *cur) {
     const char *begin = cur;
     char *buf = NULL;
@@ -44,7 +34,10 @@ size_t match_numeric(Capture *ret, const char *cur) {
         default:
             /* It's a word! */
             len = --cur - begin;
-            OK_TOKEN_DATA(T_WORD, word, atow(begin, len));
+            buf = malloc(len + 1);
+            memcpy(buf, begin, len);
+            buf[len] = '\0';
+            OK_TOKEN_DATA(T_WORD, str, buf);
         }
     }
 
