@@ -71,6 +71,26 @@ static string emit_lit(Ctx *ctx, iIR iir, IRType type) {
     return ret;
 }
 
+static string emit_primary(Ctx *ctx, iIR iir, IRType type) {
+    string ret = snew();
+
+    switch (type) {
+    case IR_primary_dot:
+        todo();
+        break;
+    case IR_primary_typed:
+        todo();
+        break;
+    case IR_primary_id:
+        saddc(&ret, *buffer_get(ctx->sem.mangling, iir, const char *));
+        break;
+    default:
+        UNREACHABLE;
+    }
+
+    return ret;
+}
+
 static string emit_expr(Ctx *ctx, iIR iir, IRType type) {
     string ret = snew();
     IR *ir = GET_IR(iir);
@@ -81,7 +101,7 @@ static string emit_expr(Ctx *ctx, iIR iir, IRType type) {
         todo();
         break;
     case IR_expr_primary:
-        todo();
+        sadd(&ret, EMITT(primary, 0));
         break;
     case IR_expr_call:
         todo();
@@ -147,7 +167,7 @@ static string emit_stmt(Ctx *ctx, iIR iir, IRType type) {
         todo();
         break;
     case IR_stmt_ret:
-        todo();
+        saddlnc(&ret, "return;");
         break;
     case IR_stmt_retval:
         saddc(&ret, "return ");
@@ -204,18 +224,70 @@ static string emit_block(Ctx *ctx, iIR iir) {
     return ret;
 }
 
+static string emit_param(Ctx *ctx, iIR iir, IRType type) {
+    string ret = snew();
+
+    switch (type) {
+    case IR_param_copy:
+        saddc(&ret, "const ");
+        sadd(&ret, emit_type(*TYPE(iir)));
+        break;
+    case IR_param_ref:
+        todo();
+        break;
+    case IR_param_mut:
+        todo();
+        break;
+    case IR_param_mutref:
+        todo();
+        break;
+    default:
+        UNREACHABLE;
+    }
+
+    saddc(&ret, " ");
+    saddc(&ret, *buffer_get(ctx->sem.mangling, iir, const char *));
+    return ret;
+}
+
+static string emit_params(Ctx *ctx, iIR iir, IRType type) {
+    string ret = snew();
+
+    for (;;) {
+        IR *ir = GET_IR(iir);
+
+        switch (type) {
+        case IR_params_rec:
+            sadd(&ret, EMITT(param, 0));
+            saddc(&ret, ", ");
+            iir = GET_IRID(1);
+            type = GET_IRTYPE(1);
+            break;
+        case IR_params_one:
+            sadd(&ret, EMITT(param, 0));
+            return ret;
+        default:
+            UNREACHABLE;
+        }
+    }
+
+    return ret;
+}
+
 static string emit_func(Ctx *ctx, iIR iir, IRType type) {
     string ret = snew();
     IR *ir = GET_IR(iir);
     const char *mangled;
     size_t block;
 
-    mangled = *buffer_get(ctx->sem.mangling, GET_IRID(2), const char *);
+    mangled = *buffer_get(ctx->sem.mangling, iir, const char *);
     assert(mangled);
 
     switch (type) {
     case IR_function_noargs_void:
-        todo();
+        saddc(&ret, "void ");
+        saddc(&ret, mangled);
+        saddc(&ret, "(void) ");
         block = 3;
         break;
     case IR_function_noargs_typed:
@@ -230,7 +302,12 @@ static string emit_func(Ctx *ctx, iIR iir, IRType type) {
         block = 6;
         break;
     case IR_function_typed:
-        todo();
+        sadd(&ret, emit_type(*TYPE_CHILD(7)));
+        saddc(&ret, " ");
+        saddc(&ret, mangled);
+        saddc(&ret, "(");
+        sadd(&ret, EMITT(params, 4));
+        saddc(&ret, ") ");
         block = 8;
         break;
     default:

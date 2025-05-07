@@ -1,5 +1,10 @@
 #include "semantics.h"
 
+#define GET_IR(N) (buffer_get(ctx->irs, N, IR))
+#define GET_IRTYPE(N) (*buffer_get(ir->types, N, IRType))
+#define GET_IRID(N) (*buffer_get(ir->ids, N, iIR))
+#define GET_TOKEN(N) (buffer_get(ctx->tokens, N, Token))
+
 #define ASSERT_CHILDREN(N) assert(buffer_num(ir->types) == N)
 #define SEM(X, N) sem_##X(ctx, GET_IRID(N))
 #define SEMT(X, N) sem_##X(ctx, GET_IRID(N), GET_IRTYPE(N))
@@ -10,6 +15,50 @@
         assert(TYPE_CHILD(N)->id != TYPE_UNKNOWN);                             \
         *TYPE(iir) = *TYPE_CHILD(N);                                           \
     } while (0)
+
+#define PUSH_SCOPE                                                             \
+    do {                                                                       \
+        SymbolTable table;                                                     \
+        Symbols syms = NULL;                                                   \
+        table = *buffer_get(ctx->tables, ctx->current, SymbolTable);           \
+        map_new_string(&syms, sizeof(iIR), NULL, NULL, NULL, NULL);            \
+        buffer_push(table, &syms);                                             \
+    } while (0)
+
+#define POP_SCOPE                                                              \
+    do {                                                                       \
+        buffer_pop(*buffer_get(ctx->tables, ctx->current, SymbolTable));       \
+    } while (0)
+
+void push_to_scope(Ctx *ctx, const char *name, iIR iir) {
+    SymbolTable table;
+    Symbols syms;
+    table = *buffer_get(ctx->tables, ctx->current, SymbolTable);
+    syms = *buffer_back(table, Symbols);
+    map_remove_if_there(syms, name);
+    map_add(syms, name, &iir);
+}
+
+#define PUSH_TO_SCOPE(X, I) push_to_scope(ctx, X, I)
+
+/* --- */
+
+iIR lookup(Ctx *ctx, const char *name) {
+    SymbolTable table;
+    size_t i;
+    size_t num;
+
+    table = *buffer_get(ctx->tables, ctx->current, SymbolTable);
+    num = buffer_num(table);
+    for (i = 0; i < num; ++i) {
+        Symbols syms = *buffer_get(table, num - i - 1, Symbols);
+        if (map_has(syms, name))
+            return *map_get(syms, name, iIR);
+    }
+
+    throwe("could not find: %s", name);
+    return 0;
+}
 
 static bool check_types(Type a, Type b) {
     if (!a.id || !b.id)
@@ -111,6 +160,30 @@ static void sem_lit(Ctx *ctx, iIR iir, IRType type) {
     }
 }
 
+static void sem_primary(Ctx *ctx, iIR iir, IRType type) {
+    IR *ir = GET_IR(iir);
+
+    switch (type) {
+    case IR_primary_dot:
+        todo();
+        break;
+    case IR_primary_typed:
+        todo();
+        break;
+    case IR_primary_id: {
+        const char *name;
+        iIR e;
+        name = get_id(ctx, GET_IRID(0));
+        e = lookup(ctx, name);
+        buffer_set(ctx->mangling, iir, &name);
+        *TYPE(iir) = *TYPE(e);
+        break;
+    }
+    default:
+        UNREACHABLE;
+    }
+}
+
 static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
 
@@ -119,7 +192,8 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         todo();
         break;
     case IR_expr_primary:
-        todo();
+        SEMT(primary, 0);
+        COPY_TYPE(0);
         break;
     case IR_expr_call:
         todo();
@@ -182,11 +256,12 @@ static void sem_stmt(Ctx *ctx, iIR iir, IRType type) {
         todo();
         break;
     case IR_stmt_ret:
-        todo();
+        if (buffer_back(ctx->funcrets, Type)->id != TYPE_NOTHING)
+            throw("tried to return nothing, expected something");
         break;
     case IR_stmt_retval:
         SEMT(expr, 1);
-        if (!check_types(*TYPE_CHILD(1), ctx->func->ret))
+        if (!check_types(*TYPE_CHILD(1), *buffer_back(ctx->funcrets, Type)))
             throw("invalid return value type");
         break;
     case IR_stmt_if:
@@ -230,60 +305,119 @@ static void sem_block(Ctx *ctx, iIR iir) {
     SEMT(stmts, 1);
 }
 
+static const char *sem_typed_id(Ctx *ctx, iIR iir) {
+    IR *ir = GET_IR(iir);
+    ASSERT_CHILDREN(3);
+
+    /* Resolve type and copy */
+    SEMT(type, 2);
+    COPY_TYPE(2);
+
+    /* Return id */
+    assert(GET_IRTYPE(0) == IR_TOKEN);
+    return get_id(ctx, GET_IRID(0));
+}
+
+/* PARAM, but in functions (pushes symbols to the scope) */
+static void sem_func_param(Ctx *ctx, iIR iir, IRType type) {
+    IR *ir = GET_IR(iir);
+    size_t where = 0;
+    const char *name;
+
+    switch (type) {
+    case IR_param_copy:
+        where = 0;
+        break;
+    case IR_param_ref:
+        todo();
+        break;
+    case IR_param_mut:
+        todo();
+        break;
+    case IR_param_mutref:
+        todo();
+        break;
+    default:
+        UNREACHABLE;
+    }
+
+    /* Analyze now the TYPED_ID */
+    name = SEM(typed_id, where);
+    COPY_TYPE(where);
+    buffer_set(ctx->mangling, iir, &name);
+    PUSH_TO_SCOPE(name, iir);
+}
+
+/* PARAMS, but in functions (pushes symbols to the scope) */
+static void sem_func_params(Ctx *ctx, iIR iir, IRType type) {
+    for (;;) {
+        IR *ir = GET_IR(iir);
+        switch (type) {
+        case IR_params_rec:
+            SEMT(func_param, 0);
+            iir = GET_IRID(1);
+            type = GET_IRTYPE(1);
+            break;
+        case IR_params_one:
+            SEMT(func_param, 0);
+            return;
+        default:
+            UNREACHABLE;
+        }
+    }
+}
+
 static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
     const char *name;
+    Type funcret;
     char *mangled;
-    Function function;
     size_t block;
-
-    if (!ctx->entry.functions)
-        map_new_string(
-            &ctx->entry.functions, sizeof(Function), NULL, NULL, NULL, NULL);
 
     /* TODO: annotations */
 
     assert(GET_IRTYPE(2) == IR_TOKEN);
     name = get_id(ctx, GET_IRID(2));
 
+    PUSH_SCOPE;
+
     switch (type) {
     case IR_function_noargs_void:
-        function.args = NULL;
-        function.ret.id = TYPE_NOTHING;
-        function.ret.data.nothing = NULL;
+        funcret.id = TYPE_NOTHING;
+        funcret.data.nothing = NULL;
         block = 3;
         break;
     case IR_function_noargs_typed:
         SEMT(type, 4);
-        function.args = NULL;
-        function.ret = *TYPE_CHILD(4);
+        funcret = *TYPE_CHILD(4);
         block = 5;
         break;
     case IR_function_void:
         todo();
-        /*function.args = sem_params(ctx, GET_IRID(4));*/
-        function.ret.id = TYPE_NOTHING;
-        function.ret.data.nothing = NULL;
+        funcret.id = TYPE_NOTHING;
+        funcret.data.nothing = NULL;
         block = 6;
         break;
     case IR_function_typed:
         SEMT(type, 7);
-        todo();
-        /*function.args = sem_params(ctx, GET_IRID(4));*/
-        function.ret = *TYPE_CHILD(7);
+        SEMT(func_params, 4);
+        funcret = *TYPE_CHILD(7);
         block = 8;
         break;
     default:
         UNREACHABLE;
     }
 
-    map_add(ctx->entry.functions, name, &function); /* why?? no ST? */
-    ctx->func = map_get(ctx->entry.functions, name, Function);
+    /* New funcrets item */
+    buffer_push(ctx->funcrets, &funcret);
 
     mangled = mangle(ctx, name);
-    buffer_set(ctx->mangling, GET_IRID(2), &mangled);
+    buffer_set(ctx->mangling, iir, &mangled);
 
     SEM(block, block);
+
+    buffer_pop(ctx->funcrets);
+    POP_SCOPE;
 }
 
 static void sem_global(Ctx *ctx, iIR iir, IRType type) {
@@ -332,6 +466,16 @@ static void sem_program(Ctx *ctx, iIR iir) {
     IR *ir = GET_IR(iir);
     ASSERT_CHILDREN(2);
 
+    /* Symbol table for the program */
+    ctx->current = iir;
+    do {
+        SymbolTable *st;
+        st = buffer_get(ctx->tables, ctx->current, SymbolTable);
+        buffer_new(st, sizeof(Symbols));
+    } while (0);
+
+    PUSH_SCOPE;
+
     /* Uses */
     /* TODO */
 
@@ -347,22 +491,25 @@ SemResult semantics(Tokens tokens, IRs irs) {
     ctx.tokens = tokens;
     ctx.irs = irs;
 
-    /* Augmented context: types (of productions) */
+    /* Augmented context: types */
     ctx.types = NULL;
     buffer_new(&ctx.types, sizeof(Type));
     buffer_zresize(ctx.types, buffer_num(ctx.irs));
-    /* Augmented context: name mangling (of tokens) */
+    /* Augmented context: name mangling */
     ctx.mangling = NULL;
     buffer_new(&ctx.mangling, sizeof(const char *));
-    buffer_zresize(ctx.mangling, buffer_num(ctx.tokens));
+    buffer_zresize(ctx.mangling, buffer_num(ctx.irs));
 
-    /* State: functions */
-    ctx.entry.functions = NULL;
+    /* State: symbol tables */
+    ctx.tables = NULL;
+    buffer_new(&ctx.tables, sizeof(SymbolTable));
+    buffer_zresize(ctx.tables, buffer_num(ctx.irs));
     /* State: module stack */
     ctx.modstack = NULL;
     buffer_new(&ctx.modstack, sizeof(const char *));
-    /* State: current function */
-    ctx.func = NULL;
+    /* State: expected return type of called functions */
+    ctx.funcrets = NULL;
+    buffer_new(&ctx.funcrets, sizeof(Type));
 
     sem_program(&ctx, buffer_num(ctx.irs) - 1);
 

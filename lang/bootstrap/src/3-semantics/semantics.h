@@ -7,14 +7,8 @@
 #include <ir.h>
 #include <types.h>
 
-typedef struct {
-    map args;
-    Type ret;
-} Function;
-
-typedef struct {
-    map functions; /* map<string, Function> */
-} Module;
+typedef map Symbols;        /* map<const char*, iIR> */
+typedef buffer SymbolTable; /* buffer<Symbols> */
 
 typedef struct {
     /* --- GIVEN --- */
@@ -26,18 +20,15 @@ typedef struct {
     buffer mangling; /* buffer<char*> */
 
     /* --- STATE --- */
-    /* The scope for this module */
-    Module entry;
+    /* Symbol tables */
+    buffer tables; /* buffer<SymbolTable> */
     /* Module stack, e.g. ["std", "ds", "vec"] */
     buffer modstack; /* buffer<const char*> */
-    /* Which function am I in */
-    Function *func;
+    /* Expected return type of called functions */
+    buffer funcrets; /* buffer<Type> */
+    /* Current symbol table */
+    iIR current;
 } Ctx;
-
-#define GET_IR(N) (buffer_get(ctx->irs, N, IR))
-#define GET_IRTYPE(N) (*buffer_get(ir->types, N, IRType))
-#define GET_IRID(N) (*buffer_get(ir->ids, N, iIR))
-#define GET_TOKEN(N) (buffer_get(ctx->tokens, N, Token))
 
 char *mangle(Ctx *ctx, const char *name);
 
