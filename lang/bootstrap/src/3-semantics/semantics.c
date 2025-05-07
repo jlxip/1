@@ -233,6 +233,7 @@ static void sem_block(Ctx *ctx, iIR iir) {
 static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
     const char *name;
+    char *mangled;
     Function function;
     size_t block;
 
@@ -244,7 +245,6 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
 
     assert(GET_IRTYPE(2) == IR_TOKEN);
     name = get_id(ctx, GET_IRID(2));
-    printf("Found function: %s\n", name);
 
     switch (type) {
     case IR_function_noargs_void:
@@ -277,8 +277,11 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
         UNREACHABLE;
     }
 
-    map_add(ctx->entry.functions, name, &function);
+    map_add(ctx->entry.functions, name, &function); /* why?? no ST? */
     ctx->func = map_get(ctx->entry.functions, name, Function);
+
+    mangled = mangle(ctx, name);
+    buffer_set(ctx->mangling, GET_IRID(2), &mangled);
 
     SEM(block, block);
 }
@@ -336,19 +339,34 @@ static void sem_program(Ctx *ctx, iIR iir) {
     SEMT(globals, 1);
 }
 
-Types semantics(Tokens tokens, IRs irs) {
+SemResult semantics(Tokens tokens, IRs irs) {
     Ctx ctx;
+    SemResult ret;
+
+    /* Given */
     ctx.tokens = tokens;
     ctx.irs = irs;
 
-    /* Augmented context */
+    /* Augmented context: types (of productions) */
     ctx.types = NULL;
     buffer_new(&ctx.types, sizeof(Type));
     buffer_zresize(ctx.types, buffer_num(ctx.irs));
+    /* Augmented context: name mangling (of tokens) */
+    ctx.mangling = NULL;
+    buffer_new(&ctx.mangling, sizeof(const char *));
+    buffer_zresize(ctx.mangling, buffer_num(ctx.tokens));
 
+    /* State: functions */
     ctx.entry.functions = NULL;
+    /* State: module stack */
+    ctx.modstack = NULL;
+    buffer_new(&ctx.modstack, sizeof(const char *));
+    /* State: current function */
+    ctx.func = NULL;
 
     sem_program(&ctx, buffer_num(ctx.irs) - 1);
 
-    return ctx.types;
+    ret.types = ctx.types;
+    ret.mangling = ctx.mangling;
+    return ret;
 }

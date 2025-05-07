@@ -67,6 +67,8 @@ buffer get_tokens(const char *code) {
             printf("%s", token_strings[x->id]);
             switch (x->id) {
             case T_BOOL:
+                printf(x->data.word ? "(true) " : "(false) ");
+                break;
             case T_WORD:
             case T_STRING:
             case T_ID:

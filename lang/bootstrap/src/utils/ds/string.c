@@ -1,3 +1,4 @@
+#include <common.h>
 #include <ds/string.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,6 +39,24 @@ void saddc(string *x, const char *y) {
     x->len += os;
     x->a = realloc(x->a, x->len + 1);
     memcpy(x->a + sz, y, os + 1);
+}
+
+void saddi(string *x, size_t y) {
+    size_t sz = x->len;
+    assert(y < 100); /* because I say so */
+
+    if (y < 10) {
+        x->len += 1;
+        x->a = realloc(x->a, x->len + 1);
+        x->a[sz] = '0' + y;
+        x->a[sz + 1] = '\0';
+    } else {
+        x->len += 2;
+        x->a = realloc(x->a, x->len + 1);
+        x->a[sz] = '0' + (y / 10);
+        x->a[sz + 1] = '0' + (y % 10);
+        x->a[sz + 2] = '\0';
+    }
 }
 
 /* MAYBE: CRLF vs LF? */

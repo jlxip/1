@@ -19,7 +19,14 @@ typedef buffer IRs; /* buffer<IR> */
 #endif
 
 IRs parse(Tokens tokens);
-Types semantics(Tokens tokens, IRs irs);
-char *emit(Tokens tokens, IRs irs, Types types);
+
+typedef struct {
+    Types types;
+    buffer mangling; /* buffer<const char*> */
+} SemResult;
+
+SemResult semantics(Tokens tokens, IRs irs);
+
+char *emit(Tokens tokens, IRs irs, SemResult sem);
 
 #endif

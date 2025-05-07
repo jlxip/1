@@ -19,7 +19,6 @@
 size_t match_numeric(Capture *ret, const char *cur) {
     const char *begin = cur;
     char *buf = NULL;
-    double val;
     size_t len = 0;
 
     /* State 0: only numbers */
@@ -55,9 +54,7 @@ state1:
             buf = malloc(len + 1);
             memcpy(buf, begin, len);
             buf[len] = '\0';
-            val = atof(buf);
-            free(buf);
-            OK_TOKEN_DATA(T_FLOAT, d, val);
+            OK_TOKEN_DATA(T_FLOAT, str, buf);
         }
     }
 
@@ -73,9 +70,7 @@ state2:
             buf = malloc(len + 1);
             memcpy(buf, begin, len);
             buf[len] = '\0';
-            val = atof(buf);
-            free(buf);
-            OK_TOKEN_DATA(T_FLOAT, d, val);
+            OK_TOKEN_DATA(T_FLOAT, str, buf);
         }
     }
 }

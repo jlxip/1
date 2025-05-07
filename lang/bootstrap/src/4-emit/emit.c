@@ -3,14 +3,8 @@
 
 #define EMIT(X, N) emit_##X(ctx, GET_IRID(N))
 #define EMITT(X, N) emit_##X(ctx, GET_IRID(N), GET_IRTYPE(N))
-#define TYPE(N) buffer_get(ctx->types, N, Type)
+#define TYPE(N) buffer_get(ctx->sem.types, N, Type)
 #define TYPE_CHILD(N) TYPE(GET_IRID(N))
-
-static const char *get_id(Ctx *ctx, iToken itoken) {
-    Token *token = GET_TOKEN(itoken);
-    assert(token->id == T_ID);
-    return token->data.str;
-}
 
 static const char *get_word(Ctx *ctx, iToken itoken) {
     Token *token = GET_TOKEN(itoken);
@@ -213,13 +207,11 @@ static string emit_block(Ctx *ctx, iIR iir) {
 static string emit_func(Ctx *ctx, iIR iir, IRType type) {
     string ret = snew();
     IR *ir = GET_IR(iir);
-    const char *name;
+    const char *mangled;
     size_t block;
 
-    name = get_id(ctx, GET_IRID(2));
-    printf("Function emit: %s\n", name);
-
-    /* TODO NEXT: name mangling */
+    mangled = *buffer_get(ctx->sem.mangling, GET_IRID(2), const char *);
+    assert(mangled);
 
     switch (type) {
     case IR_function_noargs_void:
@@ -229,7 +221,7 @@ static string emit_func(Ctx *ctx, iIR iir, IRType type) {
     case IR_function_noargs_typed:
         sadd(&ret, emit_type(*TYPE_CHILD(4)));
         saddc(&ret, " ");
-        saddc(&ret, name);
+        saddc(&ret, mangled);
         saddc(&ret, "(void) ");
         block = 5;
         break;
@@ -311,13 +303,13 @@ static string emit_program(Ctx *ctx, iIR iir) {
     return ret;
 }
 
-char *emit(Tokens tokens, IRs irs, Types types) {
+char *emit(Tokens tokens, IRs irs, SemResult sem) {
     Ctx ctx;
     string ret;
 
     ctx.tokens = tokens;
     ctx.irs = irs;
-    ctx.types = types;
+    ctx.sem = sem;
 
     ret = sc("/* The 1 Programming Language */");
     snewln(&ret);

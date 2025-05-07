@@ -13,6 +13,7 @@ string sc(const char *x);
 string sdup(string x);
 void sadd(string *x, string y);
 void saddc(string *x, const char *y);
+void saddi(string *x, size_t y);
 
 void snewln(string *x);
 void saddln(string *x, string y);

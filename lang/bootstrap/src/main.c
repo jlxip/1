@@ -10,7 +10,7 @@ int main(int argc, const char *argv[]) {
     char *code;
     Tokens tokens;
     IRs irs;
-    Types types;
+    SemResult sem;
     char *emitted;
 
 #ifdef DEBUG
@@ -35,17 +35,20 @@ int main(int argc, const char *argv[]) {
     irs = parse(tokens);
 
     /* Semantic analysis */
-    types = semantics(tokens, irs);
+    sem = semantics(tokens, irs);
 
     /* Emit */
-    emitted = emit(tokens, irs, types);
+    emitted = emit(tokens, irs, sem);
 
+    /* TODO: this leaks everywhere */
     buffer_out(&tokens);
     buffer_out(&irs);
-    buffer_out(&types);
+    buffer_out(&sem.types);
+    buffer_out(&sem.mangling);
 
     printf("\n\n--- EMITTED CODE ---\n");
     printf("%s", emitted);
+    free(emitted);
 
     return 0;
 }

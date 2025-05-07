@@ -8,7 +8,7 @@
 typedef struct {
     Tokens tokens;
     IRs irs;
-    Types types;
+    SemResult sem;
 } Ctx;
 
 #define GET_IR(N) (buffer_get(ctx->irs, N, IR))
