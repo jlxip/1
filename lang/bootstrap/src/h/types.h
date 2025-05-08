@@ -23,10 +23,13 @@ typedef enum {
 
 typedef struct {
     TypeId id;
-    union {
-        void *nothing;
-    } data;
+    void *data;
 } Type;
+
+typedef struct {
+    buffer params;
+    Type ret;
+} Function;
 
 typedef buffer Types; /* buffer<Type> */
 

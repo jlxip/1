@@ -82,27 +82,27 @@ static void sem_type(Ctx *ctx, iIR iir, IRType type) {
     switch (type) {
     case IR_type_bool:
         TYPE(iir)->id = TYPE_BOOL;
-        TYPE(iir)->data.nothing = NULL;
+        TYPE(iir)->data = NULL;
         break;
     case IR_type_byte:
         TYPE(iir)->id = TYPE_BYTE;
-        TYPE(iir)->data.nothing = NULL;
+        TYPE(iir)->data = NULL;
         break;
     case IR_type_float:
         TYPE(iir)->id = TYPE_FLOAT;
-        TYPE(iir)->data.nothing = NULL;
+        TYPE(iir)->data = NULL;
         break;
     case IR_type_ptr:
         TYPE(iir)->id = TYPE_PTR;
-        TYPE(iir)->data.nothing = NULL;
+        TYPE(iir)->data = NULL;
         break;
     case IR_type_string:
         TYPE(iir)->id = TYPE_STRING;
-        TYPE(iir)->data.nothing = NULL;
+        TYPE(iir)->data = NULL;
         break;
     case IR_type_word:
         TYPE(iir)->id = TYPE_WORD;
-        TYPE(iir)->data.nothing = NULL;
+        TYPE(iir)->data = NULL;
         break;
     case IR_type_direct:
         todo();
@@ -121,9 +121,12 @@ static void sem_type(Ctx *ctx, iIR iir, IRType type) {
 static void sem_lit(Ctx *ctx, iIR iir, IRType type) {
     switch (type) {
     case IR_lit_bool:
+        TYPE(iir)->id = TYPE_BOOL;
+        TYPE(iir)->data = NULL;
+        break;
     case IR_lit_word:
         TYPE(iir)->id = TYPE_WORD;
-        TYPE(iir)->data.nothing = NULL;
+        TYPE(iir)->data = NULL;
         break;
     case IR_lit_float:
     case IR_lit_string:
@@ -135,8 +138,9 @@ static void sem_lit(Ctx *ctx, iIR iir, IRType type) {
     }
 }
 
-static void sem_primary(Ctx *ctx, iIR iir, IRType type) {
+static iIR sem_primary(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
+    iIR ret = 0;
 
     switch (type) {
     case IR_primary_dot:
@@ -147,15 +151,91 @@ static void sem_primary(Ctx *ctx, iIR iir, IRType type) {
         break;
     case IR_primary_id: {
         const char *name;
-        iIR e;
         name = get_id(ctx, GET_IRID(0));
-        e = lookup(ctx, name);
-        buffer_set(ctx->mangling, iir, buffer_get(ctx->mangling, e, void));
-        *TYPE(iir) = *TYPE(e);
+        ret = lookup(ctx, name);
+        assert(*buffer_get(ctx->mangling, ret, void *));
+        buffer_set(ctx->mangling, iir, buffer_get(ctx->mangling, ret, void));
+        *TYPE(iir) = *TYPE(ret);
         break;
     }
     default:
         UNREACHABLE;
+    }
+
+    return ret;
+}
+
+static void sem_expr(Ctx *ctx, iIR iir, IRType type);
+static Types sem_expr_list(Ctx *ctx, iIR iir, IRType type) {
+    IR *ir = GET_IR(iir);
+    Types ret = NULL;
+
+    switch (type) {
+    case IR_expression_list_none:
+        return ret;
+    case IR_expression_list:
+        break;
+    default:
+        UNREACHABLE;
+    }
+
+    iir = GET_IRID(0);
+    type = GET_IRTYPE(0);
+    ir = GET_IR(iir);
+    buffer_new(&ret, sizeof(Type));
+
+    for (;;) {
+        switch (type) {
+        case IR_expression_list_one:
+            SEMT(expr, 0);
+            buffer_push(ret, TYPE_CHILD(0));
+            return ret;
+        case IR_expression_list_rec:
+            SEMT(expr, 0);
+            buffer_push(ret, TYPE_CHILD(0));
+
+            iir = GET_IRID(2);
+            type = GET_IRTYPE(2);
+            ir = GET_IR(iir);
+            break;
+        default:
+            UNREACHABLE;
+        }
+    }
+
+    return ret;
+}
+
+static void sem_call(Ctx *ctx, iIR iir) {
+    IR *ir = GET_IR(iir);
+    iIR ifunc;
+    Function *func;
+    Types expected, given;
+    size_t i;
+
+    ifunc = SEMT(primary, 0);
+    assert(TYPE(ifunc)->id == TYPE_FUNC);
+    func = (Function *)(TYPE(ifunc)->data);
+    expected = func->params;
+    given = SEMT(expr_list, 2);
+
+    *TYPE(iir) = func->ret;
+
+    if (!expected && !given) {
+        return; /* ok */
+    } else if (!expected && given) {
+        throw("function did not expect parameters");
+    } else if (expected && !given) {
+        throw("function expected parameters");
+    } else if (buffer_num(expected) != buffer_num(given)) {
+        throw("invalid number of arguments for function");
+    }
+
+    for (i = 0; i < buffer_num(expected); ++i) {
+        Type *a = buffer_get(expected, i, Type);
+        Type *b = buffer_get(given, i, Type);
+        if (!check_types(*a, *b))
+            throwe("unexpected type for argument %lu", i);
     }
 }
 
@@ -171,15 +251,13 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         COPY_TYPE(0);
         break;
     case IR_expr_call:
-        todo();
+        sem_call(ctx, iir);
         break;
     case IR_expr_lit:
         SEMT(lit, 0);
         COPY_TYPE(0);
         break;
     case IR_expr_sizeof:
-        todo();
-        break;
     case IR_expr_hat:
     case IR_expr_amp:
     case IR_expr_bar:
@@ -354,18 +432,28 @@ static void sem_func_param(Ctx *ctx, iIR iir, IRType type) {
 }
 
 /* PARAMS, but in functions (pushes symbols to the scope) */
-static void sem_func_params(Ctx *ctx, iIR iir, IRType type) {
+static Types sem_func_params(Ctx *ctx, iIR iir, IRType type) {
+    Types ret = NULL;
+    Type aux;
+
+    buffer_new(&ret, sizeof(Type));
+
     for (;;) {
         IR *ir = GET_IR(iir);
         switch (type) {
         case IR_params_rec:
             SEMT(func_param, 0);
+            aux = *TYPE_CHILD(0);
+            buffer_push(ret, &aux);
+
             iir = GET_IRID(1);
             type = GET_IRTYPE(1);
             break;
         case IR_params_one:
             SEMT(func_param, 0);
-            return;
+            aux = *TYPE_CHILD(0);
+            buffer_push(ret, &aux);
+            return ret;
         default:
             UNREACHABLE;
         }
@@ -375,46 +463,54 @@ static void sem_func_params(Ctx *ctx, iIR iir, IRType type) {
 static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
     const char *name;
-    Type funcret;
+    Function *func;
     char *mangled;
     size_t block;
 
     /* TODO: annotations */
 
+    func = malloc(sizeof(Function));
+
     assert(GET_IRTYPE(2) == IR_TOKEN);
     name = get_id(ctx, GET_IRID(2));
+
+    push_to_scope(ctx, name, iir);
 
     push_scope(ctx);
 
     switch (type) {
     case IR_function_noargs_void:
-        funcret.id = TYPE_NOTHING;
-        funcret.data.nothing = NULL;
+        func->params = NULL;
+        func->ret.id = TYPE_NOTHING;
+        func->ret.data = NULL;
         block = 3;
         break;
     case IR_function_noargs_typed:
         SEMT(type, 4);
-        funcret = *TYPE_CHILD(4);
+        func->params = NULL;
+        func->ret = *TYPE_CHILD(4);
         block = 5;
         break;
     case IR_function_void:
-        todo();
-        funcret.id = TYPE_NOTHING;
-        funcret.data.nothing = NULL;
+        func->params = SEMT(func_params, 4);
+        func->ret.id = TYPE_NOTHING;
+        func->ret.data = NULL;
         block = 6;
         break;
     case IR_function_typed:
         SEMT(type, 7);
-        SEMT(func_params, 4);
-        funcret = *TYPE_CHILD(7);
+        func->params = SEMT(func_params, 4);
+        func->ret = *TYPE_CHILD(7);
         block = 8;
         break;
     default:
         UNREACHABLE;
     }
 
-    /* New funcrets item */
-    buffer_push(ctx->funcrets, &funcret);
+    /* Save type information */
+    TYPE(iir)->id = TYPE_FUNC;
+    TYPE(iir)->data = func;
+    buffer_push(ctx->funcrets, &func->ret);
 
     mangled = mangle(ctx, name);
     buffer_set(ctx->mangling, iir, &mangled);

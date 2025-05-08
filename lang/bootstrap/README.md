@@ -2,7 +2,7 @@
 
 ## 1 Bootstrap Compiler
 
-A transpiler written in architecture-agnostic ANSI C.
+A transpiler written in 100% portable ANSI C.
 
 ## Status
 - [x] Data structures

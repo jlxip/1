@@ -21,16 +21,22 @@ string sc(const char *x) {
 string sdup(string x) {
     string r;
     r.len = x.len;
-    r.a = malloc(r.len + 1);
-    memcpy(r.a, x.a, r.len + 1);
+    if (r.len) {
+        r.a = malloc(r.len + 1);
+        memcpy(r.a, x.a, r.len + 1);
+    } else {
+        r.a = NULL;
+    }
     return r;
 }
 
 void sadd(string *x, string y) {
-    size_t sz = x->len;
-    x->len += y.len;
-    x->a = realloc(x->a, x->len + 1);
-    memcpy(x->a + sz, y.a, y.len + 1);
+    if (y.len) {
+        size_t sz = x->len;
+        x->len += y.len;
+        x->a = realloc(x->a, x->len + 1);
+        memcpy(x->a + sz, y.a, y.len + 1);
+    }
 }
 
 void saddc(string *x, const char *y) {

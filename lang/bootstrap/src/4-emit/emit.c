@@ -6,6 +6,12 @@
 #define TYPE(N) buffer_get(ctx->sem.types, N, Type)
 #define TYPE_CHILD(N) TYPE(GET_IRID(N))
 
+static size_t get_bool(Ctx *ctx, iToken itoken) {
+    Token *token = GET_TOKEN(itoken);
+    assert(token->id == T_BOOL);
+    return token->data.word;
+}
+
 static const char *get_word(Ctx *ctx, iToken itoken) {
     Token *token = GET_TOKEN(itoken);
     assert(token->id == T_WORD);
@@ -56,6 +62,8 @@ static string emit_lit(Ctx *ctx, iIR iir, IRType type) {
 
     switch (type) {
     case IR_lit_bool:
+        saddi(&ret, get_bool(ctx, GET_IRID(0)));
+        break;
     case IR_lit_word:
         saddc(&ret, get_word(ctx, GET_IRID(0)));
         break;
@@ -91,6 +99,43 @@ static string emit_primary(Ctx *ctx, iIR iir, IRType type) {
     return ret;
 }
 
+static string emit_expr(Ctx *ctx, iIR iir, IRType type);
+static string emit_expr_list(Ctx *ctx, iIR iir, IRType type) {
+    string ret = snew();
+    IR *ir = GET_IR(iir);
+
+    switch (type) {
+    case IR_expression_list_none:
+        return ret;
+    case IR_expression_list:
+        break;
+    default:
+        UNREACHABLE;
+    }
+
+    iir = GET_IRID(0);
+    type = GET_IRTYPE(0);
+    ir = GET_IR(iir);
+
+    for (;;) {
+        switch (type) {
+        case IR_expression_list_one:
+            sadd(&ret, EMITT(expr, 0));
+            return ret;
+        case IR_expression_list_rec:
+            sadd(&ret, EMITT(expr, 0));
+            saddc(&ret, ", ");
+
+            iir = GET_IRID(2);
+            type = GET_IRTYPE(2);
+            ir = GET_IR(iir);
+            break;
+        default:
+            UNREACHABLE;
+        }
+    }
+}
+
 static string emit_expr(Ctx *ctx, iIR iir, IRType type) {
     string ret = snew();
     IR *ir = GET_IR(iir);
@@ -104,7 +149,10 @@ static string emit_expr(Ctx *ctx, iIR iir, IRType type) {
         sadd(&ret, EMITT(primary, 0));
         break;
     case IR_expr_call:
-        todo();
+        sadd(&ret, EMITT(primary, 0));
+        saddc(&ret, "(");
+        sadd(&ret, EMITT(expr_list, 2));
+        saddc(&ret, ")");
         break;
     case IR_expr_lit:
         sadd(&ret, EMITT(lit, 0));
