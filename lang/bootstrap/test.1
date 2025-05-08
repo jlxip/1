@@ -1,5 +1,12 @@
-fn truth -> word { return 42; }
-
-fn nothing { return; }
-
 fn same(n: word) -> word { return n; }
+
+let number = 5;
+
+fn gimme -> word { return number; }
+
+fn truth -> word {
+    let number = 42;
+    let number = 23;
+    let number = 42;
+    return number;
+}

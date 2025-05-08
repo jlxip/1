@@ -140,6 +140,40 @@ static string emit_expr(Ctx *ctx, iIR iir, IRType type) {
     return ret;
 }
 
+static string emit_decl(Ctx *ctx, iIR iir, IRType type) {
+    string ret = snew();
+    IR *ir = GET_IR(iir);
+    const char *mangled;
+
+    mangled = *buffer_get(ctx->sem.mangling, iir, const char *);
+    assert(mangled);
+
+    switch (type) {
+    case IR_decl_id:
+        saddc(&ret, "const ");
+        sadd(&ret, emit_type(*TYPE(iir)));
+        saddc(&ret, " ");
+        saddc(&ret, mangled);
+        saddc(&ret, " = ");
+        sadd(&ret, EMITT(expr, 3));
+        saddlnc(&ret, ";");
+        break;
+    case IR_decl_p_id:
+        todo();
+        break;
+    case IR_decl_typed:
+        todo();
+        break;
+    case IR_decl_p_typed:
+        todo();
+        break;
+    default:
+        UNREACHABLE;
+    }
+
+    return ret;
+}
+
 static string emit_stmt(Ctx *ctx, iIR iir, IRType type) {
     string ret = snew();
     IR *ir = GET_IR(iir);
@@ -149,7 +183,7 @@ static string emit_stmt(Ctx *ctx, iIR iir, IRType type) {
         todo();
         break;
     case IR_stmt_decl:
-        todo();
+        saddln(&ret, EMITT(decl, 0));
         break;
     case IR_stmt_expr:
         todo();
@@ -275,7 +309,7 @@ static string emit_params(Ctx *ctx, iIR iir, IRType type) {
 }
 
 static string emit_func(Ctx *ctx, iIR iir, IRType type) {
-    string ret = snew();
+    string ret = sc("static ");
     IR *ir = GET_IR(iir);
     const char *mangled;
     size_t block;
@@ -319,16 +353,13 @@ static string emit_func(Ctx *ctx, iIR iir, IRType type) {
 }
 
 static string emit_global(Ctx *ctx, iIR iir, IRType type) {
-    string ret;
     IR *ir = GET_IR(iir);
 
     switch (type) {
     case IR_global_decl:
-        todo();
-        break;
+        return EMITT(decl, 0);
     case IR_global_func:
-        ret = EMITT(func, 0);
-        break;
+        return EMITT(func, 0);
     case IR_global_struct:
         todo();
         break;
@@ -342,7 +373,7 @@ static string emit_global(Ctx *ctx, iIR iir, IRType type) {
         UNREACHABLE;
     }
 
-    return ret;
+    return snew();
 }
 
 static string emit_globals(Ctx *ctx, iIR iir, IRType type) {

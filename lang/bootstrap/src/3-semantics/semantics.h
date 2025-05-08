@@ -10,6 +10,8 @@
 typedef map Symbols;        /* map<const char*, iIR> */
 typedef buffer SymbolTable; /* buffer<Symbols> */
 
+typedef map ShadowingTable; /* map<const char*, size_t> */
+
 typedef struct {
     /* --- GIVEN --- */
     Tokens tokens;
@@ -22,14 +24,22 @@ typedef struct {
     /* --- STATE --- */
     /* Symbol tables */
     buffer tables; /* buffer<SymbolTable> */
+    /* Current symbol table */
+    iIR current;
     /* Module stack, e.g. ["std", "ds", "vec"] */
     buffer modstack; /* buffer<const char*> */
     /* Expected return type of called functions */
     buffer funcrets; /* buffer<Type> */
-    /* Current symbol table */
-    iIR current;
+    /* Shadowing stack */
+    buffer shadowing; /* buffer<ShadowingTable> */
 } Ctx;
 
 char *mangle(Ctx *ctx, const char *name);
+char *mangle_var(Ctx *ctx, const char *name);
+
+void push_scope(Ctx *ctx);
+void pop_scope(Ctx *ctx);
+void push_to_scope(Ctx *ctx, const char *name, iIR iir);
+bool in_scope(Ctx *ctx, const char *name);
 
 #endif

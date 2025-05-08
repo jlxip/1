@@ -124,10 +124,10 @@ PRIMARY -> id #primary_id
 
 
 # ---------- DECLARATION ----------
-DECLARATION -> let id eq EXPRESSION #decl_let_id
-DECLARATION -> let plus id eq EXPRESSION #decl_let_p_id
-DECLARATION -> let TYPED_ID eq EXPRESSION #decl_let_typed
-DECLARATION -> let plus TYPED_ID eq EXPRESSION #decl_let_p_typed
+DECLARATION -> let id eq EXPRESSION #decl_id
+DECLARATION -> let plus id eq EXPRESSION #decl_p_id
+DECLARATION -> let TYPED_ID eq EXPRESSION #decl_typed
+DECLARATION -> let plus TYPED_ID eq EXPRESSION #decl_p_typed
 
 TYPED_ID -> id colon TYPE #typed
 

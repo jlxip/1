@@ -16,34 +16,9 @@
         *TYPE(iir) = *TYPE_CHILD(N);                                           \
     } while (0)
 
-#define PUSH_SCOPE                                                             \
-    do {                                                                       \
-        SymbolTable table;                                                     \
-        Symbols syms = NULL;                                                   \
-        table = *buffer_get(ctx->tables, ctx->current, SymbolTable);           \
-        map_new_string(&syms, sizeof(iIR), NULL, NULL, NULL, NULL);            \
-        buffer_push(table, &syms);                                             \
-    } while (0)
-
-#define POP_SCOPE                                                              \
-    do {                                                                       \
-        buffer_pop(*buffer_get(ctx->tables, ctx->current, SymbolTable));       \
-    } while (0)
-
-void push_to_scope(Ctx *ctx, const char *name, iIR iir) {
-    SymbolTable table;
-    Symbols syms;
-    table = *buffer_get(ctx->tables, ctx->current, SymbolTable);
-    syms = *buffer_back(table, Symbols);
-    map_remove_if_there(syms, name);
-    map_add(syms, name, &iir);
-}
-
-#define PUSH_TO_SCOPE(X, I) push_to_scope(ctx, X, I)
-
 /* --- */
 
-iIR lookup(Ctx *ctx, const char *name) {
+static iIR lookup(Ctx *ctx, const char *name) {
     SymbolTable table;
     size_t i;
     size_t num;
@@ -175,7 +150,7 @@ static void sem_primary(Ctx *ctx, iIR iir, IRType type) {
         iIR e;
         name = get_id(ctx, GET_IRID(0));
         e = lookup(ctx, name);
-        buffer_set(ctx->mangling, iir, &name);
+        buffer_set(ctx->mangling, iir, buffer_get(ctx->mangling, e, void));
         *TYPE(iir) = *TYPE(e);
         break;
     }
@@ -230,6 +205,36 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
     }
 }
 
+static void sem_decl_nonglobal(Ctx *ctx, iIR iir, IRType type) {
+    IR *ir = GET_IR(iir);
+    const char *name;
+    char *mangled;
+
+    switch (type) {
+    case IR_decl_id:
+        assert(GET_IRTYPE(1) == IR_TOKEN);
+        name = get_id(ctx, GET_IRID(1));
+        mangled = mangle_var(ctx, name);
+        buffer_set(ctx->mangling, iir, &mangled);
+        SEMT(expr, 3);
+        COPY_TYPE(3);
+        break;
+    case IR_decl_p_id:
+        todo();
+        break;
+    case IR_decl_typed:
+        todo();
+        break;
+    case IR_decl_p_typed:
+        todo();
+        break;
+    default:
+        UNREACHABLE;
+    }
+
+    push_to_scope(ctx, name, iir);
+}
+
 static void sem_stmt(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
 
@@ -238,7 +243,7 @@ static void sem_stmt(Ctx *ctx, iIR iir, IRType type) {
         todo();
         break;
     case IR_stmt_decl:
-        todo();
+        SEMT(decl_nonglobal, 0);
         break;
     case IR_stmt_expr:
         todo();
@@ -345,7 +350,7 @@ static void sem_func_param(Ctx *ctx, iIR iir, IRType type) {
     name = SEM(typed_id, where);
     COPY_TYPE(where);
     buffer_set(ctx->mangling, iir, &name);
-    PUSH_TO_SCOPE(name, iir);
+    push_to_scope(ctx, name, iir);
 }
 
 /* PARAMS, but in functions (pushes symbols to the scope) */
@@ -379,7 +384,7 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     assert(GET_IRTYPE(2) == IR_TOKEN);
     name = get_id(ctx, GET_IRID(2));
 
-    PUSH_SCOPE;
+    push_scope(ctx);
 
     switch (type) {
     case IR_function_noargs_void:
@@ -417,7 +422,39 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     SEM(block, block);
 
     buffer_pop(ctx->funcrets);
-    POP_SCOPE;
+    pop_scope(ctx);
+}
+
+static void sem_decl_global(Ctx *ctx, iIR iir, IRType type) {
+    IR *ir = GET_IR(iir);
+    const char *name;
+    char *mangled;
+
+    switch (type) {
+    case IR_decl_id:
+        assert(GET_IRTYPE(1) == IR_TOKEN);
+        name = get_id(ctx, GET_IRID(1));
+        if (in_scope(ctx, name))
+            throwe("already declared: %s", name);
+        mangled = mangle(ctx, name);
+        buffer_set(ctx->mangling, iir, &mangled);
+        SEMT(expr, 3);
+        COPY_TYPE(3);
+        break;
+    case IR_decl_p_id:
+        todo();
+        break;
+    case IR_decl_typed:
+        todo();
+        break;
+    case IR_decl_p_typed:
+        todo();
+        break;
+    default:
+        UNREACHABLE;
+    }
+
+    push_to_scope(ctx, name, iir);
 }
 
 static void sem_global(Ctx *ctx, iIR iir, IRType type) {
@@ -425,7 +462,7 @@ static void sem_global(Ctx *ctx, iIR iir, IRType type) {
 
     switch (type) {
     case IR_global_decl:
-        todo();
+        SEMT(decl_global, 0);
         break;
     case IR_global_func:
         SEMT(func, 0);
@@ -474,7 +511,7 @@ static void sem_program(Ctx *ctx, iIR iir) {
         buffer_new(st, sizeof(Symbols));
     } while (0);
 
-    PUSH_SCOPE;
+    push_scope(ctx);
 
     /* Uses */
     /* TODO */
@@ -510,6 +547,9 @@ SemResult semantics(Tokens tokens, IRs irs) {
     /* State: expected return type of called functions */
     ctx.funcrets = NULL;
     buffer_new(&ctx.funcrets, sizeof(Type));
+    /* State: shadowing stack */
+    ctx.shadowing = NULL;
+    buffer_new(&ctx.shadowing, sizeof(ShadowingTable));
 
     sem_program(&ctx, buffer_num(ctx.irs) - 1);
 
