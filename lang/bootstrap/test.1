@@ -1,11 +1,5 @@
-fn same(n: word) -> word { return n; }
-
-let number = 42;
-
-fn gimme -> word { return same(number); }
-
-fn truth -> word {
-    let number = 23;
-    let number = gimme();
-    return number;
+fn main {
+    let+ hola = "\"¡Hola!\"\n";
+    let adios = "¡Adiós!\n";
+    hola = adios;
 }

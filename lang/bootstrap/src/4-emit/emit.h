@@ -3,12 +3,16 @@
 
 #include <common.h>
 #include <compiler.h>
+#include <ds/map.h>
 #include <ir.h>
 
 typedef struct {
     Tokens tokens;
     IRs irs;
     SemResult sem;
+
+    buffer decl; /* buffer<buffer<string>> */
+    map decln;   /* map<string, size_t> */
 } Ctx;
 
 #define GET_IR(N) (buffer_get(ctx->irs, N, IR))

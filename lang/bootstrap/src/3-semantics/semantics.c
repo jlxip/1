@@ -56,8 +56,6 @@ static bool check_types(Type a, Type b) {
         todo();
         break;
     case TYPE_FUNC:
-        UNREACHABLE;
-        break;
     case TYPE_MODULE:
         UNREACHABLE;
         break;
@@ -83,33 +81,35 @@ static void sem_type(Ctx *ctx, iIR iir, IRType type) {
     case IR_type_bool:
         TYPE(iir)->id = TYPE_BOOL;
         TYPE(iir)->data = NULL;
+        TYPE(iir)->flags = 0;
         break;
     case IR_type_byte:
         TYPE(iir)->id = TYPE_BYTE;
         TYPE(iir)->data = NULL;
+        TYPE(iir)->flags = 0;
         break;
     case IR_type_float:
         TYPE(iir)->id = TYPE_FLOAT;
         TYPE(iir)->data = NULL;
+        TYPE(iir)->flags = 0;
         break;
     case IR_type_ptr:
         TYPE(iir)->id = TYPE_PTR;
         TYPE(iir)->data = NULL;
+        TYPE(iir)->flags = 0;
         break;
     case IR_type_string:
         TYPE(iir)->id = TYPE_STRING;
         TYPE(iir)->data = NULL;
+        TYPE(iir)->flags = 0;
         break;
     case IR_type_word:
         TYPE(iir)->id = TYPE_WORD;
         TYPE(iir)->data = NULL;
+        TYPE(iir)->flags = 0;
         break;
     case IR_type_direct:
-        todo();
-        break;
     case IR_type_tuple:
-        todo();
-        break;
     case IR_type_tuple_star:
         todo();
         break;
@@ -123,13 +123,21 @@ static void sem_lit(Ctx *ctx, iIR iir, IRType type) {
     case IR_lit_bool:
         TYPE(iir)->id = TYPE_BOOL;
         TYPE(iir)->data = NULL;
+        TYPE(iir)->flags = 0;
         break;
     case IR_lit_word:
         TYPE(iir)->id = TYPE_WORD;
         TYPE(iir)->data = NULL;
+        TYPE(iir)->flags = 0;
         break;
     case IR_lit_float:
+        todo();
+        break;
     case IR_lit_string:
+        TYPE(iir)->id = TYPE_STRING;
+        TYPE(iir)->data = NULL;
+        TYPE(iir)->flags = 0;
+        break;
     case IR_lit_tuple:
         todo();
         break;
@@ -239,6 +247,38 @@ static void sem_call(Ctx *ctx, iIR iir) {
     }
 }
 
+static void sem_assign(Ctx *ctx, iIR iir, IRType type) {
+    IR *ir = GET_IR(iir);
+    iIR lhs;
+
+    /* Check lhs is a valid lvalue */
+    lhs = SEMT(primary, 0);
+    if (!(TYPE(lhs)->flags & TYPE_FLAG_MUTABLE))
+        throw("assign to immutable variable");
+
+    /* Check type of rhs matches */
+    SEMT(expr, 2);
+    if (!check_types(*TYPE(lhs), *TYPE_CHILD(2)))
+        throw("type mismatch in assignment");
+
+    /* Check assignment can happen */
+    (void)type;
+    /*switch (type) {
+    case IR_assign_eq:
+    case IR_assign_plus:
+    case IR_assign_minus:
+    case IR_assign_star:
+    case IR_assign_slash:
+    case IR_assign_hat:
+    case IR_assign_amp:
+    case IR_assign_bar:
+        todo();
+        break;
+    default:
+        UNREACHABLE;
+        }*/
+}
+
 static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
 
@@ -275,8 +315,10 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
     case IR_expr_and:
     case IR_expr_or:
     case IR_expr_struct_inst:
-    case IR_expr_assign:
         todo();
+        break;
+    case IR_expr_assign:
+        SEMT(assign, 0);
         break;
     default:
         UNREACHABLE;
@@ -298,7 +340,13 @@ static void sem_decl_nonglobal(Ctx *ctx, iIR iir, IRType type) {
         COPY_TYPE(3);
         break;
     case IR_decl_p_id:
-        todo();
+        assert(GET_IRTYPE(2) == IR_TOKEN);
+        name = get_id(ctx, GET_IRID(2));
+        mangled = mangle_var(ctx, name);
+        buffer_set(ctx->mangling, iir, &mangled);
+        SEMT(expr, 4);
+        COPY_TYPE(4);
+        TYPE(iir)->flags |= TYPE_FLAG_MUTABLE;
         break;
     case IR_decl_typed:
         todo();
@@ -324,7 +372,7 @@ static void sem_stmt(Ctx *ctx, iIR iir, IRType type) {
         SEMT(decl_nonglobal, 0);
         break;
     case IR_stmt_expr:
-        todo();
+        SEMT(expr, 0);
         break;
     case IR_stmt_assert:
         todo();
@@ -483,6 +531,7 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
         func->params = NULL;
         func->ret.id = TYPE_NOTHING;
         func->ret.data = NULL;
+        func->ret.flags = 0;
         block = 3;
         break;
     case IR_function_noargs_typed:
@@ -495,6 +544,7 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
         func->params = SEMT(func_params, 4);
         func->ret.id = TYPE_NOTHING;
         func->ret.data = NULL;
+        func->ret.flags = 0;
         block = 6;
         break;
     case IR_function_typed:
@@ -510,6 +560,7 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     /* Save type information */
     TYPE(iir)->id = TYPE_FUNC;
     TYPE(iir)->data = func;
+    TYPE(iir)->flags = 0;
     buffer_push(ctx->funcrets, &func->ret);
 
     mangled = mangle(ctx, name);

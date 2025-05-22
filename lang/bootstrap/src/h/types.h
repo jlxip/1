@@ -21,9 +21,12 @@ typedef enum {
     TYPE_MODULE
 } TypeId;
 
+#define TYPE_FLAG_MUTABLE 0x1
+
 typedef struct {
     TypeId id;
     void *data;
+    size_t flags;
 } Type;
 
 typedef struct {

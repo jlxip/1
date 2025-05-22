@@ -9,14 +9,20 @@ size_t match_string(Capture *ret, const char *cur) {
     const char *begin = cur;
     char *buf = NULL;
     size_t len;
+    bool escape = false;
 
     for (;;) {
         switch (*cur++) {
         case '\\':
             /* Escape */
-            todo(); /* not feeling like it */
+            escape = !escape;
             break;
         case '"':
+            if (escape) {
+                escape = false;
+                break;
+            }
+
             /* End */
             len = --cur - begin;
             buf = malloc(len + 1);
@@ -26,10 +32,12 @@ size_t match_string(Capture *ret, const char *cur) {
             --begin; /* Include first quote now */
             ++cur;   /* As well as last one */
             OK_TOKEN_DATA(T_STRING, str, buf);
+            break;
         case '\0':
-            /* Unfinished string */
-            todo();
-            return 0;
+            throw("unfinished string");
+            break;
+        default:
+            escape = false;
         }
     }
 }
