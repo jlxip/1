@@ -18,6 +18,7 @@ typedef enum {
 
     /* Others */
     TYPE_FUNC,
+    TYPE_STRUCT_DEF,
     TYPE_MODULE
 } TypeId;
 

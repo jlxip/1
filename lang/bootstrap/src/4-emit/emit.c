@@ -522,6 +522,41 @@ static string emit_func(Ctx *ctx, iIR iir, IRType type) {
     return ret;
 }
 
+static string emit_struct(Ctx *ctx, iIR iir) {
+    string ret = sc("typedef struct {");
+    map fields; /* map<string, Type> */
+    map_iterator it;
+    const char *mangled;
+
+    fields = (map)(TYPE(iir)->data);
+    it = map_it_begin(fields);
+    while (!map_it_finished(&it)) {
+        const char *field_name;
+        Type field_type;
+
+        field_name = map_it_get_key(&it, const char);
+        field_type = *map_it_get_value(&it, Type);
+
+        snewln(&ret);
+        sadd(&ret, emit_type(field_type));
+        saddc(&ret, " ");
+        saddc(&ret, field_name);
+        saddc(&ret, ";");
+
+        map_it_next(&it);
+    }
+
+    snewln(&ret);
+    saddc(&ret, "} ");
+
+    mangled = *buffer_get(ctx->sem.mangling, iir, const char *);
+    assert(mangled);
+    saddc(&ret, mangled);
+    saddc(&ret, ";");
+
+    return ret;
+}
+
 static string emit_global(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
 
@@ -531,8 +566,7 @@ static string emit_global(Ctx *ctx, iIR iir, IRType type) {
     case IR_global_func:
         return EMITT(func, 0);
     case IR_global_struct:
-        todo();
-        break;
+        return EMIT(struct, 0);
     case IR_global_impl:
         todo();
         break;
@@ -555,6 +589,7 @@ static string emit_globals(Ctx *ctx, iIR iir, IRType type) {
         switch (type) {
         case IR_globals_rec:
             saddln(&ret, EMITT(global, 0));
+            snewln(&ret);
             iir = GET_IRID(1);
             type = GET_IRTYPE(1);
             break;

@@ -604,6 +604,58 @@ static void sem_decl_global(Ctx *ctx, iIR iir, IRType type) {
     push_to_scope(ctx, name, iir);
 }
 
+static void sem_struct(Ctx *ctx, iIR iir) {
+    iIR struct_def = iir;
+    IR *ir = GET_IR(iir);
+    const char *name;
+    char *mangled;
+    IRType type;
+    map fields = NULL; /* map<string, Type> */
+
+    /* TODO: annotations */
+
+    assert(GET_IRTYPE(2) == IR_TOKEN);
+    name = get_id(ctx, GET_IRID(2));
+    if (in_scope(ctx, name))
+        throwe("already declared: %s", name);
+    mangled = mangle(ctx, name);
+    buffer_set(ctx->mangling, iir, &mangled);
+
+    /* Run through the fields */
+    map_new_string(&fields, sizeof(Type), NULL, NULL, NULL, NULL);
+    iir = GET_IRID(4);
+    type = GET_IRTYPE(4);
+    for (;;) {
+        ir = GET_IR(iir);
+        switch (type) {
+        case IR_struct_def: {
+            /* TYPED_ID */
+            const char *field_name;
+            Type field_type;
+
+            field_name = SEM(typed_id, 0);
+            field_type = *TYPE(GET_IRID(0));
+            map_add(fields, field_name, &field_type);
+
+            /* Recursion */
+            iir = GET_IRID(2);
+            type = GET_IRTYPE(2);
+            break;
+        }
+        case IR_struct_def_null:
+            goto done;
+        default:
+            UNREACHABLE;
+        }
+    }
+
+done:
+    TYPE(struct_def)->id = TYPE_STRUCT_DEF;
+    TYPE(struct_def)->data = fields;
+    TYPE(struct_def)->flags = 0;
+    push_to_scope(ctx, name, struct_def);
+}
+
 static void sem_global(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
 
@@ -615,7 +667,7 @@ static void sem_global(Ctx *ctx, iIR iir, IRType type) {
         SEMT(func, 0);
         break;
     case IR_global_struct:
-        todo();
+        SEM(struct, 0);
         break;
     case IR_global_impl:
         todo();
