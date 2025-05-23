@@ -134,4 +134,8 @@ typedef buffer IRs; /* buffer<IR> */
 
 IRs Grammar_parse(Grammar *g, const StreamElement *stream);
 
+/* Serialization */
+buffer Grammar_serialize(const Grammar *g);
+Grammar *Grammar_deserialize(buffer in);
+
 #endif

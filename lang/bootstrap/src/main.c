@@ -25,7 +25,7 @@ int main(int argc, const char *argv[]) {
     }
 
     /* Read input file */
-    code = read_whole_file(argv[1]);
+    code = file_read_whole(argv[1]);
 
     /* Lexical analysis */
     tokens = get_tokens(code);

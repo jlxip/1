@@ -262,3 +262,16 @@ IRs grammar_parse(void *ptr, const TokenData *stream) {
     Grammar *g = (Grammar *)ptr;
     return Grammar_parse(g, (StreamElement *)stream);
 }
+
+/* --- */
+
+buffer grammar_save(void *ptr) {
+    Grammar *g = (Grammar *)ptr;
+    return Grammar_serialize(g);
+}
+
+void *grammar_load(buffer in, const char **tokens, const char **nts) {
+    Grammar *g = Grammar_deserialize(in);
+    Grammar_set_debugging(g, tokens, nts);
+    return g;
+}

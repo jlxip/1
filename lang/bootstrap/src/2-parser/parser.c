@@ -7,6 +7,9 @@
 #include <stdlib.h>
 #include <tokens.h>
 
+const char GRAMMAR_PATH[] = "src/2-parser/grammar.txt";
+const char SERIALIZED_PATH[] = "src/2-parser/grammar.bin";
+
 const char *nts[] = {"S", "USES", "USE", "RELATIVE_PATH", "MODULE", "GLOBALS",
     "GLOBAL", "ANNOTATIONS", "ANNOTATION", "PRIMARY_LIST", "FUNCTION", "PARAMS",
     "PARAM", "EXPRESSION", "EXPRESSION_LIST_OR_NONE", "EXPRESSION_LIST",
@@ -17,18 +20,32 @@ const char *nts[] = {"S", "USES", "USE", "RELATIVE_PATH", "MODULE", "GLOBALS",
     "IMPL_DEF", "EXTERN", "EXTERN_ARGS", "EXTERN_ARG", "BLOCK", "STATEMENTS",
     "STATEMENT", NULL};
 
+void *get_grammar(void) {
+    void *ret;
+    char *gtext;
+
+    if (file_exists(SERIALIZED_PATH))
+        return grammar_load(
+            file_read_bytes(SERIALIZED_PATH), token_strings + 1, nts);
+
+    gtext = file_read_whole(GRAMMAR_PATH);
+    ret = grammar(token_strings + 1, nts, gtext, "S");
+    free(gtext);
+    grammar_compile(ret);
+
+    file_write_bytes(SERIALIZED_PATH, grammar_save(ret));
+    return ret;
+}
+
+/* --- */
+
 IRs parse(Tokens tokens) {
     void *g;
-    char *gtext;
     TokenData *stream;
     size_t i;
     IRs ret;
 
-    /* Compile grammar */
-    gtext = read_whole_file("src/2-parser/grammar.txt");
-    g = grammar(token_strings + 1, nts, gtext, "S");
-    free(gtext);
-    grammar_compile(g);
+    g = get_grammar();
 
     /* Create stream of TokenData */
     stream = malloc((buffer_num(tokens) + 1) * sizeof(TokenData));

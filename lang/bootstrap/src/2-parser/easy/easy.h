@@ -28,4 +28,7 @@ typedef buffer IRs; /* buffer<IR> */
 
 IRs grammar_parse(void *g, const TokenData *stream);
 
+buffer grammar_save(void *ptr);
+void *grammar_load(buffer in, const char **tokens, const char **nts);
+
 #endif
