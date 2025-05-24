@@ -2,11 +2,11 @@
 #include <ds/string.h>
 #include <string.h>
 
-/* my_function -> _O11my_function */
-/* std.ds.vec.Vec.new -> _O3std2ds3vec3Vec3new */
+/* my_function -> _X11my_function */
+/* std.ds.vec.Vec.new -> _X3std2ds3vec3Vec3new */
 
 char *mangle(Ctx *ctx, const char *name) {
-    string ret = sc("_O");
+    string ret = sc("_X");
     size_t i;
 
     for (i = 0; i < buffer_num(ctx->modstack); ++i) {

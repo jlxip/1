@@ -1,4 +1,5 @@
 #include "emit.h"
+#include <files.h>
 #include <string.h>
 
 #define EMIT(X, N) emit_##X(ctx, GET_IRID(N))
@@ -134,7 +135,7 @@ static string emit_lit(Ctx *ctx, iIR iir, IRType type) {
         const char *str = get_string(ctx, GET_IRID(0));
         string val;
 
-        ret = sc("_Olits");
+        ret = sc("_Xlits");
         countit(ctx, &ret);
 
         val = sc("{");
@@ -235,7 +236,7 @@ static Expr emit_struct_inst(Ctx *ctx, iIR iir) {
     /* Declaration */
     base = TYPE(iir)->data.word;
     struct_name = sc(*buffer_get(ctx->sem.mangling, base, const char *));
-    name = sc("_Oinst");
+    name = sc("_Xinst");
     countit(ctx, &name);
     push_decl(ctx, struct_name, name, snew());
 
@@ -725,6 +726,9 @@ static string emit_program(Ctx *ctx, iIR iir) {
     return ret;
 }
 
+const char PREAMBLE_PATH[] = "src/4-emit/preamble.txt";
+const char EPILOGUE_PATH[] = "src/4-emit/epilogue.txt";
+
 char *emit(Tokens tokens, IRs irs, SemResult sem) {
     Ctx ctx;
     string ret;
@@ -738,15 +742,10 @@ char *emit(Tokens tokens, IRs irs, SemResult sem) {
     buffer_new(&ctx.decl, sizeof(buffer));
     map_new_string(&ctx.decln, sizeof(size_t), NULL, NULL, NULL, NULL);
 
-    ret = sc("/* The 1 Programming Language */");
+    ret = sc(file_read_whole(PREAMBLE_PATH));
     snewln(&ret);
-    snewln(&ret);
-    saddlnc(&ret, "#include <stddef.h>");
-    snewln(&ret);
-    saddlnc(&ret, "typedef struct { size_t len; char* buf; } string;");
-    snewln(&ret);
-
     saddln(&ret, emit_program(&ctx, buffer_num(ctx.irs) - 1));
+    saddln(&ret, sc(file_read_whole(EPILOGUE_PATH)));
 
     return sget(ret);
 }

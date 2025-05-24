@@ -1,0 +1,10 @@
+/* The 1 Programming Language */
+
+#include <stddef.h>
+
+typedef struct {
+    size_t len;
+    char *buf;
+} string;
+
+/* --- BEGIN EMITTED CODE --- */

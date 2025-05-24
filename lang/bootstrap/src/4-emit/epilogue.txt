@@ -1,0 +1,10 @@
+/* --- BEGIN EPILOGUE --- */
+
+int main(int argc, char *argv[]) {
+    (void)argc;
+    (void)argv;
+
+    _X4main();
+
+    return 0;
+}
