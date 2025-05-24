@@ -83,6 +83,14 @@ void buffer_remove(buffer buf, size_t idx) {
     buf->used--;
 }
 
+void buffer_join(buffer a, buffer b) {
+    size_t i;
+    buffer_assert(a);
+    buffer_assert(b);
+    for (i = 0; i < buffer_num(b); ++i)
+        buffer_push(a, buffer_get(b, i, void));
+}
+
 buffer buffer_copy(const buffer buf) {
     buffer new = NULL;
     size_t i;

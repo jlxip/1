@@ -1,4 +1,5 @@
 #include "semantics.h"
+#include <ds/set.h>
 
 #define GET_IR(N) (buffer_get(ctx->irs, N, IR))
 #define GET_IRTYPE(N) (*buffer_get(ir->types, N, IRType))
@@ -55,6 +56,11 @@ static bool check_types(Type a, Type b) {
     case TYPE_TUPLE:
         todo();
         break;
+    case TYPE_STRUCT_INST:
+        if (a.data.word != b.data.word)
+            return false;
+        break;
+    case TYPE_STRUCT_DEF:
     case TYPE_FUNC:
     case TYPE_MODULE:
         UNREACHABLE;
@@ -76,39 +82,51 @@ static const char *get_id(Ctx *ctx, iToken itoken) {
 
 /* --- */
 
+static iIR sem_primary(Ctx *ctx, iIR iir, IRType type);
 static void sem_type(Ctx *ctx, iIR iir, IRType type) {
+    IR *ir = GET_IR(iir);
+
     switch (type) {
     case IR_type_bool:
         TYPE(iir)->id = TYPE_BOOL;
-        TYPE(iir)->data = NULL;
+        TYPE(iir)->data.ptr = NULL;
         TYPE(iir)->flags = 0;
         break;
     case IR_type_byte:
         TYPE(iir)->id = TYPE_BYTE;
-        TYPE(iir)->data = NULL;
+        TYPE(iir)->data.ptr = NULL;
         TYPE(iir)->flags = 0;
         break;
     case IR_type_float:
         TYPE(iir)->id = TYPE_FLOAT;
-        TYPE(iir)->data = NULL;
+        TYPE(iir)->data.ptr = NULL;
         TYPE(iir)->flags = 0;
         break;
     case IR_type_ptr:
         TYPE(iir)->id = TYPE_PTR;
-        TYPE(iir)->data = NULL;
+        TYPE(iir)->data.ptr = NULL;
         TYPE(iir)->flags = 0;
         break;
     case IR_type_string:
         TYPE(iir)->id = TYPE_STRING;
-        TYPE(iir)->data = NULL;
+        TYPE(iir)->data.ptr = NULL;
         TYPE(iir)->flags = 0;
         break;
     case IR_type_word:
         TYPE(iir)->id = TYPE_WORD;
-        TYPE(iir)->data = NULL;
+        TYPE(iir)->data.ptr = NULL;
         TYPE(iir)->flags = 0;
         break;
-    case IR_type_direct:
+    case IR_type_direct: {
+        iIR x = SEMT(primary, 0);
+        if (TYPE(x)->id != TYPE_STRUCT_DEF)
+            throw("referenced non-struct id as type");
+
+        TYPE(iir)->id = TYPE_STRUCT_INST;
+        TYPE(iir)->data.word = x;
+        TYPE(iir)->flags = 0;
+        break;
+    }
     case IR_type_tuple:
     case IR_type_tuple_star:
         todo();
@@ -122,12 +140,12 @@ static void sem_lit(Ctx *ctx, iIR iir, IRType type) {
     switch (type) {
     case IR_lit_bool:
         TYPE(iir)->id = TYPE_BOOL;
-        TYPE(iir)->data = NULL;
+        TYPE(iir)->data.ptr = NULL;
         TYPE(iir)->flags = 0;
         break;
     case IR_lit_word:
         TYPE(iir)->id = TYPE_WORD;
-        TYPE(iir)->data = NULL;
+        TYPE(iir)->data.ptr = NULL;
         TYPE(iir)->flags = 0;
         break;
     case IR_lit_float:
@@ -135,7 +153,7 @@ static void sem_lit(Ctx *ctx, iIR iir, IRType type) {
         break;
     case IR_lit_string:
         TYPE(iir)->id = TYPE_STRING;
-        TYPE(iir)->data = NULL;
+        TYPE(iir)->data.ptr = NULL;
         TYPE(iir)->flags = 0;
         break;
     case IR_lit_tuple:
@@ -223,7 +241,7 @@ static void sem_call(Ctx *ctx, iIR iir) {
 
     ifunc = SEMT(primary, 0);
     assert(TYPE(ifunc)->id == TYPE_FUNC);
-    func = (Function *)(TYPE(ifunc)->data);
+    func = (Function *)(TYPE(ifunc)->data.ptr);
     expected = func->params;
     given = SEMT(expr_list, 2);
 
@@ -247,6 +265,68 @@ static void sem_call(Ctx *ctx, iIR iir) {
     }
 }
 
+static void sem_struct_inst(Ctx *ctx, iIR iir) {
+    IR *ir = GET_IR(iir);
+    IRType irtype;
+    iIR base;
+    map fields;
+    set seen = NULL;
+
+    base = SEMT(primary, 0);
+    if (TYPE(base)->id != TYPE_STRUCT_DEF)
+        throw("cannot instantiate non-struct");
+
+    TYPE(iir)->id = TYPE_STRUCT_INST;
+    TYPE(iir)->data.word = base;
+    TYPE(iir)->flags = 0;
+
+    /* Go through the fields */
+    fields = (map)(TYPE(base)->data.ptr);
+    set_new_string(&seen);
+    iir = GET_IRID(2);
+    irtype = GET_IRTYPE(2);
+    for (;;) {
+        ir = GET_IR(iir);
+
+        switch (irtype) {
+        case IR_struct_field_inst_rec: {
+            const char *field_name;
+            Type *expected_type;
+            assert(GET_IRTYPE(0) == IR_TOKEN);
+            field_name = get_id(ctx, GET_IRID(0));
+
+            /* Already seen? */
+            if (set_has(seen, field_name))
+                throwe("repeated field: %s", field_name);
+
+            /* Check field exists */
+            if (!map_has(fields, field_name))
+                throwe("undefined field: %s", field_name);
+
+            /* Compare types */
+            expected_type = map_get(fields, field_name, Type);
+            SEMT(expr, 2);
+            if (!check_types(*expected_type, *TYPE_CHILD(2)))
+                throwe("invalid type for field: %s", field_name);
+
+            /* Mark field as seen */
+            set_add(seen, field_name);
+
+            /* Next one */
+            iir = GET_IRID(4);
+            irtype = GET_IRTYPE(4);
+            break;
+        }
+        case IR_struct_field_inst_null:
+            if (map_num(fields) != set_num(seen))
+                throw("struct initialization with missing fields");
+            return;
+        default:
+            UNREACHABLE;
+        }
+    }
+}
+
 static void sem_assign(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
     iIR lhs;
@@ -262,7 +342,7 @@ static void sem_assign(Ctx *ctx, iIR iir, IRType type) {
         throw("type mismatch in assignment");
 
     /* Check assignment can happen */
-    (void)type;
+    (void)type; /* TODO */
     /*switch (type) {
     case IR_assign_eq:
     case IR_assign_plus:
@@ -314,8 +394,11 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
     case IR_expr_not:
     case IR_expr_and:
     case IR_expr_or:
-    case IR_expr_struct_inst:
         todo();
+        break;
+    case IR_expr_struct_inst:
+        SEM(struct_inst, 0);
+        COPY_TYPE(0);
         break;
     case IR_expr_assign:
         SEMT(assign, 0);
@@ -530,7 +613,7 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     case IR_function_noargs_void:
         func->params = NULL;
         func->ret.id = TYPE_NOTHING;
-        func->ret.data = NULL;
+        func->ret.data.ptr = NULL;
         func->ret.flags = 0;
         block = 3;
         break;
@@ -543,7 +626,7 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     case IR_function_void:
         func->params = SEMT(func_params, 4);
         func->ret.id = TYPE_NOTHING;
-        func->ret.data = NULL;
+        func->ret.data.ptr = NULL;
         func->ret.flags = 0;
         block = 6;
         break;
@@ -559,7 +642,7 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
 
     /* Save type information */
     TYPE(iir)->id = TYPE_FUNC;
-    TYPE(iir)->data = func;
+    TYPE(iir)->data.ptr = func;
     TYPE(iir)->flags = 0;
     buffer_push(ctx->funcrets, &func->ret);
 
@@ -651,7 +734,7 @@ static void sem_struct(Ctx *ctx, iIR iir) {
 
 done:
     TYPE(struct_def)->id = TYPE_STRUCT_DEF;
-    TYPE(struct_def)->data = fields;
+    TYPE(struct_def)->data.ptr = fields;
     TYPE(struct_def)->flags = 0;
     push_to_scope(ctx, name, struct_def);
 }

@@ -20,6 +20,7 @@ void buffer_push_front(buffer buf, const void *element);
 void buffer_set(buffer buf, size_t idx, const void *element);
 void buffer_pop(buffer buf);
 void buffer_remove(buffer buf, size_t idx);
+void buffer_join(buffer a, buffer b);
 buffer buffer_copy(const buffer buf);
 void buffer_out(buffer *buf);
 void buffer_shrink(buffer buf);

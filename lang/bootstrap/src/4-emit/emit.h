@@ -4,6 +4,7 @@
 #include <common.h>
 #include <compiler.h>
 #include <ds/map.h>
+#include <ds/string.h>
 #include <ir.h>
 
 typedef struct {
@@ -19,5 +20,11 @@ typedef struct {
 #define GET_IRTYPE(N) (*buffer_get(ir->types, N, IRType))
 #define GET_IRID(N) (*buffer_get(ir->ids, N, iIR))
 #define GET_TOKEN(N) (buffer_get(ctx->tokens, N, Token))
+
+/* Returned by expressions */
+typedef struct {
+    string code;
+    buffer above; /* code above (auxiliary assignments) */
+} Expr;
 
 #endif

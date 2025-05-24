@@ -3,8 +3,19 @@ struct Two {
     b: word,
 }
 
+struct Three {
+    c: Two,
+    d: word,
+}
+
 fn main {
-    let+ hola = "\"¡Hola!\"\n";
-    let adios = "¡Adiós!\n";
-    hola = adios;
+    let two = Two {
+        a = 1,
+        b = 2,
+    };
+
+    let three = Three {
+        c = two,
+        d = 3,
+    };
 }

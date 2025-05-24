@@ -19,6 +19,7 @@ typedef enum {
     /* Others */
     TYPE_FUNC,
     TYPE_STRUCT_DEF,
+    TYPE_STRUCT_INST,
     TYPE_MODULE
 } TypeId;
 
@@ -26,7 +27,10 @@ typedef enum {
 
 typedef struct {
     TypeId id;
-    void *data;
+    union {
+        void *ptr;
+        size_t word;
+    } data;
     size_t flags;
 } Type;
 
