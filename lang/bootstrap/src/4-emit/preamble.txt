@@ -1,10 +1,16 @@
 /* The 1 Programming Language */
 
 #include <stddef.h>
+#include <stdlib.h>
+
+size_t _Xargc;
+const char** _Xargv;
 
 typedef struct {
     size_t len;
     char *buf;
 } string;
+
+void c_exit(size_t retval) { exit(retval); }
 
 /* --- BEGIN EMITTED CODE --- */

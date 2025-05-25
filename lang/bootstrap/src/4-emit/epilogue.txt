@@ -1,10 +1,8 @@
 /* --- BEGIN EPILOGUE --- */
 
-int main(int argc, char *argv[]) {
-    (void)argc;
-    (void)argv;
-
+int main(int argc, const char *argv[]) {
+    _Xargc = argc;
+    _Xargv = argv;
     _X4main();
-
     return 0;
 }

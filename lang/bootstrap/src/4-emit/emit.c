@@ -592,43 +592,45 @@ static string emit_func(Ctx *ctx, iIR iir, IRType type) {
     string ret = sc("static ");
     IR *ir = GET_IR(iir);
     const char *mangled;
-    size_t block;
+    Function *func;
 
     mangled = *buffer_get(ctx->sem.mangling, iir, const char *);
     assert(mangled);
+    func = (Function *)(TYPE(iir)->data.ptr);
 
-    switch (type) {
-    case IR_function_noargs_void:
+    if (func->ret.id != TYPE_NOTHING) {
+        sadd(&ret, emit_type(ctx, func->ret));
+        saddc(&ret, " ");
+    } else {
         saddc(&ret, "void ");
-        saddc(&ret, mangled);
-        saddc(&ret, "(void) ");
-        block = 3;
-        break;
-    case IR_function_noargs_typed:
-        sadd(&ret, emit_type(ctx, *TYPE_CHILD(4)));
-        saddc(&ret, " ");
-        saddc(&ret, mangled);
-        saddc(&ret, "(void) ");
-        block = 5;
-        break;
-    case IR_function_void:
-        todo();
-        block = 6;
-        break;
-    case IR_function_typed:
-        sadd(&ret, emit_type(ctx, *TYPE_CHILD(7)));
-        saddc(&ret, " ");
-        saddc(&ret, mangled);
+    }
+
+    saddc(&ret, mangled);
+    if (func->params) {
         saddc(&ret, "(");
         sadd(&ret, EMITT(params, 4));
         saddc(&ret, ") ");
-        block = 8;
+    } else {
+        saddc(&ret, "(void) ");
+    }
+
+    switch (type) {
+    case IR_function_noargs_void:
+        sadd(&ret, EMIT(block, 3));
+        break;
+    case IR_function_noargs_typed:
+        sadd(&ret, EMIT(block, 5));
+        break;
+    case IR_function_void:
+        sadd(&ret, EMIT(block, 6));
+        break;
+    case IR_function_typed:
+        sadd(&ret, EMIT(block, 8));
         break;
     default:
         UNREACHABLE;
     }
 
-    sadd(&ret, EMIT(block, block));
     return ret;
 }
 
@@ -667,6 +669,35 @@ static string emit_struct(Ctx *ctx, iIR iir) {
     return ret;
 }
 
+static string emit_extern(Ctx *ctx, iIR iir) {
+    string ret;
+    IR *ir = GET_IR(iir);
+    const char *name;
+    Function *func;
+
+    name = *buffer_get(ctx->sem.mangling, iir, const char *);
+    assert(name);
+    func = (Function *)(TYPE(iir)->data.ptr);
+
+    if (func->ret.id != TYPE_NOTHING) {
+        ret = emit_type(ctx, func->ret);
+        saddc(&ret, " ");
+    } else {
+        ret = sc("void ");
+    }
+
+    saddc(&ret, name);
+    if (func->params) {
+        saddc(&ret, "(");
+        sadd(&ret, EMITT(params, 4));
+        saddc(&ret, ");");
+    } else {
+        saddc(&ret, "(void);");
+    }
+
+    return ret;
+}
+
 static string emit_global(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
 
@@ -681,8 +712,7 @@ static string emit_global(Ctx *ctx, iIR iir, IRType type) {
         todo();
         break;
     case IR_global_extern:
-        todo();
-        break;
+        return EMIT(extern, 0);
     default:
         UNREACHABLE;
     }

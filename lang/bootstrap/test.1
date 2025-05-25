@@ -1,21 +1,5 @@
-struct Two {
-    a: word,
-    b: word,
-}
-
-struct Three {
-    c: Two,
-    d: word,
-}
+extern c_exit(retval: word);
 
 fn main {
-    let two = Two {
-        a = 1,
-        b = 2,
-    };
-
-    let three = Three {
-        c = two,
-        d = 3,
-    };
+    c_exit(42);
 }

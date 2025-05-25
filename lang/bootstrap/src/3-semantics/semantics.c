@@ -601,12 +601,9 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     /* TODO: annotations */
 
     func = malloc(sizeof(Function));
-
     assert(GET_IRTYPE(2) == IR_TOKEN);
     name = get_id(ctx, GET_IRID(2));
-
     push_to_scope(ctx, name, iir);
-
     push_scope(ctx);
 
     switch (type) {
@@ -739,6 +736,65 @@ done:
     push_to_scope(ctx, name, struct_def);
 }
 
+static Types sem_extern_params(Ctx *ctx, iIR iir, IRType type) {
+    /* Recycle sem_func_params, check for invalid types */
+    Types ret = sem_func_params(ctx, iir, type);
+    size_t i;
+
+    for (i = 0; i < buffer_num(ret); ++i) {
+        switch (buffer_get(ret, i, Type)->id) {
+        case TYPE_BYTE:
+        case TYPE_FLOAT:
+        case TYPE_PTR:
+        case TYPE_WORD:
+            /* Valid types */
+            break;
+        default:
+            throw("invalid type for extern parameter");
+        }
+    }
+
+    return ret;
+}
+
+static void sem_extern(Ctx *ctx, iIR iir, IRType type) {
+    IR *ir = GET_IR(iir);
+    const char *name;
+    Function *func;
+
+    func = malloc(sizeof(Function));
+    assert(GET_IRTYPE(2) == IR_TOKEN);
+    name = get_id(ctx, GET_IRID(2));
+    push_to_scope(ctx, name, iir);
+
+    switch (type) {
+    case IR_extern_noargs_void:
+        todo();
+        break;
+    case IR_extern_noargs_typed:
+        todo();
+        break;
+    case IR_extern_void:
+        func->params = SEMT(extern_params, 4);
+        func->ret.id = TYPE_NOTHING;
+        func->ret.data.ptr = NULL;
+        func->ret.flags = 0;
+        break;
+    case IR_extern_typed:
+        todo();
+        break;
+    default:
+        UNREACHABLE;
+    }
+
+    /* Save type information */
+    TYPE(iir)->id = TYPE_FUNC;
+    TYPE(iir)->data.ptr = func;
+    TYPE(iir)->flags = 0;
+
+    buffer_set(ctx->mangling, iir, &name);
+}
+
 static void sem_global(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
 
@@ -756,7 +812,7 @@ static void sem_global(Ctx *ctx, iIR iir, IRType type) {
         todo();
         break;
     case IR_global_extern:
-        todo();
+        SEMT(extern, 0);
         break;
     default:
         UNREACHABLE;
