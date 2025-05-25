@@ -157,24 +157,8 @@ static string emit_lit(Ctx *ctx, iIR iir, IRType type) {
     return ret;
 }
 
-static string emit_primary(Ctx *ctx, iIR iir, IRType type) {
-    string ret = snew();
-
-    switch (type) {
-    case IR_primary_dot:
-        todo();
-        break;
-    case IR_primary_typed:
-        todo();
-        break;
-    case IR_primary_id:
-        saddc(&ret, *buffer_get(ctx->sem.mangling, iir, const char *));
-        break;
-    default:
-        UNREACHABLE;
-    }
-
-    return ret;
+static string emit_name(Ctx *ctx, iIR iir) {
+    return sc(*buffer_get(ctx->sem.mangling, iir, const char *));
 }
 
 static Expr emit_expr(Ctx *ctx, iIR iir, IRType type);
@@ -185,19 +169,6 @@ static Expr emit_expr_list(Ctx *ctx, iIR iir, IRType type) {
     ret.code = snew();
     ret.above = NULL;
     buffer_new(&ret.above, sizeof(string));
-
-    switch (type) {
-    case IR_expression_list_none:
-        return ret;
-    case IR_expression_list:
-        break;
-    default:
-        UNREACHABLE;
-    }
-
-    iir = GET_IRID(0);
-    type = GET_IRTYPE(0);
-    ir = GET_IR(iir);
 
     for (;;) {
         switch (type) {
@@ -241,8 +212,8 @@ static Expr emit_struct_inst(Ctx *ctx, iIR iir) {
     push_decl(ctx, struct_name, name, snew());
 
     /* Fill fields */
-    iir = GET_IRID(2);
-    irtype = GET_IRTYPE(2);
+    iir = GET_IRID(3);
+    irtype = GET_IRTYPE(3);
     for (;;) {
         ir = GET_IR(iir);
 
@@ -291,7 +262,10 @@ static Expr emit_assign(Ctx *ctx, iIR iir, IRType type) {
 
     switch (type) {
     case IR_assign_eq:
-        sadd(&ret.code, EMITT(primary, 0));
+        /* TODO: if reference, dereference */
+        sub = EMITT(expr, 0);
+        sadd(&ret.code, sub.code);
+        buffer_join(ret.above, sub.above);
         saddc(&ret.code, " = ");
         sub = EMITT(expr, 2);
         sadd(&ret.code, sub.code);
@@ -324,13 +298,23 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
     saddc(&ret.code, "(");
     switch (type) {
     case IR_expr_par:
-        todo();
+        sub = EMITT(expr, 0);
+        sadd(&ret.code, sub.code);
+        buffer_join(ret.above, sub.above);
         break;
-    case IR_expr_primary:
-        sadd(&ret.code, EMITT(primary, 0));
+    case IR_expr_name:
+        sadd(&ret.code, EMIT(name, 0));
+        break;
+    case IR_expr_call_noargs:
+        sub = EMITT(expr, 0);
+        sadd(&ret.code, sub.code);
+        buffer_join(ret.above, sub.above);
+        saddc(&ret.code, "()");
         break;
     case IR_expr_call:
-        sadd(&ret.code, EMITT(primary, 0));
+        sub = EMITT(expr, 0);
+        sadd(&ret.code, sub.code);
+        buffer_join(ret.above, sub.above);
         saddc(&ret.code, "(");
         sub = EMITT(expr_list, 2);
         sadd(&ret.code, sub.code);
@@ -398,12 +382,6 @@ static string emit_decl(Ctx *ctx, iIR iir, IRType type) {
         typename = emit_type(ctx, *TYPE(iir));
         name = sc(mangled);
         expr = EMITT(expr, 4);
-        break;
-    case IR_decl_typed:
-        todo();
-        break;
-    case IR_decl_p_typed:
-        todo();
         break;
     default:
         UNREACHABLE;

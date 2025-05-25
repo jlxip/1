@@ -10,30 +10,33 @@
 const char GRAMMAR_PATH[] = "src/2-parser/grammar.txt";
 const char SERIALIZED_PATH[] = "src/2-parser/grammar.bin";
 
-const char *nts[] = {"S", "USES", "USE", "RELATIVE_PATH", "MODULE", "GLOBALS",
-    "GLOBAL", "ANNOTATIONS", "ANNOTATION", "PRIMARY_LIST", "FUNCTION", "PARAMS",
-    "PARAM", "EXPRESSION", "EXPRESSION_LIST_OR_NONE", "EXPRESSION_LIST",
-    "LITERAL", "TUPLE", "STRUCT_INST", "STRUCT_FIELD_INST", "ASSIGNMENT",
-    "PRIMARY", "DECLARATION", "TYPED_ID", "TYPE", "TUPLEDEF", "TYPES",
-    "CONTROL", "CONDITIONAL", "IF", "ELIF", "ELSE", "SWITCH", "SWITCH_BODY",
-    "SWITCH_CASE", "LOOP", "FOR", "WHILE", "STRUCT", "STRUCT_DEF", "IMPL",
-    "IMPL_DEF", "EXTERN", "EXTERN_ARGS", "EXTERN_ARG", "BLOCK", "STATEMENTS",
-    "STATEMENT", NULL};
+const char *nts[] = {"S", "USES", "USE", "GLOBALS", "GLOBAL", "ANNOTATIONS",
+    "ANNOTATION", "FUNCTION", "PARAMS", "PARAM", "EXPRESSION", "NAME",
+    "EXPRESSION_LIST", "LITERAL", "TUPLE", "STRUCT_INST", "STRUCT_FIELD_INST",
+    "ASSIGNMENT", "DECLARATION", "TYPED_ID", "TYPE", "PATH", "TUPLEDEF",
+    "TYPES", "CONTROL", "CONDITIONAL", "IF", "ELIF", "ELSE", "SWITCH",
+    "SWITCH_BODY", "SWITCH_CASE", "LOOP", "FOR", "WHILE", "STRUCT",
+    "STRUCT_DEF", "IMPL", "IMPL_DEF", "EXTERN", "EXTERN_ARGS", "EXTERN_ARG",
+    "BLOCK", "STATEMENTS", "STATEMENT", NULL};
 
 void *get_grammar(void) {
     void *ret;
     char *gtext;
 
+#ifndef NO_GRAMMAR_CACHE
     if (file_exists(SERIALIZED_PATH))
         return grammar_load(
             file_read_bytes(SERIALIZED_PATH), token_strings + 1, nts);
+#endif
 
     gtext = file_read_whole(GRAMMAR_PATH);
     ret = grammar(token_strings + 1, nts, gtext, "S");
     free(gtext);
     grammar_compile(ret);
 
+#ifndef NO_GRAMMAR_CACHE
     file_write_bytes(SERIALIZED_PATH, grammar_save(ret));
+#endif
     return ret;
 }
 

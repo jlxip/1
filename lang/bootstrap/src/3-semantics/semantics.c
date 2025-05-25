@@ -36,6 +36,30 @@ static iIR lookup(Ctx *ctx, const char *name) {
     return 0;
 }
 
+static const char *get_id(Ctx *ctx, iToken itoken) {
+    Token *token = GET_TOKEN(itoken);
+    assert(token->id == T_ID);
+    return token->data.str;
+}
+
+static iIR lookup_path(Ctx *ctx, iIR iir, IRType type) {
+    IR *ir = GET_IR(iir);
+    for (;;) {
+        switch (type) {
+        case IR_path_id:
+            assert(GET_IRTYPE(0) == IR_TOKEN);
+            return lookup(ctx, get_id(ctx, GET_IRID(0)));
+        case IR_path_dot:
+            todo();
+            break;
+        default:
+            UNREACHABLE;
+        }
+    }
+}
+
+#define LOOKUP_PATH(N) lookup_path(ctx, GET_IRID(N), GET_IRTYPE(N))
+
 static bool check_types(Type a, Type b) {
     if (!a.id || !b.id)
         throw("TYPE_UNKNOWN! (bug)");
@@ -74,15 +98,6 @@ static bool check_types(Type a, Type b) {
 
 /* --- */
 
-static const char *get_id(Ctx *ctx, iToken itoken) {
-    Token *token = GET_TOKEN(itoken);
-    assert(token->id == T_ID);
-    return token->data.str;
-}
-
-/* --- */
-
-static iIR sem_primary(Ctx *ctx, iIR iir, IRType type);
 static void sem_type(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
 
@@ -117,8 +132,8 @@ static void sem_type(Ctx *ctx, iIR iir, IRType type) {
         TYPE(iir)->data.ptr = NULL;
         TYPE(iir)->flags = 0;
         break;
-    case IR_type_direct: {
-        iIR x = SEMT(primary, 0);
+    case IR_type_path: {
+        iIR x = LOOKUP_PATH(0);
         if (TYPE(x)->id != TYPE_STRUCT_DEF)
             throw("referenced non-struct id as type");
 
@@ -164,30 +179,16 @@ static void sem_lit(Ctx *ctx, iIR iir, IRType type) {
     }
 }
 
-static iIR sem_primary(Ctx *ctx, iIR iir, IRType type) {
+static iIR sem_name(Ctx *ctx, iIR iir) {
     IR *ir = GET_IR(iir);
     iIR ret = 0;
+    const char *name;
 
-    switch (type) {
-    case IR_primary_dot:
-        todo();
-        break;
-    case IR_primary_typed:
-        todo();
-        break;
-    case IR_primary_id: {
-        const char *name;
-        name = get_id(ctx, GET_IRID(0));
-        ret = lookup(ctx, name);
-        assert(*buffer_get(ctx->mangling, ret, void *));
-        buffer_set(ctx->mangling, iir, buffer_get(ctx->mangling, ret, void));
-        *TYPE(iir) = *TYPE(ret);
-        break;
-    }
-    default:
-        UNREACHABLE;
-    }
-
+    name = get_id(ctx, GET_IRID(0));
+    ret = lookup(ctx, name);
+    assert(*buffer_get(ctx->mangling, ret, void *));
+    buffer_set(ctx->mangling, iir, buffer_get(ctx->mangling, ret, void));
+    *TYPE(iir) = *TYPE(ret);
     return ret;
 }
 
@@ -195,19 +196,6 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type);
 static Types sem_expr_list(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
     Types ret = NULL;
-
-    switch (type) {
-    case IR_expression_list_none:
-        return ret;
-    case IR_expression_list:
-        break;
-    default:
-        UNREACHABLE;
-    }
-
-    iir = GET_IRID(0);
-    type = GET_IRTYPE(0);
-    ir = GET_IR(iir);
     buffer_new(&ret, sizeof(Type));
 
     for (;;) {
@@ -232,18 +220,27 @@ static Types sem_expr_list(Ctx *ctx, iIR iir, IRType type) {
     return ret;
 }
 
-static void sem_call(Ctx *ctx, iIR iir) {
+static void sem_call(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
-    iIR ifunc;
     Function *func;
     Types expected, given;
     size_t i;
 
-    ifunc = SEMT(primary, 0);
-    assert(TYPE(ifunc)->id == TYPE_FUNC);
-    func = (Function *)(TYPE(ifunc)->data.ptr);
+    SEMT(expr, 0);
+    assert(TYPE(GET_IRID(0))->id == TYPE_FUNC);
+    func = (Function *)(TYPE(GET_IRID(0))->data.ptr);
     expected = func->params;
-    given = SEMT(expr_list, 2);
+
+    switch (type) {
+    case IR_expr_call_noargs:
+        given = NULL;
+        break;
+    case IR_expr_call:
+        given = SEMT(expr_list, 2);
+        break;
+    default:
+        UNREACHABLE;
+    }
 
     *TYPE(iir) = func->ret;
 
@@ -272,7 +269,7 @@ static void sem_struct_inst(Ctx *ctx, iIR iir) {
     map fields;
     set seen = NULL;
 
-    base = SEMT(primary, 0);
+    base = LOOKUP_PATH(1);
     if (TYPE(base)->id != TYPE_STRUCT_DEF)
         throw("cannot instantiate non-struct");
 
@@ -283,8 +280,8 @@ static void sem_struct_inst(Ctx *ctx, iIR iir) {
     /* Go through the fields */
     fields = (map)(TYPE(base)->data.ptr);
     set_new_string(&seen);
-    iir = GET_IRID(2);
-    irtype = GET_IRTYPE(2);
+    iir = GET_IRID(3);
+    irtype = GET_IRTYPE(3);
     for (;;) {
         ir = GET_IR(iir);
 
@@ -329,16 +326,15 @@ static void sem_struct_inst(Ctx *ctx, iIR iir) {
 
 static void sem_assign(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
-    iIR lhs;
 
     /* Check lhs is a valid lvalue */
-    lhs = SEMT(primary, 0);
-    if (!(TYPE(lhs)->flags & TYPE_FLAG_MUTABLE))
+    SEMT(expr, 0);
+    if (!(TYPE_CHILD(0)->flags & TYPE_FLAG_MUTABLE))
         throw("assign to immutable variable");
 
     /* Check type of rhs matches */
     SEMT(expr, 2);
-    if (!check_types(*TYPE(lhs), *TYPE_CHILD(2)))
+    if (!check_types(*TYPE_CHILD(0), *TYPE_CHILD(2)))
         throw("type mismatch in assignment");
 
     /* Check assignment can happen */
@@ -366,12 +362,18 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
     case IR_expr_par:
         todo();
         break;
-    case IR_expr_primary:
-        SEMT(primary, 0);
+    case IR_expr_name:
+        SEM(name, 0);
         COPY_TYPE(0);
         break;
+    case IR_expr_dot:
+        todo();
+        break;
+    case IR_expr_call_noargs:
+        sem_call(ctx, iir, type);
+        break;
     case IR_expr_call:
-        sem_call(ctx, iir);
+        sem_call(ctx, iir, type);
         break;
     case IR_expr_lit:
         SEMT(lit, 0);
@@ -430,12 +432,6 @@ static void sem_decl_nonglobal(Ctx *ctx, iIR iir, IRType type) {
         SEMT(expr, 4);
         COPY_TYPE(4);
         TYPE(iir)->flags |= TYPE_FLAG_MUTABLE;
-        break;
-    case IR_decl_typed:
-        todo();
-        break;
-    case IR_decl_p_typed:
-        todo();
         break;
     default:
         UNREACHABLE;
@@ -669,12 +665,6 @@ static void sem_decl_global(Ctx *ctx, iIR iir, IRType type) {
         COPY_TYPE(3);
         break;
     case IR_decl_p_id:
-        todo();
-        break;
-    case IR_decl_typed:
-        todo();
-        break;
-    case IR_decl_p_typed:
         todo();
         break;
     default:

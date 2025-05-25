@@ -2,11 +2,8 @@
 S -> USES GLOBALS #program
 USES -> USE USES #uses_rec
 USES -> EPSILON #uses_null
-USE -> use RELATIVE_PATH semicolon #use
-RELATIVE_PATH -> dot RELATIVE_PATH #relpath_dot
-RELATIVE_PATH -> MODULE #relpath_direct
-MODULE -> id dot MODULE #module_dot
-MODULE -> id #module_direct
+USE -> use PATH semicolon #use_global
+USE -> use dot PATH semicolon #use_local
 
 GLOBALS -> GLOBAL GLOBALS #globals_rec
 GLOBALS -> EPSILON #globals_null
@@ -19,10 +16,7 @@ GLOBAL -> EXTERN #global_extern
 ANNOTATIONS -> ANNOTATION ANNOTATIONS #annot_rec
 ANNOTATIONS -> EPSILON #annot_null
 ANNOTATION -> atsymbol id #annot
-ANNOTATION -> atsymbol id opar PRIMARY_LIST cpar #annot_args
-
-PRIMARY_LIST -> PRIMARY comma PRIMARY_LIST #primary_list_rec
-PRIMARY_LIST -> PRIMARY #primary_list_direct
+ANNOTATION -> atsymbol id opar EXPRESSION_LIST cpar #annot_args
 
 FUNCTION -> ANNOTATIONS fn id BLOCK #function_noargs_void
 FUNCTION -> ANNOTATIONS fn id arrow TYPE BLOCK #function_noargs_typed
@@ -38,16 +32,24 @@ PARAM -> amp plus TYPED_ID #param_mutref
 
 
 # ---------- EXPRESSIONS ----------
+# Parentheses always have the highest priority
+%left opar cpar
 EXPRESSION -> opar EXPRESSION cpar #expr_par
 
-%left obraces opar
+# The name, atom of all expressions
 %hint id
-EXPRESSION -> PRIMARY #expr_primary
+EXPRESSION -> NAME #expr_name
+%left id
+NAME -> id #name
+
+# Pathing
+%left dot
+EXPRESSION -> EXPRESSION dot NAME #expr_dot
 
 # Function call
-EXPRESSION -> PRIMARY opar EXPRESSION_LIST_OR_NONE cpar #expr_call
-EXPRESSION_LIST_OR_NONE -> EPSILON #expression_list_none
-EXPRESSION_LIST_OR_NONE -> EXPRESSION_LIST #expression_list
+EXPRESSION -> EXPRESSION opar cpar #expr_call_noargs
+EXPRESSION -> EXPRESSION opar EXPRESSION_LIST cpar #expr_call
+%hint comma
 EXPRESSION_LIST -> EXPRESSION #expression_list_one
 EXPRESSION_LIST -> EXPRESSION comma EXPRESSION_LIST #expression_list_rec
 
@@ -57,7 +59,8 @@ LITERAL -> word #lit_word
 LITERAL -> float #lit_float
 LITERAL -> string #lit_string
 LITERAL -> TUPLE #lit_tuple
-TUPLE -> opar EXPRESSION comma EXPRESSION_LIST_OR_NONE cpar #tuple
+TUPLE -> opar EXPRESSION comma cpar #tuple_one
+TUPLE -> opar EXPRESSION comma EXPRESSION_LIST cpar #tuple_many
 
 %left sizeof
 EXPRESSION -> sizeof EXPRESSION #expr_sizeof
@@ -96,38 +99,31 @@ EXPRESSION -> EXPRESSION or EXPRESSION #expr_or
 
 # Struct instantiation
 EXPRESSION -> STRUCT_INST #expr_struct_inst
-STRUCT_INST -> PRIMARY obraces STRUCT_FIELD_INST cbraces #struct_inst
+STRUCT_INST -> new PATH obraces STRUCT_FIELD_INST cbraces #struct_inst
 STRUCT_FIELD_INST -> id eq EXPRESSION comma STRUCT_FIELD_INST #struct_field_inst_rec
 STRUCT_FIELD_INST -> EPSILON #struct_field_inst_null
 
 # Assignments
 EXPRESSION -> ASSIGNMENT #expr_assign
 %right eq
-ASSIGNMENT -> PRIMARY eq EXPRESSION #assign_eq
+ASSIGNMENT -> EXPRESSION eq EXPRESSION #assign_eq
 %nonassoc pluseq minuseq stareq slasheq hateq ampeq bareq
-ASSIGNMENT -> PRIMARY pluseq EXPRESSION #assign_plus
-ASSIGNMENT -> PRIMARY minuseq EXPRESSION #assign_minus
-ASSIGNMENT -> PRIMARY stareq EXPRESSION #assign_star
-ASSIGNMENT -> PRIMARY slasheq EXPRESSION #assign_slash
-ASSIGNMENT -> PRIMARY hateq EXPRESSION #assign_hat
-ASSIGNMENT -> PRIMARY ampeq EXPRESSION #assign_amp
-ASSIGNMENT -> PRIMARY bareq EXPRESSION #assign_bar
+ASSIGNMENT -> EXPRESSION pluseq EXPRESSION #assign_plus
+ASSIGNMENT -> EXPRESSION minuseq EXPRESSION #assign_minus
+ASSIGNMENT -> EXPRESSION stareq EXPRESSION #assign_star
+ASSIGNMENT -> EXPRESSION slasheq EXPRESSION #assign_slash
+ASSIGNMENT -> EXPRESSION hateq EXPRESSION #assign_hat
+ASSIGNMENT -> EXPRESSION ampeq EXPRESSION #assign_amp
+ASSIGNMENT -> EXPRESSION bareq EXPRESSION #assign_bar
 
-# Due to #lt# having lower precedence than #id#, this part of
-# the grammar must be non-ambiguous
-%left dot id
-PRIMARY -> PRIMARY dot id #primary_dot
-PRIMARY -> PRIMARY lt TYPES gt #primary_typed
-PRIMARY -> id #primary_id
-# TODO: id[]
+# Comma has the lowest priority, since it's not part of an expression
+%left comma
 
 
 
 # ---------- DECLARATION ----------
 DECLARATION -> let id eq EXPRESSION #decl_id
 DECLARATION -> let plus id eq EXPRESSION #decl_p_id
-DECLARATION -> let TYPED_ID eq EXPRESSION #decl_typed
-DECLARATION -> let plus TYPED_ID eq EXPRESSION #decl_p_typed
 
 TYPED_ID -> id colon TYPE #typed
 
@@ -137,9 +133,12 @@ TYPE -> kfloat #type_float
 TYPE -> kptr #type_ptr
 TYPE -> kstring #type_string
 TYPE -> kword #type_word
-TYPE -> PRIMARY #type_direct
+TYPE -> PATH #type_path
 TYPE -> TUPLEDEF #type_tuple
 TYPE -> TUPLEDEF star EXPRESSION #type_tuple_star
+
+PATH -> id #path_id
+PATH -> PATH dot id #path_dot
 
 TUPLEDEF -> opar TYPE comma cpar #tupledef_one
 TUPLEDEF -> opar TYPE comma TYPES cpar #tupledef_many
@@ -176,7 +175,7 @@ STRUCT_DEF -> EPSILON #struct_def_null
 
 
 # ---------- IMPL ----------
-IMPL -> ANNOTATIONS impl PRIMARY obraces IMPL_DEF cbraces #impl
+IMPL -> ANNOTATIONS impl PATH obraces IMPL_DEF cbraces #impl
 IMPL_DEF -> FUNCTION IMPL_DEF #impl_def
 IMPL_DEF -> EPSILON #impl_def_null
 

@@ -33,6 +33,7 @@ typedef enum {
     T_KSTRING,  /* string */
     T_KWORD,    /* word */
     T_LET,      /* let */
+    T_NEW,      /* new */
     T_NOT,      /* not */
     T_OR,       /* or */
     T_RETURN,   /* return */
@@ -91,7 +92,7 @@ typedef enum {
 static const char *token_strings[] = {"NULL", "id", "and", "arrow", "assert",
     "break", "kbyte", "case", "continue", "default", "elif", "else", "extern",
     "fall", "fn", "for", "if", "impl", "in", "kbool", "kfloat", "kptr",
-    "kstring", "kword", "let", "not", "or", "return", "sizeof", "struct",
+    "kstring", "kword", "let", "new", "not", "or", "return", "sizeof", "struct",
     "switch", "use", "while", "bool", "word", "float", "string", "deq", "neq",
     "eq", "pluseq", "plus", "minuseq", "minus", "stareq", "star", "slasheq",
     "slash", "hateq", "hat", "ampeq", "damp", "ampplus", "amp", "bareq", "bar",
