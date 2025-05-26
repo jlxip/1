@@ -2,6 +2,7 @@
 #define TYPES_H
 
 #include <ds/buffer.h>
+#include <ds/map.h>
 
 typedef enum {
     TYPE_UNKNOWN, /* default type for anything */
@@ -20,10 +21,12 @@ typedef enum {
     TYPE_FUNC,
     TYPE_STRUCT_DEF,
     TYPE_STRUCT_INST,
+    TYPE_SELF,
     TYPE_MODULE
 } TypeId;
 
 #define TYPE_FLAG_MUTABLE 0x1
+#define TYPE_FLAG_METHOD 0x2
 
 typedef struct {
     TypeId id;
@@ -38,6 +41,11 @@ typedef struct {
     buffer params;
     Type ret;
 } Function;
+
+typedef struct {
+    map fields;  /* map<const char*, Type> */
+    map methods; /* map<const char*, iIR> */
+} Struct;
 
 typedef buffer Types; /* buffer<Type> */
 

@@ -14,6 +14,8 @@ typedef struct {
 
     buffer decl; /* buffer<buffer<string>> */
     map decln;   /* map<string, size_t> */
+
+    iIR self_struct; /* iIR of Self in current impl */
 } Ctx;
 
 #define GET_IR(N) (buffer_get(ctx->irs, N, IR))
@@ -24,7 +26,8 @@ typedef struct {
 /* Returned by expressions */
 typedef struct {
     string code;
-    buffer above; /* code above (auxiliary assignments) */
+    buffer above;    /* code above (auxiliary assignments) */
+    string self_val; /* mangled name of instance for methods */
 } Expr;
 
 #endif

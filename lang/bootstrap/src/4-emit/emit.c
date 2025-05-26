@@ -7,6 +7,10 @@
 #define TYPE(N) buffer_get(ctx->sem.types, N, Type)
 #define TYPE_CHILD(N) TYPE(GET_IRID(N))
 
+#define IIR_BEGIN (buffer_num(ctx.irs) - 3)
+#define IIR_CONST_SELF (buffer_num(ctx->irs) - 2)
+#define IIR_MUT_SELF (buffer_num(ctx->irs) - 1)
+
 static const size_t ONE = 1;
 
 static const char *get_id(Ctx *ctx, iToken itoken) {
@@ -200,9 +204,9 @@ static Expr emit_struct_inst(Ctx *ctx, iIR iir) {
     string struct_name, name;
     IRType irtype;
 
-    ret.code = snew();
     ret.above = NULL;
     buffer_new(&ret.above, sizeof(string));
+    ret.self_val = snew(); /* Same as ret.code */
 
     /* Declaration */
     base = TYPE(iir)->data.word;
@@ -288,14 +292,14 @@ static Expr emit_assign(Ctx *ctx, iIR iir, IRType type) {
 }
 
 static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
-    Expr ret, sub;
+    Expr ret, sub, sub2;
     IR *ir = GET_IR(iir);
 
     ret.code = snew();
     ret.above = NULL;
     buffer_new(&ret.above, sizeof(string));
+    ret.self_val = snew();
 
-    saddc(&ret.code, "(");
     switch (type) {
     case IR_expr_par:
         sub = EMITT(expr, 0);
@@ -304,18 +308,82 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         break;
     case IR_expr_name:
         sadd(&ret.code, EMIT(name, 0));
+        ret.self_val = ret.code;
         break;
+    case IR_expr_dot: {
+        string name = EMIT(name, 2);
+        sub = EMITT(expr, 0);
+        buffer_join(ret.above, sub.above);
+
+        switch (TYPE_CHILD(0)->id) {
+        case TYPE_STRUCT_DEF:
+            /* Static method */
+            todo();
+            break;
+        case TYPE_STRUCT_INST: {
+            iIR base;
+            Struct *obj;
+            base = TYPE_CHILD(0)->data.word;
+            obj = (Struct *)(TYPE(base)->data.ptr);
+
+            if (map_has(obj->fields, sget(name))) {
+                assert(sub.self_val.len);
+                sadd(&ret.code, sub.self_val);
+                saddc(&ret.code, "."); /* TODO: depends if ref */
+                sadd(&ret.code, name);
+            } else if (map_has(obj->methods, sget(name))) {
+                iIR method = *map_get(obj->methods, sget(name), iIR);
+                saddc(&ret.code,
+                    *buffer_get(ctx->sem.mangling, method, const char *));
+                assert(sub.self_val.len);
+                ret.self_val = sc("&"); /* TODO: depends if ref */
+                sadd(&ret.self_val, sub.self_val);
+            } else
+                UNREACHABLE;
+            break;
+        }
+        case TYPE_SELF: {
+            Struct *obj;
+            assert(ctx->self_struct);
+            obj = (Struct *)(TYPE(ctx->self_struct)->data.ptr);
+
+            if (map_has(obj->fields, sget(name))) {
+                saddc(&ret.code, "self->");
+                sadd(&ret.code, name);
+            } else if (map_has(obj->methods, sget(name))) {
+                iIR method = *map_get(obj->methods, sget(name), iIR);
+                saddc(&ret.code,
+                    *buffer_get(ctx->sem.mangling, method, const char *));
+                ret.self_val = sc("self");
+            } else
+                UNREACHABLE;
+            break;
+        }
+        default:
+            UNREACHABLE;
+        }
+        break;
+    }
     case IR_expr_call_noargs:
         sub = EMITT(expr, 0);
         sadd(&ret.code, sub.code);
         buffer_join(ret.above, sub.above);
-        saddc(&ret.code, "()");
+        if (TYPE(GET_IRID(0))->flags & TYPE_FLAG_METHOD) {
+            saddc(&ret.code, "(");
+            assert(sub.self_val.len);
+            sadd(&ret.code, sub.self_val);
+            saddc(&ret.code, ")");
+        } else {
+            saddc(&ret.code, "()");
+        }
         break;
     case IR_expr_call:
         sub = EMITT(expr, 0);
         sadd(&ret.code, sub.code);
         buffer_join(ret.above, sub.above);
         saddc(&ret.code, "(");
+        if (TYPE(GET_IRID(0))->flags & TYPE_FLAG_METHOD)
+            todo();
         sub = EMITT(expr_list, 2);
         sadd(&ret.code, sub.code);
         buffer_join(ret.above, sub.above);
@@ -328,7 +396,24 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
     case IR_expr_hat:
     case IR_expr_amp:
     case IR_expr_bar:
+        todo();
+        break;
     case IR_expr_star:
+        sub = EMITT(expr, 0);
+        buffer_join(ret.above, sub.above);
+        sub2 = EMITT(expr, 2);
+        buffer_join(ret.above, sub2.above);
+
+        switch (TYPE_CHILD(0)->id) {
+        case TYPE_WORD:
+            sadd(&ret.code, sub.code);
+            saddc(&ret.code, " * ");
+            sadd(&ret.code, sub2.code);
+            break;
+        default:
+            todo();
+        }
+        break;
     case IR_expr_slash:
     case IR_expr_plus:
     case IR_expr_minus:
@@ -347,6 +432,7 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         sub = EMIT(struct_inst, 0);
         sadd(&ret.code, sub.code);
         buffer_join(ret.above, sub.above);
+        ret.self_val = sub.code;
         break;
     case IR_expr_assign:
         sub = EMITT(assign, 0);
@@ -356,7 +442,6 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
     default:
         UNREACHABLE;
     }
-    saddc(&ret.code, ")");
 
     return ret;
 }
@@ -585,11 +670,20 @@ static string emit_func(Ctx *ctx, iIR iir, IRType type) {
 
     saddc(&ret, mangled);
     if (func->params) {
+        /* We have params */
         saddc(&ret, "(");
         sadd(&ret, EMITT(params, 4));
         saddc(&ret, ") ");
     } else {
-        saddc(&ret, "(void) ");
+        /* No params */
+        if (TYPE(iir)->flags & TYPE_FLAG_METHOD) {
+            saddc(&ret, "(const ");
+            saddc(&ret,
+                *buffer_get(ctx->sem.mangling, ctx->self_struct, const char *));
+            saddc(&ret, " *self)");
+        } else {
+            saddc(&ret, "(void) ");
+        }
     }
 
     switch (type) {
@@ -614,12 +708,12 @@ static string emit_func(Ctx *ctx, iIR iir, IRType type) {
 
 static string emit_struct(Ctx *ctx, iIR iir) {
     string ret = sc("typedef struct {");
-    map fields; /* map<string, Type> */
+    Struct *obj;
     map_iterator it;
     const char *mangled;
 
-    fields = (map)(TYPE(iir)->data.ptr);
-    it = map_it_begin(fields);
+    obj = (Struct *)(TYPE(iir)->data.ptr);
+    it = map_it_begin(obj->fields);
     while (!map_it_finished(&it)) {
         const char *field_name;
         Type field_type;
@@ -644,6 +738,35 @@ static string emit_struct(Ctx *ctx, iIR iir) {
     saddc(&ret, mangled);
     saddc(&ret, ";");
 
+    return ret;
+}
+
+static string emit_impl(Ctx *ctx, iIR iir) {
+    string ret = snew();
+    IR *ir = GET_IR(iir);
+    IRType type;
+
+    ctx->self_struct = TYPE(iir)->data.word;
+
+    iir = GET_IRID(4);
+    type = GET_IRTYPE(4);
+    for (;;) {
+        ir = GET_IR(iir);
+        switch (type) {
+        case IR_impl_def:
+            saddln(&ret, EMITT(func, 0));
+            iir = GET_IRID(1);
+            type = GET_IRTYPE(1);
+            break;
+        case IR_impl_def_null:
+            goto next;
+        default:
+            UNREACHABLE;
+        }
+    }
+
+next:
+    ctx->self_struct = 0;
     return ret;
 }
 
@@ -687,8 +810,7 @@ static string emit_global(Ctx *ctx, iIR iir, IRType type) {
     case IR_global_struct:
         return EMIT(struct, 0);
     case IR_global_impl:
-        todo();
-        break;
+        return EMIT(impl, 0);
     case IR_global_extern:
         return EMIT(extern, 0);
     default:
@@ -746,13 +868,14 @@ char *emit(Tokens tokens, IRs irs, SemResult sem) {
     ctx.sem = sem;
     ctx.decl = NULL;
     ctx.decln = NULL;
+    ctx.self_struct = 0;
 
     buffer_new(&ctx.decl, sizeof(buffer));
     map_new_string(&ctx.decln, sizeof(size_t), NULL, NULL, NULL, NULL);
 
     ret = sc(file_read_whole(PREAMBLE_PATH));
     snewln(&ret);
-    saddln(&ret, emit_program(&ctx, buffer_num(ctx.irs) - 1));
+    saddln(&ret, emit_program(&ctx, IIR_BEGIN));
     saddln(&ret, sc(file_read_whole(EPILOGUE_PATH)));
 
     return sget(ret);

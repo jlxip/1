@@ -22,12 +22,14 @@ typedef struct {
     buffer mangling; /* buffer<char*> */
 
     /* --- STATE --- */
+    /* Raw names, prior to mangling */
+    buffer rawnames; /* buffer<char*> */
     /* Symbol tables */
     buffer tables; /* buffer<SymbolTable> */
     /* Current symbol table */
     iIR current;
-    /* Module stack, e.g. ["std", "ds", "vec"] */
-    buffer modstack; /* buffer<const char*> */
+    /* Mangling stack, e.g. ["std", "ds", "vec", "Vec"] */
+    buffer mangling_stack; /* buffer<const char*> */
     /* Expected return type of called functions */
     buffer funcrets; /* buffer<Type> */
     /* Shadowing stack */

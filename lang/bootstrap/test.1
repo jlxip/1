@@ -1,5 +1,18 @@
 extern c_exit(retval: word);
 
+struct Number { a: word, }
+
+impl Number {
+    fn twice -> word { return 2 * self.a; }
+
+    fn four_times -> word { return 2 * self.twice(); }
+}
+
 fn main {
-    c_exit(42);
+    c_exit(new Number { a = 3, }.a);
+    c_exit(new Number { a = 3, }.four_times());
+
+    let other = new Number { a = 5, };
+    c_exit(other.a);
+    c_exit(other.twice());
 }

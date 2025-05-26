@@ -9,10 +9,10 @@ char *mangle(Ctx *ctx, const char *name) {
     string ret = sc("_X");
     size_t i;
 
-    for (i = 0; i < buffer_num(ctx->modstack); ++i) {
-        const char *mod = *buffer_get(ctx->modstack, i, const char *);
-        saddi(&ret, strlen(mod));
-        saddc(&ret, mod);
+    for (i = 0; i < buffer_num(ctx->mangling_stack); ++i) {
+        const char *scope = *buffer_get(ctx->mangling_stack, i, const char *);
+        saddi(&ret, strlen(scope));
+        saddc(&ret, scope);
     }
 
     saddi(&ret, strlen(name));

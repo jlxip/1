@@ -17,6 +17,10 @@
         *TYPE(iir) = *TYPE_CHILD(N);                                           \
     } while (0)
 
+#define IIR_BEGIN (buffer_num(ctx.irs) - 3)
+#define IIR_CONST_SELF (buffer_num(ctx->irs) - 2)
+#define IIR_MUT_SELF (buffer_num(ctx->irs) - 1)
+
 /* --- */
 
 static iIR lookup(Ctx *ctx, const char *name) {
@@ -61,8 +65,10 @@ static iIR lookup_path(Ctx *ctx, iIR iir, IRType type) {
 #define LOOKUP_PATH(N) lookup_path(ctx, GET_IRID(N), GET_IRTYPE(N))
 
 static bool check_types(Type a, Type b) {
-    if (!a.id || !b.id)
-        throw("TYPE_UNKNOWN! (bug)");
+    if (!a.id)
+        throw("TYPE_UNKNOWN! (bug, a)");
+    if (!b.id)
+        throw("TYPE_UNKNOWN! (bug, b)");
 
     if (a.id != b.id)
         return false;
@@ -179,13 +185,18 @@ static void sem_lit(Ctx *ctx, iIR iir, IRType type) {
     }
 }
 
-static iIR sem_name(Ctx *ctx, iIR iir) {
+static const char *sem_name_nolookup(Ctx *ctx, iIR iir) {
     IR *ir = GET_IR(iir);
-    iIR ret = 0;
-    const char *name;
+    const char *ret;
+    assert(GET_IRTYPE(0) == IR_TOKEN);
+    ret = get_id(ctx, GET_IRID(0));
+    buffer_set(ctx->mangling, iir, &ret);
+    return ret;
+}
 
-    name = get_id(ctx, GET_IRID(0));
-    ret = lookup(ctx, name);
+static iIR sem_name(Ctx *ctx, iIR iir) {
+    iIR ret = 0;
+    ret = lookup(ctx, sem_name_nolookup(ctx, iir));
     assert(*buffer_get(ctx->mangling, ret, void *));
     buffer_set(ctx->mangling, iir, buffer_get(ctx->mangling, ret, void));
     *TYPE(iir) = *TYPE(ret);
@@ -266,7 +277,7 @@ static void sem_struct_inst(Ctx *ctx, iIR iir) {
     IR *ir = GET_IR(iir);
     IRType irtype;
     iIR base;
-    map fields;
+    Struct *obj;
     set seen = NULL;
 
     base = LOOKUP_PATH(1);
@@ -278,7 +289,7 @@ static void sem_struct_inst(Ctx *ctx, iIR iir) {
     TYPE(iir)->flags = 0;
 
     /* Go through the fields */
-    fields = (map)(TYPE(base)->data.ptr);
+    obj = (Struct *)(TYPE(base)->data.ptr);
     set_new_string(&seen);
     iir = GET_IRID(3);
     irtype = GET_IRTYPE(3);
@@ -297,11 +308,11 @@ static void sem_struct_inst(Ctx *ctx, iIR iir) {
                 throwe("repeated field: %s", field_name);
 
             /* Check field exists */
-            if (!map_has(fields, field_name))
+            if (!map_has(obj->fields, field_name))
                 throwe("undefined field: %s", field_name);
 
             /* Compare types */
-            expected_type = map_get(fields, field_name, Type);
+            expected_type = map_get(obj->fields, field_name, Type);
             SEMT(expr, 2);
             if (!check_types(*expected_type, *TYPE_CHILD(2)))
                 throwe("invalid type for field: %s", field_name);
@@ -315,7 +326,7 @@ static void sem_struct_inst(Ctx *ctx, iIR iir) {
             break;
         }
         case IR_struct_field_inst_null:
-            if (map_num(fields) != set_num(seen))
+            if (map_num(obj->fields) != set_num(seen))
                 throw("struct initialization with missing fields");
             return;
         default:
@@ -366,9 +377,45 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         SEM(name, 0);
         COPY_TYPE(0);
         break;
-    case IR_expr_dot:
-        todo();
+    case IR_expr_dot: {
+        const char *name = SEM(name_nolookup, 2);
+        SEMT(expr, 0);
+
+        switch (TYPE_CHILD(0)->id) {
+        case TYPE_STRUCT_DEF:
+            /* Static method */
+            todo();
+            break;
+        case TYPE_STRUCT_INST: {
+            iIR struct_def = TYPE_CHILD(0)->data.word;
+            Struct *obj = (Struct *)(TYPE(struct_def)->data.ptr);
+            if (map_has(obj->fields, name))
+                *TYPE(iir) = *map_get(obj->fields, name, Type);
+            else if (map_has(obj->methods, name))
+                *TYPE(iir) = *TYPE(*map_get(obj->methods, name, iIR));
+            else
+                throwe("no `%s' in self", name);
+            break;
+        }
+        case TYPE_SELF: {
+            iIR struct_def;
+            Struct *obj;
+            struct_def = lookup(ctx, "Self");
+            obj = (Struct *)(TYPE(struct_def)->data.ptr);
+
+            if (map_has(obj->fields, name))
+                *TYPE(iir) = *map_get(obj->fields, name, Type);
+            else if (map_has(obj->methods, name))
+                *TYPE(iir) = *TYPE(*map_get(obj->methods, name, iIR));
+            else
+                throwe("no `%s' in self", name);
+            break;
+        }
+        default:
+            UNREACHABLE;
+        }
         break;
+    }
     case IR_expr_call_noargs:
         sem_call(ctx, iir, type);
         break;
@@ -383,7 +430,21 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
     case IR_expr_hat:
     case IR_expr_amp:
     case IR_expr_bar:
+        todo();
+        break;
     case IR_expr_star:
+        SEMT(expr, 0);
+        SEMT(expr, 2);
+        switch (TYPE_CHILD(0)->id) {
+        case TYPE_WORD:
+            if (TYPE_CHILD(2)->id != TYPE_WORD)
+                throw("tried to multiply word and non-word");
+            COPY_TYPE(0);
+            break;
+        default:
+            todo();
+        }
+        break;
     case IR_expr_slash:
     case IR_expr_plus:
     case IR_expr_minus:
@@ -408,6 +469,9 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
     default:
         UNREACHABLE;
     }
+
+    if (!TYPE(iir)->id)
+        throw("Oops this is a bug");
 }
 
 static void sem_decl_nonglobal(Ctx *ctx, iIR iir, IRType type) {
@@ -591,8 +655,9 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
     const char *name;
     Function *func;
-    char *mangled;
+    size_t flags = 0;
     size_t block;
+    char *mangled;
 
     /* TODO: annotations */
 
@@ -601,6 +666,15 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     name = get_id(ctx, GET_IRID(2));
     push_to_scope(ctx, name, iir);
     push_scope(ctx);
+
+    /* Push self */
+    if (in_scope(ctx, "Self")) {
+        /* This is a method! */
+        /* TODO: this does not happen in static methods */
+        /* TODO: maybe mutable */
+        push_to_scope(ctx, "self", IIR_CONST_SELF);
+        flags |= TYPE_FLAG_METHOD;
+    }
 
     switch (type) {
     case IR_function_noargs_void:
@@ -636,9 +710,10 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     /* Save type information */
     TYPE(iir)->id = TYPE_FUNC;
     TYPE(iir)->data.ptr = func;
-    TYPE(iir)->flags = 0;
+    TYPE(iir)->flags = flags;
     buffer_push(ctx->funcrets, &func->ret);
 
+    buffer_set(ctx->rawnames, iir, &name);
     mangled = mangle(ctx, name);
     buffer_set(ctx->mangling, iir, &mangled);
 
@@ -680,7 +755,7 @@ static void sem_struct(Ctx *ctx, iIR iir) {
     const char *name;
     char *mangled;
     IRType type;
-    map fields = NULL; /* map<string, Type> */
+    Struct *obj = calloc(1, sizeof(Struct));
 
     /* TODO: annotations */
 
@@ -688,11 +763,12 @@ static void sem_struct(Ctx *ctx, iIR iir) {
     name = get_id(ctx, GET_IRID(2));
     if (in_scope(ctx, name))
         throwe("already declared: %s", name);
+    buffer_set(ctx->rawnames, iir, &name);
     mangled = mangle(ctx, name);
     buffer_set(ctx->mangling, iir, &mangled);
 
     /* Run through the fields */
-    map_new_string(&fields, sizeof(Type), NULL, NULL, NULL, NULL);
+    map_new_string(&obj->fields, sizeof(Type), NULL, NULL, NULL, NULL);
     iir = GET_IRID(4);
     type = GET_IRTYPE(4);
     for (;;) {
@@ -705,7 +781,7 @@ static void sem_struct(Ctx *ctx, iIR iir) {
 
             field_name = SEM(typed_id, 0);
             field_type = *TYPE(GET_IRID(0));
-            map_add(fields, field_name, &field_type);
+            map_add(obj->fields, field_name, &field_type);
 
             /* Recursion */
             iir = GET_IRID(2);
@@ -720,10 +796,60 @@ static void sem_struct(Ctx *ctx, iIR iir) {
     }
 
 done:
+    map_new_string(&obj->methods, sizeof(iIR), NULL, NULL, NULL, NULL);
     TYPE(struct_def)->id = TYPE_STRUCT_DEF;
-    TYPE(struct_def)->data.ptr = fields;
+    TYPE(struct_def)->data.ptr = obj;
     TYPE(struct_def)->flags = 0;
     push_to_scope(ctx, name, struct_def);
+}
+
+static void sem_impl(Ctx *ctx, iIR iir) {
+    IR *ir = GET_IR(iir);
+    iIR struct_def;
+    Struct *obj;
+    const char *struct_name;
+    IRType type;
+    const char *method_name;
+
+    struct_def = LOOKUP_PATH(2);
+    if (TYPE(struct_def)->id != TYPE_STRUCT_DEF)
+        throw("tried to impl a non-struct");
+    obj = (Struct *)(TYPE(struct_def)->data.ptr);
+
+    /* This comes very handy for emit */
+    TYPE(iir)->data.word = struct_def;
+
+    /* Add Self */
+    push_scope(ctx);
+    push_to_scope(ctx, "Self", struct_def);
+
+    /* Add prefix for mangling */
+    struct_name = *buffer_get(ctx->rawnames, struct_def, const char *);
+    assert(struct_name);
+    buffer_push(ctx->mangling_stack, &struct_name);
+
+    iir = GET_IRID(4);
+    type = GET_IRTYPE(4);
+    for (;;) {
+        ir = GET_IR(iir);
+        switch (type) {
+        case IR_impl_def:
+            SEMT(func, 0);
+            method_name = *buffer_get(ctx->rawnames, GET_IRID(0), const char *);
+            map_add(obj->methods, method_name, &GET_IRID(0));
+            iir = GET_IRID(1);
+            type = GET_IRTYPE(1);
+            break;
+        case IR_impl_def_null:
+            goto next;
+        default:
+            UNREACHABLE;
+        }
+    }
+
+next:
+    pop_scope(ctx);
+    buffer_pop(ctx->mangling_stack);
 }
 
 static Types sem_extern_params(Ctx *ctx, iIR iir, IRType type) {
@@ -799,7 +925,7 @@ static void sem_global(Ctx *ctx, iIR iir, IRType type) {
         SEM(struct, 0);
         break;
     case IR_global_impl:
-        todo();
+        SEM(impl, 0);
         break;
     case IR_global_extern:
         SEMT(extern, 0);
@@ -848,6 +974,26 @@ static void sem_program(Ctx *ctx, iIR iir) {
     SEMT(globals, 1);
 }
 
+static void add_self(Ctx *ctx) {
+    IR ir;
+    Type type;
+    const char *txt = "self";
+
+    ir.types = NULL;
+    ir.ids = NULL;
+    buffer_push(ctx->irs, &ir);
+    type.id = TYPE_SELF;
+    type.data.ptr = NULL;
+    type.flags = 0;
+    buffer_push(ctx->types, &type);
+    buffer_push(ctx->mangling, &txt);
+
+    buffer_push(ctx->irs, &ir);
+    type.flags = TYPE_FLAG_MUTABLE;
+    buffer_push(ctx->types, &type);
+    buffer_push(ctx->mangling, &txt);
+}
+
 SemResult semantics(Tokens tokens, IRs irs) {
     Ctx ctx;
     SemResult ret;
@@ -865,13 +1011,20 @@ SemResult semantics(Tokens tokens, IRs irs) {
     buffer_new(&ctx.mangling, sizeof(const char *));
     buffer_zresize(ctx.mangling, buffer_num(ctx.irs));
 
+    /* Add context-free "self" */
+    add_self(&ctx);
+
+    /* State: raw names */
+    ctx.rawnames = NULL;
+    buffer_new(&ctx.rawnames, sizeof(const char *));
+    buffer_zresize(ctx.rawnames, buffer_num(ctx.irs));
     /* State: symbol tables */
     ctx.tables = NULL;
     buffer_new(&ctx.tables, sizeof(SymbolTable));
     buffer_zresize(ctx.tables, buffer_num(ctx.irs));
-    /* State: module stack */
-    ctx.modstack = NULL;
-    buffer_new(&ctx.modstack, sizeof(const char *));
+    /* State: mangling stack */
+    ctx.mangling_stack = NULL;
+    buffer_new(&ctx.mangling_stack, sizeof(const char *));
     /* State: expected return type of called functions */
     ctx.funcrets = NULL;
     buffer_new(&ctx.funcrets, sizeof(Type));
@@ -879,7 +1032,7 @@ SemResult semantics(Tokens tokens, IRs irs) {
     ctx.shadowing = NULL;
     buffer_new(&ctx.shadowing, sizeof(ShadowingTable));
 
-    sem_program(&ctx, buffer_num(ctx.irs) - 1);
+    sem_program(&ctx, IIR_BEGIN);
 
     ret.types = ctx.types;
     ret.mangling = ctx.mangling;
