@@ -116,7 +116,6 @@ static string emit_type(Ctx *ctx, Type type) {
         break;
     case TYPE_STRUCT_INST:
         return sc(*buffer_get(ctx->sem.mangling, type.data.word, const char *));
-        break;
     case TYPE_MODULE:
         UNREACHABLE;
         break;
@@ -179,6 +178,7 @@ static Expr emit_expr_list(Ctx *ctx, iIR iir, IRType type) {
     ret.code = snew();
     ret.above = NULL;
     buffer_new(&ret.above, sizeof(string));
+    ret.lvalue = 0;
 
     for (;;) {
         switch (type) {
@@ -213,6 +213,7 @@ static Expr emit_struct_inst(Ctx *ctx, iIR iir) {
     ret.above = NULL;
     buffer_new(&ret.above, sizeof(string));
     ret.self_val = snew(); /* Same as ret.code */
+    ret.lvalue = 1;
 
     /* Declaration */
     base = TYPE(iir)->data.word;
@@ -269,6 +270,7 @@ static Expr emit_assign(Ctx *ctx, iIR iir, IRType type) {
     ret.code = snew();
     ret.above = NULL;
     buffer_new(&ret.above, sizeof(string));
+    ret.lvalue = 0; /* I'm not sure */
 
     switch (type) {
     case IR_assign_eq:
@@ -305,6 +307,7 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
     ret.above = NULL;
     buffer_new(&ret.above, sizeof(string));
     ret.self_val = snew();
+    ret.lvalue = 0; /* sane default */
 
     switch (type) {
     case IR_expr_par:
@@ -313,10 +316,12 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         sadd(&ret.code, sub.code);
         saddc(&ret.code, ")");
         buffer_join(ret.above, sub.above);
+        ret.lvalue = sub.lvalue;
         break;
     case IR_expr_name:
         sadd(&ret.code, EMIT(name, 0));
         ret.self_val = ret.code;
+        ret.lvalue = 1;
         break;
     case IR_expr_dot: {
         string name = EMIT(name, 2);
@@ -324,10 +329,20 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         buffer_join(ret.above, sub.above);
 
         switch (TYPE_CHILD(0)->id) {
-        case TYPE_STRUCT_DEF:
-            /* Static method */
-            todo();
+        case TYPE_STRUCT_DEF: {
+            Struct *obj = (Struct *)(TYPE_CHILD(0)->data.ptr);
+            if (map_has(obj->fields, sget(name))) {
+                todo();
+                ret.lvalue = 1;
+            } else if (map_has(obj->methods, sget(name))) {
+                iIR method = *map_get(obj->methods, sget(name), iIR);
+                saddc(&ret.code,
+                    *buffer_get(ctx->sem.mangling, method, const char *));
+                ret.lvalue = 1;
+            } else
+                UNREACHABLE;
             break;
+        }
         case TYPE_STRUCT_INST: {
             iIR base;
             Struct *obj;
@@ -339,13 +354,35 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
                 sadd(&ret.code, sub.self_val);
                 saddc(&ret.code, "."); /* TODO: depends if ref */
                 sadd(&ret.code, name);
+                ret.lvalue = 1;
             } else if (map_has(obj->methods, sget(name))) {
                 iIR method = *map_get(obj->methods, sget(name), iIR);
                 saddc(&ret.code,
                     *buffer_get(ctx->sem.mangling, method, const char *));
-                assert(sub.self_val.len);
-                ret.self_val = sc("&"); /* TODO: depends if ref */
-                sadd(&ret.self_val, sub.self_val);
+                if (sub.lvalue) {
+                    assert(sub.self_val.len);
+                    ret.self_val = sc("&"); /* TODO: depends if ref */
+                    sadd(&ret.self_val, sub.self_val);
+                } else {
+                    /* Make auxiliary and use that */
+                    string struct_name, name, above;
+
+                    struct_name =
+                        sc(*buffer_get(ctx->sem.mangling, base, const char *));
+                    name = sc("_Xinst");
+                    countit(ctx, &name);
+                    push_decl(ctx, struct_name, name, snew());
+
+                    above = sdup(name);
+                    saddc(&above, " = ");
+                    sadd(&above, sub.code);
+                    saddc(&above, ";");
+                    buffer_push(ret.above, &above);
+
+                    ret.self_val = sc("&");
+                    sadd(&ret.self_val, name);
+                }
+                ret.lvalue = 1;
             } else
                 UNREACHABLE;
             break;
@@ -358,11 +395,13 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
             if (map_has(obj->fields, sget(name))) {
                 saddc(&ret.code, "self->");
                 sadd(&ret.code, name);
+                ret.lvalue = 1;
             } else if (map_has(obj->methods, sget(name))) {
                 iIR method = *map_get(obj->methods, sget(name), iIR);
                 saddc(&ret.code,
                     *buffer_get(ctx->sem.mangling, method, const char *));
                 ret.self_val = sc("self");
+                ret.lvalue = 1;
             } else
                 UNREACHABLE;
             break;
@@ -376,7 +415,7 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         sub = EMITT(expr, 0);
         sadd(&ret.code, sub.code);
         buffer_join(ret.above, sub.above);
-        if (TYPE(GET_IRID(0))->flags & TYPE_FLAG_METHOD) {
+        if (IS_METHOD(GET_IRID(0)) && !IS_STATIC(GET_IRID(0))) {
             saddc(&ret.code, "(");
             assert(sub.self_val.len);
             sadd(&ret.code, sub.self_val);
@@ -390,7 +429,7 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         sadd(&ret.code, sub.code);
         buffer_join(ret.above, sub.above);
         saddc(&ret.code, "(");
-        if (TYPE(GET_IRID(0))->flags & TYPE_FLAG_METHOD) {
+        if (IS_METHOD(GET_IRID(0)) && !IS_STATIC(GET_IRID(0))) {
             assert(sub.self_val.len);
             sadd(&ret.code, sub.self_val);
             saddc(&ret.code, ", ");
@@ -489,7 +528,7 @@ static string emit_decl(Ctx *ctx, iIR iir, IRType type) {
     if (buffer_empty(ctx->decl)) {
         /* Global, declaration goes right here right now */
         /* These can be actually const ;) */
-        if (!(TYPE(iir)->flags & TYPE_FLAG_MUTABLE))
+        if (!IS_MUTABLE(iir))
             saddc(&ret, "const ");
         sadd(&ret, typename);
         saddc(&ret, " ");
@@ -709,7 +748,7 @@ static string emit_func(Ctx *ctx, iIR iir, IRType type) {
     if (func->params) {
         /* We have params */
         saddc(&ret, "(");
-        if (TYPE(iir)->flags & TYPE_FLAG_METHOD) {
+        if (IS_METHOD(iir) && !IS_STATIC(iir)) {
             saddc(&ret, "const ");
             saddc(&ret,
                 *buffer_get(ctx->sem.mangling, ctx->self_struct, const char *));
@@ -719,7 +758,7 @@ static string emit_func(Ctx *ctx, iIR iir, IRType type) {
         saddc(&ret, ") ");
     } else {
         /* No params */
-        if (TYPE(iir)->flags & TYPE_FLAG_METHOD) {
+        if (IS_METHOD(iir) && !IS_STATIC(iir)) {
             saddc(&ret, "(const ");
             saddc(&ret,
                 *buffer_get(ctx->sem.mangling, ctx->self_struct, const char *));

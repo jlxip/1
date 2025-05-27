@@ -3,11 +3,16 @@ extern c_exit(retval: word);
 struct Number { a: word, }
 
 impl Number {
-    fn times(n: word) -> word { return self.a * n; }
+    @static
+    fn make(n: word) -> Self { return new Self { a = n, }; }
+
+    fn times(n: word) -> Self { return Self.make(self.a * n); }
+    fn square -> Self { return Self.make(self.a * self.a); }
+    fn get -> word { return self.a; }
 }
 
 let aux = 3;
 
 fn main {
-    c_exit(new Number { a=aux, }.times(2));
+    c_exit(Number.make(aux).times(2).square().get());
 }

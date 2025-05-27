@@ -249,6 +249,51 @@ static Types sem_expr_list(Ctx *ctx, iIR iir, IRType type) {
     return ret;
 }
 
+static void parse_annotation(Ctx *ctx, iIR iir, IRType type, map out) {
+    IR *ir = GET_IR(iir);
+    const char *name;
+    Types types;
+
+    assert(type == IR_annot || type == IR_annot_args);
+    assert(GET_IRTYPE(1) == IR_TOKEN);
+    name = get_id(ctx, GET_IRID(1));
+    if (map_has(out, name))
+        throwe("@%s already used", name);
+
+    switch (type) {
+    case IR_annot:
+        types = NULL;
+        break;
+    case IR_annot_args:
+        types = SEMT(expr_list, 3);
+        break;
+    default:
+        UNREACHABLE;
+    }
+
+    map_add(out, name, &types);
+}
+
+static map sem_annotations(Ctx *ctx, iIR iir, IRType type) {
+    map ret = NULL; /* map<const char*, Types> */
+    map_new_string(&ret, sizeof(Types), NULL, NULL, NULL, NULL);
+
+    for (;;) {
+        IR *ir = GET_IR(iir);
+        switch (type) {
+        case IR_annot_rec:
+            parse_annotation(ctx, GET_IRID(0), GET_IRTYPE(0), ret);
+            iir = GET_IRID(1);
+            type = GET_IRTYPE(1);
+            break;
+        case IR_annot_null:
+            return ret;
+        default:
+            UNREACHABLE;
+        }
+    }
+}
+
 static void sem_call(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
     Function *func;
@@ -358,7 +403,7 @@ static void sem_assign(Ctx *ctx, iIR iir, IRType type) {
 
     /* Check lhs is a valid lvalue */
     SEMT(expr, 0);
-    if (!(TYPE_CHILD(0)->flags & TYPE_FLAG_MUTABLE))
+    if (!IS_MUTABLE(GET_IRID(0)))
         throw("assign to immutable variable");
 
     /* Check type of rhs matches */
@@ -401,18 +446,30 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         SEMT(expr, 0);
 
         switch (TYPE_CHILD(0)->id) {
-        case TYPE_STRUCT_DEF:
-            /* Static method */
-            todo();
+        case TYPE_STRUCT_DEF: {
+            Struct *obj = (Struct *)(TYPE_CHILD(0)->data.ptr);
+            if (map_has(obj->fields, name)) {
+                todo();
+            } else if (map_has(obj->methods, name)) {
+                iIR method = *map_get(obj->methods, name, iIR);
+                if (!IS_STATIC(method))
+                    throwe("method `%s' is non-static", name);
+                *TYPE(iir) = *TYPE(method);
+            } else
+                throwe("no `%s' in struct", name);
             break;
+        }
         case TYPE_STRUCT_INST: {
             iIR struct_def = TYPE_CHILD(0)->data.word;
             Struct *obj = (Struct *)(TYPE(struct_def)->data.ptr);
-            if (map_has(obj->fields, name))
+            if (map_has(obj->fields, name)) {
                 *TYPE(iir) = *map_get(obj->fields, name, Type);
-            else if (map_has(obj->methods, name))
-                *TYPE(iir) = *TYPE(*map_get(obj->methods, name, iIR));
-            else
+            } else if (map_has(obj->methods, name)) {
+                iIR method = *map_get(obj->methods, name, iIR);
+                if (IS_STATIC(method))
+                    throwe("method `%s' is static, use struct", name);
+                *TYPE(iir) = *TYPE(method);
+            } else
                 throwe("no `%s' in self", name);
             break;
         }
@@ -422,11 +479,14 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
             struct_def = lookup(ctx, "Self");
             obj = (Struct *)(TYPE(struct_def)->data.ptr);
 
-            if (map_has(obj->fields, name))
+            if (map_has(obj->fields, name)) {
                 *TYPE(iir) = *map_get(obj->fields, name, Type);
-            else if (map_has(obj->methods, name))
-                *TYPE(iir) = *TYPE(*map_get(obj->methods, name, iIR));
-            else
+            } else if (map_has(obj->methods, name)) {
+                iIR method = *map_get(obj->methods, name, iIR);
+                if (IS_STATIC(method))
+                    throwe("method `%s' is static, use Self", name);
+                *TYPE(iir) = *TYPE(method);
+            } else
                 throwe("no `%s' in self", name);
             break;
         }
@@ -691,13 +751,24 @@ static Types sem_func_params(Ctx *ctx, iIR iir, IRType type) {
 
 static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
-    const char *name;
+    map annot; /* map<const char*, Types> */
     Function *func;
+    const char *name;
     size_t flags = 0;
     size_t block;
     char *mangled;
 
-    /* TODO: annotations */
+    /* Annotations */
+    annot = SEMT(annotations, 0);
+    if (map_has(annot, "static")) {
+        if (!in_scope(ctx, "Self"))
+            throw("@static used in non-method");
+        flags |= TYPE_FLAG_STATIC;
+        map_remove(annot, "static");
+    }
+
+    if (!map_empty(annot))
+        throw("unused annotations");
 
     func = malloc(sizeof(Function));
     assert(GET_IRTYPE(2) == IR_TOKEN);

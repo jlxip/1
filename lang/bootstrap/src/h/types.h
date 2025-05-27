@@ -25,8 +25,13 @@ typedef enum {
     TYPE_MODULE
 } TypeId;
 
-#define TYPE_FLAG_MUTABLE 0x1
-#define TYPE_FLAG_METHOD 0x2
+#define TYPE_FLAG_MUTABLE (1 << 0)
+#define TYPE_FLAG_METHOD (1 << 1)
+#define TYPE_FLAG_STATIC (1 << 2)
+
+#define IS_MUTABLE(N) (TYPE(N)->flags & TYPE_FLAG_MUTABLE)
+#define IS_METHOD(N) (TYPE(N)->flags & TYPE_FLAG_METHOD)
+#define IS_STATIC(N) (TYPE(N)->flags & TYPE_FLAG_STATIC)
 
 typedef struct {
     TypeId id;

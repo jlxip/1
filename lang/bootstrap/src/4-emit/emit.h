@@ -28,6 +28,7 @@ typedef struct {
     string code;
     buffer above;    /* code above (auxiliary assignments) */
     string self_val; /* mangled name of instance for methods */
+    bool lvalue;     /* whether you can &this */
 } Expr;
 
 #endif
