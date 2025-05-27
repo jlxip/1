@@ -1,5 +1,6 @@
 #include "files.h"
 #include <stdio.h>
+#include <string.h>
 
 #define CHUNK_SIZE 1024
 
@@ -19,7 +20,7 @@ buffer file_read_bytes(const char *path) {
     uint8_t byte;
 
     file = fopen(path, "rb");
-    if (file == NULL)
+    if (!file)
         throwe("Could not open file: %s\n", path);
 
     buffer_new(&ret, sizeof(uint8_t));
@@ -35,7 +36,7 @@ void file_write_bytes(const char *path, buffer buf) {
     size_t i;
 
     file = fopen(path, "wb");
-    if (file == NULL)
+    if (!file)
         throwe("Could not open file: %s\n", path);
 
     for (i = 0; i < buffer_num(buf); ++i)
@@ -50,7 +51,7 @@ char *file_read_whole(const char *path) {
     char *ret, *cur;
 
     file = fopen(path, "r");
-    if (file == NULL)
+    if (!file)
         throwe("Could not open file: %s\n", path);
 
     size = CHUNK_SIZE;
@@ -71,4 +72,14 @@ char *file_read_whole(const char *path) {
 
     fclose(file);
     return ret;
+}
+
+void file_write_whole(const char *path, const char *txt) {
+    FILE *file;
+
+    file = fopen(path, "w");
+    if (!file)
+        throwe("Could not open file: %s\n", path);
+    fwrite(txt, 1, strlen(txt), file);
+    fclose(file);
 }

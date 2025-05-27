@@ -670,7 +670,8 @@ static string emit_block(Ctx *ctx, iIR iir) {
     decls = pop_decls(ctx);
     for (i = 0; i < buffer_num(decls); ++i)
         saddln(&ret, *buffer_get(decls, i, string));
-    snewln(&ret);
+    if (i)
+        snewln(&ret);
     sadd(&ret, body);
     saddlnc(&ret, "}");
 

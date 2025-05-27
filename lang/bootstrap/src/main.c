@@ -1,4 +1,5 @@
 #include <compiler.h>
+#include <ds/string.h>
 #include <files.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -12,6 +13,7 @@ int main(int argc, const char *argv[]) {
     IRs irs;
     SemResult sem;
     char *emitted;
+    string output_file;
 
 #ifdef DEBUG
     printf("Testing LALR implementation\n");
@@ -46,8 +48,10 @@ int main(int argc, const char *argv[]) {
     buffer_out(&sem.types);
     buffer_out(&sem.mangling);
 
-    printf("\n\n--- EMITTED CODE ---\n");
-    printf("%s", emitted);
+    /* Write emitted */
+    output_file = sc(argv[1]);
+    saddc(&output_file, "c");
+    file_write_whole(sget(output_file), emitted);
     free(emitted);
 
     return 0;
