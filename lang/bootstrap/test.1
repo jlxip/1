@@ -3,16 +3,11 @@ extern c_exit(retval: word);
 struct Number { a: word, }
 
 impl Number {
-    fn twice -> word { return 2 * self.a; }
-
-    fn four_times -> word { return 2 * self.twice(); }
+    fn times(n: word) -> word { return self.a * n; }
 }
 
-fn main {
-    c_exit(new Number { a = 3, }.a);
-    c_exit(new Number { a = 3, }.four_times());
+let aux = 3;
 
-    let other = new Number { a = 5, };
-    c_exit(other.a);
-    c_exit(other.twice());
+fn main {
+    c_exit(new Number { a=aux, }.times(2));
 }

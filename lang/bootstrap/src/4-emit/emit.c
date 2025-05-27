@@ -37,6 +37,12 @@ static const char *get_word(Ctx *ctx, iToken itoken) {
     return token->data.str;
 }
 
+static const char *get_float(Ctx *ctx, iToken itoken) {
+    Token *token = GET_TOKEN(itoken);
+    assert(token->id == T_FLOAT);
+    return token->data.str;
+}
+
 static void push_decls(Ctx *ctx) {
     buffer empty = NULL;
     buffer_new(&empty, sizeof(string));
@@ -133,7 +139,7 @@ static string emit_lit(Ctx *ctx, iIR iir, IRType type) {
         saddc(&ret, get_word(ctx, GET_IRID(0)));
         break;
     case IR_lit_float:
-        todo();
+        saddc(&ret, get_float(ctx, GET_IRID(0)));
         break;
     case IR_lit_string: {
         const char *str = get_string(ctx, GET_IRID(0));
@@ -302,8 +308,10 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
 
     switch (type) {
     case IR_expr_par:
-        sub = EMITT(expr, 0);
+        sub = EMITT(expr, 1);
+        saddc(&ret.code, "(");
         sadd(&ret.code, sub.code);
+        saddc(&ret.code, ")");
         buffer_join(ret.above, sub.above);
         break;
     case IR_expr_name:
@@ -382,8 +390,11 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         sadd(&ret.code, sub.code);
         buffer_join(ret.above, sub.above);
         saddc(&ret.code, "(");
-        if (TYPE(GET_IRID(0))->flags & TYPE_FLAG_METHOD)
-            todo();
+        if (TYPE(GET_IRID(0))->flags & TYPE_FLAG_METHOD) {
+            assert(sub.self_val.len);
+            sadd(&ret.code, sub.self_val);
+            saddc(&ret.code, ", ");
+        }
         sub = EMITT(expr_list, 2);
         sadd(&ret.code, sub.code);
         buffer_join(ret.above, sub.above);
@@ -477,6 +488,9 @@ static string emit_decl(Ctx *ctx, iIR iir, IRType type) {
 
     if (buffer_empty(ctx->decl)) {
         /* Global, declaration goes right here right now */
+        /* These can be actually const ;) */
+        if (!(TYPE(iir)->flags & TYPE_FLAG_MUTABLE))
+            saddc(&ret, "const ");
         sadd(&ret, typename);
         saddc(&ret, " ");
         sadd(&ret, name);
@@ -496,13 +510,14 @@ static string emit_decl(Ctx *ctx, iIR iir, IRType type) {
     return ret;
 }
 
+static string emit_block(Ctx *ctx, iIR iir);
 static string emit_stmt(Ctx *ctx, iIR iir, IRType type) {
     string ret = snew();
     IR *ir = GET_IR(iir);
 
     switch (type) {
     case IR_stmt_block:
-        todo();
+        saddln(&ret, EMIT(block, 0));
         break;
     case IR_stmt_decl:
         saddln(&ret, EMITT(decl, 0));
@@ -516,9 +531,31 @@ static string emit_stmt(Ctx *ctx, iIR iir, IRType type) {
         saddlnc(&ret, ";");
         break;
     }
-    case IR_stmt_assert:
-        todo();
+    case IR_stmt_assert: {
+        Expr expr = EMITT(expr, 1);
+        size_t i;
+
+        switch (TYPE_CHILD(1)->id) {
+        case TYPE_BOOL:
+        case TYPE_BYTE:
+        case TYPE_FLOAT:
+        case TYPE_PTR:
+        case TYPE_STRING:
+        case TYPE_WORD:
+            for (i = 0; i < buffer_num(expr.above); ++i)
+                saddln(&ret, *buffer_get(expr.above, i, string));
+            saddc(&ret, "_Xassert(");
+            sadd(&ret, expr.code);
+            saddlnc(&ret, ");");
+            break;
+        case TYPE_STRUCT_INST:
+            todo();
+            break;
+        default:
+            UNREACHABLE;
+        }
         break;
+    }
     case IR_stmt_break:
         todo();
         break;
@@ -672,6 +709,12 @@ static string emit_func(Ctx *ctx, iIR iir, IRType type) {
     if (func->params) {
         /* We have params */
         saddc(&ret, "(");
+        if (TYPE(iir)->flags & TYPE_FLAG_METHOD) {
+            saddc(&ret, "const ");
+            saddc(&ret,
+                *buffer_get(ctx->sem.mangling, ctx->self_struct, const char *));
+            saddc(&ret, " *self, ");
+        }
         sadd(&ret, EMITT(params, 4));
         saddc(&ret, ") ");
     } else {

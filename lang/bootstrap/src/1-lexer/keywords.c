@@ -46,8 +46,17 @@ size_t match_keyword(Capture *ret, const char *cur) {
     const char *begin = cur;
     switch (*cur++) {
     case 'a':
-        /* a: and */
-        MATCH_REST("nd", T_AND);
+        /* a: and, assert */
+        switch (*cur++) {
+        case 'n':
+            /* an: and */
+            MATCH_REST("nd", T_AND);
+            return 0;
+        case 's':
+            /* as: assert */
+            MATCH_REST("sert", T_ASSERT);
+            return 0;
+        }
         return 0;
     case 'b':
         /* b: bool, break, byte */

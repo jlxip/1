@@ -53,9 +53,25 @@ static iIR lookup_path(Ctx *ctx, iIR iir, IRType type) {
         case IR_path_id:
             assert(GET_IRTYPE(0) == IR_TOKEN);
             return lookup(ctx, get_id(ctx, GET_IRID(0)));
-        case IR_path_dot:
-            todo();
+        case IR_path_dot: {
+            iIR lhs;
+            const char *rhs;
+            lhs = lookup_path(ctx, GET_IRID(0), GET_IRTYPE(0));
+            assert(GET_IRTYPE(0) == IR_TOKEN);
+            rhs = get_id(ctx, GET_IRID(2));
+            (void)rhs;
+            switch (TYPE(lhs)->id) {
+            case TYPE_STRUCT_DEF:
+                todo();
+                break;
+            case TYPE_MODULE:
+                todo();
+                break;
+            default:
+                throw("unsupported type for pathing");
+            }
             break;
+        }
         default:
             UNREACHABLE;
         }
@@ -170,7 +186,9 @@ static void sem_lit(Ctx *ctx, iIR iir, IRType type) {
         TYPE(iir)->flags = 0;
         break;
     case IR_lit_float:
-        todo();
+        TYPE(iir)->id = TYPE_FLOAT;
+        TYPE(iir)->data.ptr = NULL;
+        TYPE(iir)->flags = 0;
         break;
     case IR_lit_string:
         TYPE(iir)->id = TYPE_STRING;
@@ -371,7 +389,8 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
 
     switch (type) {
     case IR_expr_par:
-        todo();
+        SEMT(expr, 1);
+        COPY_TYPE(1);
         break;
     case IR_expr_name:
         SEM(name, 0);
@@ -504,12 +523,13 @@ static void sem_decl_nonglobal(Ctx *ctx, iIR iir, IRType type) {
     push_to_scope(ctx, name, iir);
 }
 
+static void sem_block(Ctx *ctx, iIR iir);
 static void sem_stmt(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
 
     switch (type) {
     case IR_stmt_block:
-        todo();
+        SEM(block, 0);
         break;
     case IR_stmt_decl:
         SEMT(decl_nonglobal, 0);
@@ -518,7 +538,25 @@ static void sem_stmt(Ctx *ctx, iIR iir, IRType type) {
         SEMT(expr, 0);
         break;
     case IR_stmt_assert:
-        todo();
+        SEMT(expr, 1);
+        switch (TYPE_CHILD(1)->id) {
+        case TYPE_BOOL:
+        case TYPE_BYTE:
+        case TYPE_FLOAT:
+        case TYPE_PTR:
+        case TYPE_STRING:
+        case TYPE_WORD:
+            /* These are OK */
+            break;
+        case TYPE_TUPLE:
+            throw("bool downcast is undefined for tuples");
+            break;
+        case TYPE_STRUCT_INST:
+            todo();
+            break;
+        default:
+            throw("bool downcast does not apply here");
+        }
         break;
     case IR_stmt_break:
         todo();
@@ -740,7 +778,15 @@ static void sem_decl_global(Ctx *ctx, iIR iir, IRType type) {
         COPY_TYPE(3);
         break;
     case IR_decl_p_id:
-        todo();
+        assert(GET_IRTYPE(2) == IR_TOKEN);
+        name = get_id(ctx, GET_IRID(2));
+        if (in_scope(ctx, name))
+            throwe("already declared: %s", name);
+        mangled = mangle(ctx, name);
+        buffer_set(ctx->mangling, iir, &mangled);
+        SEMT(expr, 4);
+        COPY_TYPE(4);
+        TYPE(iir)->flags |= TYPE_FLAG_MUTABLE;
         break;
     default:
         UNREACHABLE;
@@ -885,10 +931,14 @@ static void sem_extern(Ctx *ctx, iIR iir, IRType type) {
 
     switch (type) {
     case IR_extern_noargs_void:
-        todo();
+        func->params = NULL;
+        func->ret.id = TYPE_NOTHING;
+        func->ret.data.ptr = NULL;
+        func->ret.flags = 0;
         break;
     case IR_extern_noargs_typed:
-        todo();
+        func->params = NULL;
+        func->ret = *TYPE_CHILD(4);
         break;
     case IR_extern_void:
         func->params = SEMT(extern_params, 4);
@@ -897,7 +947,8 @@ static void sem_extern(Ctx *ctx, iIR iir, IRType type) {
         func->ret.flags = 0;
         break;
     case IR_extern_typed:
-        todo();
+        func->params = SEMT(extern_params, 4);
+        func->ret = *TYPE_CHILD(7);
         break;
     default:
         UNREACHABLE;

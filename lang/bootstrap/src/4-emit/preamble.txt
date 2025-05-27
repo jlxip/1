@@ -11,6 +11,13 @@ typedef struct {
     char *buf;
 } string;
 
-void c_exit(size_t retval) { exit(retval); }
+static void c_exit(size_t retval) { exit(retval); }
+
+static void _Xassert(unsigned char val) {
+    if (!val) {
+        /* TODO: print something */
+        c_exit(1);
+    }
+}
 
 /* --- BEGIN EMITTED CODE --- */
