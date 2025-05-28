@@ -81,6 +81,7 @@ static void push_decl(Ctx *ctx, string type, string name, string value) {
     }
     saddc(&line, ";");
 
+    assert(buffer_num(ctx->decl));
     buffer_push(*buffer_back(ctx->decl, buffer), &line);
 }
 
@@ -733,6 +734,8 @@ static string emit_func(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
     const char *mangled;
     Function *func;
+    size_t block;
+    bool colon_mode = false;
 
     mangled = *buffer_get(ctx->sem.mangling, iir, const char *);
     assert(mangled);
@@ -771,19 +774,62 @@ static string emit_func(Ctx *ctx, iIR iir, IRType type) {
 
     switch (type) {
     case IR_function_noargs_void:
-        sadd(&ret, EMIT(block, 3));
+        block = 3;
+        break;
+    case IR_function_noargs_void_colon:
+        block = 4;
+        colon_mode = true;
         break;
     case IR_function_noargs_typed:
-        sadd(&ret, EMIT(block, 5));
+        block = 5;
+        break;
+    case IR_function_noargs_typed_colon:
+        block = 6;
+        colon_mode = true;
         break;
     case IR_function_void:
-        sadd(&ret, EMIT(block, 6));
+        block = 6;
+        break;
+    case IR_function_void_colon:
+        block = 7;
+        colon_mode = true;
         break;
     case IR_function_typed:
-        sadd(&ret, EMIT(block, 8));
+        block = 8;
+        break;
+    case IR_function_typed_colon:
+        block = 9;
+        colon_mode = true;
         break;
     default:
         UNREACHABLE;
+    }
+
+    if (colon_mode) {
+        Expr expr;
+        buffer decls;
+        size_t i;
+
+        push_decls(ctx);
+        expr = EMITT(expr, block);
+        decls = pop_decls(ctx);
+
+        saddlnc(&ret, "{");
+        /* Declarations */
+        for (i = 0; i < buffer_num(decls); ++i)
+            saddln(&ret, *buffer_get(decls, i, string));
+        if (i)
+            snewln(&ret);
+        /* Auxiliary assigns */
+        for (i = 0; i < buffer_num(expr.above); ++i)
+            saddln(&ret, *buffer_get(expr.above, i, string));
+        /* Return */
+        saddc(&ret, "return ");
+        saddln(&ret, expr.code);
+        saddlnc(&ret, ";");
+        saddc(&ret, "}");
+    } else {
+        sadd(&ret, EMIT(block, block));
     }
 
     return ret;

@@ -17,6 +17,15 @@
         *TYPE(iir) = *TYPE_CHILD(N);                                           \
     } while (0)
 
+Type _NULL_TYPE() {
+    Type ret;
+    ret.id = TYPE_NOTHING;
+    ret.data.ptr = NULL;
+    ret.flags = 0;
+    return ret;
+}
+#define NULL_TYPE _NULL_TYPE()
+
 #define IIR_BEGIN (buffer_num(ctx.irs) - 3)
 #define IIR_CONST_SELF (buffer_num(ctx->irs) - 2)
 #define IIR_MUT_SELF (buffer_num(ctx->irs) - 1)
@@ -316,6 +325,7 @@ static void sem_call(Ctx *ctx, iIR iir, IRType type) {
         UNREACHABLE;
     }
 
+    assert(func->ret.id);
     *TYPE(iir) = func->ret;
 
     if (!expected && !given) {
@@ -550,7 +560,7 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
     }
 
     if (!TYPE(iir)->id)
-        throw("Oops this is a bug");
+        throwe("Oops this is a bug. Expression type: %u", type);
 }
 
 static void sem_decl_nonglobal(Ctx *ctx, iIR iir, IRType type) {
@@ -756,6 +766,7 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     const char *name;
     size_t flags = 0;
     size_t block;
+    bool colon_mode = false;
     char *mangled;
 
     /* Annotations */
@@ -788,10 +799,14 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     switch (type) {
     case IR_function_noargs_void:
         func->params = NULL;
-        func->ret.id = TYPE_NOTHING;
-        func->ret.data.ptr = NULL;
-        func->ret.flags = 0;
+        func->ret = NULL_TYPE;
         block = 3;
+        break;
+    case IR_function_noargs_void_colon:
+        func->params = NULL;
+        func->ret = NULL_TYPE;
+        block = 4;
+        colon_mode = true;
         break;
     case IR_function_noargs_typed:
         SEMT(type, 4);
@@ -799,12 +814,23 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
         func->ret = *TYPE_CHILD(4);
         block = 5;
         break;
+    case IR_function_noargs_typed_colon:
+        SEMT(type, 4);
+        func->params = NULL;
+        func->ret = *TYPE_CHILD(4);
+        block = 6;
+        colon_mode = true;
+        break;
     case IR_function_void:
         func->params = SEMT(func_params, 4);
-        func->ret.id = TYPE_NOTHING;
-        func->ret.data.ptr = NULL;
-        func->ret.flags = 0;
+        func->ret = NULL_TYPE;
         block = 6;
+        break;
+    case IR_function_void_colon:
+        func->params = SEMT(func_params, 4);
+        func->ret = NULL_TYPE;
+        block = 7;
+        colon_mode = true;
         break;
     case IR_function_typed:
         SEMT(type, 7);
@@ -812,9 +838,19 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
         func->ret = *TYPE_CHILD(7);
         block = 8;
         break;
+    case IR_function_typed_colon:
+        SEMT(type, 7);
+        func->params = SEMT(func_params, 4);
+        func->ret = *TYPE_CHILD(7);
+        block = 9;
+        colon_mode = true;
+        break;
     default:
         UNREACHABLE;
     }
+
+    if (!func->ret.id)
+        throwe("yankee with no brim? Function type: %u\n", type);
 
     /* Save type information */
     TYPE(iir)->id = TYPE_FUNC;
@@ -826,7 +862,10 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     mangled = mangle(ctx, name);
     buffer_set(ctx->mangling, iir, &mangled);
 
-    SEM(block, block);
+    if (colon_mode)
+        SEMT(expr, block);
+    else
+        SEM(block, block);
 
     buffer_pop(ctx->funcrets);
     pop_scope(ctx);

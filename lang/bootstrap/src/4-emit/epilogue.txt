@@ -1,6 +1,7 @@
 /* --- BEGIN EPILOGUE --- */
 
 int main(int argc, const char *argv[]) {
+    (void)_Xassert;
     _Xargc = argc;
     _Xargv = argv;
     _X4main();

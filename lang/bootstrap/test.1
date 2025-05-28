@@ -4,11 +4,11 @@ struct Number { a: word, }
 
 impl Number {
     @static
-    fn make(n: word) -> Self { return new Self { a = n, }; }
+    fn make(n: word) -> Self: new Self { a = n, };
 
-    fn times(n: word) -> Self { return Self.make(self.a * n); }
-    fn square -> Self { return Self.make(self.a * self.a); }
-    fn get -> word { return self.a; }
+    fn times(n: word) -> Self: Self.make(self.a * n);
+    fn square -> Self: Self.make(self.a * self.a);
+    fn get -> word: self.a;
 }
 
 let aux = 3;

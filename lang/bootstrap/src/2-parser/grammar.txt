@@ -19,9 +19,14 @@ ANNOTATION -> atsymbol id #annot
 ANNOTATION -> atsymbol id opar EXPRESSION_LIST cpar #annot_args
 
 FUNCTION -> ANNOTATIONS fn id BLOCK #function_noargs_void
+FUNCTION -> ANNOTATIONS fn id colon EXPRESSION semicolon #function_noargs_void_colon
 FUNCTION -> ANNOTATIONS fn id arrow TYPE BLOCK #function_noargs_typed
+FUNCTION -> ANNOTATIONS fn id arrow TYPE colon EXPRESSION semicolon #function_noargs_typed_colon
 FUNCTION -> ANNOTATIONS fn id opar PARAMS cpar BLOCK #function_void
+FUNCTION -> ANNOTATIONS fn id opar PARAMS cpar colon EXPRESSION semicolon #function_void_colon
 FUNCTION -> ANNOTATIONS fn id opar PARAMS cpar arrow TYPE BLOCK #function_typed
+FUNCTION -> ANNOTATIONS fn id opar PARAMS cpar arrow TYPE colon EXPRESSION semicolon #function_typed_colon
+
 PARAMS -> PARAM comma PARAMS #params_rec
 PARAMS -> PARAM #params_one
 PARAM -> TYPED_ID #param_copy
