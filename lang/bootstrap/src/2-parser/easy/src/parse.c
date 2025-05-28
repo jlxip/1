@@ -135,7 +135,7 @@ IRs Grammar_parse(Grammar *g, const StreamElement *stream) {
             buffer_push(stack, &entry->info);
 
 #ifdef DEBUG
-            printf("Reduce\n");
+            printf("Reduce: %lu\n", prodidx);
 #endif
 
             buffer_push(valstack, &prodidx);

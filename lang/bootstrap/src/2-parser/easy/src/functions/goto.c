@@ -1,5 +1,25 @@
 #include "../internal.h"
 
+/* a: set<Item (core)> */
+/* b: set<Item> */
+static void join_item_core(set a, set b) {
+    set_iterator it;
+    it = set_it_begin(b);
+    while (!set_it_finished(&it)) {
+        Item *item = set_it_get(&it, Item);
+        if (set_has(a, item)) {
+            /* Seen core, join looks */
+            Item *seen = set_get(a, item, Item);
+            set_join(seen->look, item->look);
+        } else {
+            /* New core, just add */
+            set_add(a, item);
+        }
+
+        set_it_next(&it);
+    }
+}
+
 static Item advance(const Production *prod, const Item *parent) {
     /* Just advance the dot */
     Item ret;
@@ -12,7 +32,7 @@ static Item advance(const Production *prod, const Item *parent) {
 }
 
 set GOTO(Grammar *g, const set items, symbol sym) {
-    set ret = NULL;   /* set<Item> */
+    set ret = NULL;   /* set<Item (core)> */
     set gotos = NULL; /* set<Item> */
     set_iterator it;
 
@@ -47,14 +67,13 @@ set GOTO(Grammar *g, const set items, symbol sym) {
     }
 
     /* Perform closure of all of them */
-    set_new_Item(&ret);
+    set_new_Item_core(&ret);
     it = set_it_begin(gotos);
     while (!set_it_finished(&it)) {
         const Item *item = set_it_get(&it, Item);
         set aux = NULL;
         aux = CLOSURE(g, item);
-        if (aux)
-            set_join_move(ret, aux);
+        join_item_core(ret, aux);
         set_it_next(&it);
     }
 

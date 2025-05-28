@@ -7,6 +7,7 @@ void test_lalr_closure(void);
 void test_lalr_goto(void);
 void test_lalr_collection(void);
 void test_lalr_table(void);
+void test_lalr_edge(void);
 
 #define test(TXT)                                                              \
     do {                                                                       \
@@ -23,4 +24,5 @@ void test_lalr(void) {
     test(goto);
     test(collection);
     test(table);
+    test(edge);
 }

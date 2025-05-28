@@ -45,7 +45,6 @@ const char *grammar_forfirst2 = "E -> A B\n"
     A -> a | epsilon
     B -> b | epsilon
 */
-
 const char *tokens_forfirst3[3] = {"a", "b", NULL};
 const char *nts_forfirst3[4] = {"E", "A", "B", NULL};
 const char *grammar_forfirst3 = "E -> A B\n"
@@ -62,7 +61,6 @@ const char *grammar_forfirst3 = "E -> A B\n"
     S -> CC
     C -> cC | d
 */
-
 const char *tokens_basic[3] = {"c", "d", NULL};
 const char *nts_basic[3] = {"S", "C", NULL};
 const char *grammar_basic = "S -> C C\n"

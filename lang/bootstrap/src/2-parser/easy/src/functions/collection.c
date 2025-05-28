@@ -63,19 +63,13 @@ static void recursive_goto(Grammar *g, map seen) {
 
             /* Throw all symbols at it and see what sticks */
             for (sym = 1; sym < g->nsym; ++sym) {
-                set child;            /* Child state: set<Item> */
-                set childcore = NULL; /* Child state: set<Item (core)> */
+                set child; /* set<Item (core)> */
                 child = GOTO(g, parent, sym);
                 if (set_empty(child)) {
                     /* Nothing to do with this symbol */
                     set_out(&child);
                     continue;
                 }
-
-                set_new_Item_core(&childcore);
-                set_migrate(childcore, child);
-                child = childcore;
-                childcore = NULL;
 
                 /* Already seen? */
                 if (map_has(seen, &child)) {
