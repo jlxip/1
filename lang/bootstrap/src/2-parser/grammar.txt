@@ -43,6 +43,7 @@ EXPRESSION -> opar EXPRESSION cpar #expr_par
 # The id, atom of all expressions
 %left id
 EXPRESSION -> id #expr_id
+EXPRESSION -> atsymbol #expr_at
 
 # Struct instantiation
 EXPRESSION -> STRUCT_INST #expr_struct_inst

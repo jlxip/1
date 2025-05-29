@@ -316,6 +316,7 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         ret.lvalue = sub.lvalue;
         break;
     case IR_expr_id:
+    case IR_expr_at:
         ret.code = sc(*buffer_get(ctx->sem.mangling, iir, const char *));
         ret.self_val = ret.code;
         ret.lvalue = 1;

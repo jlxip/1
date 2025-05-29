@@ -400,6 +400,12 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         *TYPE(iir) = *TYPE(ref);
         break;
     }
+    case IR_expr_at: {
+        iIR ref = lookup(ctx, "@");
+        *TYPE(iir) = *TYPE(ref);
+        buffer_set(ctx->mangling, iir, buffer_get(ctx->mangling, ref, void));
+        break;
+    }
     case IR_expr_dot: {
         const char *name;
         SEMT(expr, 0);
@@ -437,7 +443,7 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         case TYPE_SELF: {
             iIR struct_def;
             Struct *obj;
-            struct_def = lookup(ctx, "Self");
+            struct_def = lookup(ctx, "@");
             obj = (Struct *)(TYPE(struct_def)->data.ptr);
 
             if (map_has(obj->fields, name)) {
@@ -445,7 +451,7 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
             } else if (map_has(obj->methods, name)) {
                 iIR method = *map_get(obj->methods, name, iIR);
                 if (IS_STATIC(method))
-                    throwe("method `%s' is static, use Self", name);
+                    throwe("method `%s' is static, use @", name);
                 *TYPE(iir) = *TYPE(method);
             } else
                 throwe("no `%s' in self", name);
@@ -723,7 +729,7 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     /* Annotations */
     annot = SEMT(annotations, 0);
     if (map_has(annot, "static")) {
-        if (!in_scope(ctx, "Self"))
+        if (!in_scope(ctx, "@"))
             throw("@static used in non-method");
         flags |= TYPE_FLAG_STATIC;
         map_remove(annot, "static");
@@ -739,7 +745,7 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     push_scope(ctx);
 
     /* Push self */
-    if (in_scope(ctx, "Self")) {
+    if (in_scope(ctx, "@")) {
         /* This is a method! */
         /* TODO: this does not happen in static methods */
         /* TODO: maybe mutable */
@@ -936,9 +942,9 @@ static void sem_impl(Ctx *ctx, iIR iir) {
     /* This comes very handy for emit */
     TYPE(iir)->data.word = struct_def;
 
-    /* Add Self */
+    /* Add @ */
     push_scope(ctx);
-    push_to_scope(ctx, "Self", struct_def);
+    push_to_scope(ctx, "@", struct_def);
 
     /* Add prefix for mangling */
     struct_name = *buffer_get(ctx->rawnames, struct_def, const char *);

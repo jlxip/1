@@ -4,15 +4,13 @@ struct Number { a: word, }
 
 impl Number {
     @static
-    fn make(n: word) -> Self: Self { a = n, };
+    fn make(n: word) -> @: @ { a = n, };
 
-    fn times(n: word) -> Self: Self.make(self.a * n);
-    fn square -> Self: Self.make(self.a * self.a);
+    fn times(n: word) -> @: @.make(self.a * n);
+    fn square -> @: self.times(self.a);
     fn get -> word: self.a;
 }
 
-let aux = 3;
-
 fn main {
-    c_exit(Number.make(aux).times(2).square().get());
+    c_exit(Number.make(3).times(2).square().get());
 }

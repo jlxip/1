@@ -36,6 +36,7 @@ typedef enum {
     IR_param_mutref,
     IR_expr_par,
     IR_expr_id,
+    IR_expr_at,
     IR_expr_struct_inst,
     IR_struct_inst,
     IR_struct_field_inst_rec,
