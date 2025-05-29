@@ -50,7 +50,7 @@ EXPRESSION -> dot id #expr_local
 EXPRESSION -> STRUCT_INST #expr_struct_inst
 %left obraces
 STRUCT_INST -> EXPRESSION obraces STRUCT_FIELD_INST cbraces #struct_inst
-STRUCT_FIELD_INST -> id eq EXPRESSION comma STRUCT_FIELD_INST #struct_field_inst_rec
+STRUCT_FIELD_INST -> id colon EXPRESSION comma STRUCT_FIELD_INST #struct_field_inst_rec
 %prefer 2
 STRUCT_FIELD_INST -> EPSILON #struct_field_inst_null
 
