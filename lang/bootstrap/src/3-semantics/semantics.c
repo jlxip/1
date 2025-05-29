@@ -406,6 +406,28 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         buffer_set(ctx->mangling, iir, buffer_get(ctx->mangling, ref, void));
         break;
     }
+    case IR_expr_local: {
+        const char *name;
+        Struct *obj;
+
+        if (!in_scope(ctx, "."))
+            throw("cannot use dot pathing outside non-static methods");
+
+        assert(GET_IRTYPE(1) == IR_TOKEN);
+        name = get_id(ctx, GET_IRID(1));
+        obj = (Struct *)(TYPE(lookup(ctx, "@"))->data.ptr);
+
+        if (map_has(obj->fields, name)) {
+            *TYPE(iir) = *map_get(obj->fields, name, Type);
+        } else if (map_has(obj->methods, name)) {
+            iIR method = *map_get(obj->methods, name, iIR);
+            if (IS_STATIC(method))
+                throwe("method `%s' is static, use @", name);
+            *TYPE(iir) = *TYPE(method);
+        } else
+            throwe("no `%s' in struct", name);
+        break;
+    }
     case IR_expr_dot: {
         const char *name;
         SEMT(expr, 0);
@@ -420,7 +442,7 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
             } else if (map_has(obj->methods, name)) {
                 iIR method = *map_get(obj->methods, name, iIR);
                 if (!IS_STATIC(method))
-                    throwe("method `%s' is non-static", name);
+                    throwe("method `%s' is not static", name);
                 *TYPE(iir) = *TYPE(method);
             } else
                 throwe("no `%s' in struct", name);
@@ -434,27 +456,10 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
             } else if (map_has(obj->methods, name)) {
                 iIR method = *map_get(obj->methods, name, iIR);
                 if (IS_STATIC(method))
-                    throwe("method `%s' is static, use struct", name);
+                    throwe("method `%s' is static, use struct name", name);
                 *TYPE(iir) = *TYPE(method);
             } else
-                throwe("no `%s' in self", name);
-            break;
-        }
-        case TYPE_SELF: {
-            iIR struct_def;
-            Struct *obj;
-            struct_def = lookup(ctx, "@");
-            obj = (Struct *)(TYPE(struct_def)->data.ptr);
-
-            if (map_has(obj->fields, name)) {
-                *TYPE(iir) = *map_get(obj->fields, name, Type);
-            } else if (map_has(obj->methods, name)) {
-                iIR method = *map_get(obj->methods, name, iIR);
-                if (IS_STATIC(method))
-                    throwe("method `%s' is static, use @", name);
-                *TYPE(iir) = *TYPE(method);
-            } else
-                throwe("no `%s' in self", name);
+                throwe("no `%s' in struct", name);
             break;
         }
         default:
@@ -744,12 +749,12 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     push_to_scope(ctx, name, iir);
     push_scope(ctx);
 
-    /* Push self */
+    /* Push reference to instance */
     if (in_scope(ctx, "@")) {
         /* This is a method! */
         /* TODO: this does not happen in static methods */
         /* TODO: maybe mutable */
-        push_to_scope(ctx, "self", IIR_CONST_SELF);
+        push_to_scope(ctx, ".", IIR_CONST_SELF);
         flags |= TYPE_FLAG_METHOD;
     }
 
@@ -1105,7 +1110,7 @@ static void sem_program(Ctx *ctx, iIR iir) {
 static void add_self(Ctx *ctx) {
     IR ir;
     Type type;
-    const char *txt = "self";
+    const char *txt = ".";
 
     ir.types = NULL;
     ir.ids = NULL;

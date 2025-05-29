@@ -6,9 +6,9 @@ impl Number {
     @static
     fn make(n: word) -> @: @ { a = n, };
 
-    fn times(n: word) -> @: @.make(self.a * n);
-    fn square -> @: self.times(self.a);
-    fn get -> word: self.a;
+    fn times(n: word) -> @: @.make(.a * n);
+    fn square -> @: .times(.a);
+    fn get -> word: .a;
 }
 
 fn main {

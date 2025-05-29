@@ -321,6 +321,28 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         ret.self_val = ret.code;
         ret.lvalue = 1;
         break;
+    case IR_expr_local: {
+        string name;
+        Struct *obj;
+
+        name = sc(get_id(ctx, GET_IRID(1)));
+        assert(ctx->self_struct);
+        obj = (Struct *)(TYPE(ctx->self_struct)->data.ptr);
+
+        if (map_has(obj->fields, sget(name))) {
+            saddc(&ret.code, "self->");
+            sadd(&ret.code, name);
+            ret.lvalue = 1;
+        } else if (map_has(obj->methods, sget(name))) {
+            iIR method = *map_get(obj->methods, sget(name), iIR);
+            saddc(&ret.code,
+                *buffer_get(ctx->sem.mangling, method, const char *));
+            ret.self_val = sc("self");
+            ret.lvalue = 1;
+        } else
+            UNREACHABLE;
+        break;
+    }
     case IR_expr_dot: {
         string name = sc(get_id(ctx, GET_IRID(2)));
         sub = EMITT(expr, 0);
@@ -380,25 +402,6 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
                     ret.self_val = sc("&");
                     sadd(&ret.self_val, name);
                 }
-                ret.lvalue = 1;
-            } else
-                UNREACHABLE;
-            break;
-        }
-        case TYPE_SELF: {
-            Struct *obj;
-            assert(ctx->self_struct);
-            obj = (Struct *)(TYPE(ctx->self_struct)->data.ptr);
-
-            if (map_has(obj->fields, sget(name))) {
-                saddc(&ret.code, "self->");
-                sadd(&ret.code, name);
-                ret.lvalue = 1;
-            } else if (map_has(obj->methods, sget(name))) {
-                iIR method = *map_get(obj->methods, sget(name), iIR);
-                saddc(&ret.code,
-                    *buffer_get(ctx->sem.mangling, method, const char *));
-                ret.self_val = sc("self");
                 ret.lvalue = 1;
             } else
                 UNREACHABLE;
