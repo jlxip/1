@@ -2,8 +2,7 @@
 S -> USES GLOBALS #program
 USES -> USE USES #uses_rec
 USES -> EPSILON #uses_null
-USE -> use PATH semicolon #use_global
-USE -> use dot PATH semicolon #use_local
+USE -> use #use_TODO
 
 GLOBALS -> GLOBAL GLOBALS #globals_rec
 GLOBALS -> EPSILON #globals_null
@@ -41,15 +40,21 @@ PARAM -> amp plus TYPED_ID #param_mutref
 %left opar cpar
 EXPRESSION -> opar EXPRESSION cpar #expr_par
 
-# The name, atom of all expressions
-%hint id
-EXPRESSION -> NAME #expr_name
+# The id, atom of all expressions
 %left id
-NAME -> id #name
+EXPRESSION -> id #expr_id
+
+# Struct instantiation
+EXPRESSION -> STRUCT_INST #expr_struct_inst
+%left obraces
+STRUCT_INST -> EXPRESSION obraces STRUCT_FIELD_INST cbraces #struct_inst
+STRUCT_FIELD_INST -> id eq EXPRESSION comma STRUCT_FIELD_INST #struct_field_inst_rec
+%prefer 2
+STRUCT_FIELD_INST -> EPSILON #struct_field_inst_null
 
 # Pathing
 %left dot
-EXPRESSION -> EXPRESSION dot NAME #expr_dot
+EXPRESSION -> EXPRESSION dot id #expr_dot
 
 # Function call
 EXPRESSION -> EXPRESSION opar cpar #expr_call_noargs
@@ -102,12 +107,6 @@ EXPRESSION -> not EXPRESSION #expr_not
 EXPRESSION -> EXPRESSION and EXPRESSION #expr_and
 EXPRESSION -> EXPRESSION or EXPRESSION #expr_or
 
-# Struct instantiation
-EXPRESSION -> STRUCT_INST #expr_struct_inst
-STRUCT_INST -> new PATH obraces STRUCT_FIELD_INST cbraces #struct_inst
-STRUCT_FIELD_INST -> id eq EXPRESSION comma STRUCT_FIELD_INST #struct_field_inst_rec
-STRUCT_FIELD_INST -> EPSILON #struct_field_inst_null
-
 # Assignments
 EXPRESSION -> ASSIGNMENT #expr_assign
 %right eq
@@ -138,12 +137,10 @@ TYPE -> kfloat #type_float
 TYPE -> kptr #type_ptr
 TYPE -> kstring #type_string
 TYPE -> kword #type_word
-TYPE -> PATH #type_path
+%hint id
+TYPE -> EXPRESSION #type_expr
 TYPE -> TUPLEDEF #type_tuple
 TYPE -> TUPLEDEF star EXPRESSION #type_tuple_star
-
-PATH -> id #path_id
-PATH -> PATH dot id #path_dot
 
 TUPLEDEF -> opar TYPE comma cpar #tupledef_one
 TUPLEDEF -> opar TYPE comma TYPES cpar #tupledef_many
@@ -180,8 +177,9 @@ STRUCT_DEF -> EPSILON #struct_def_null
 
 
 # ---------- IMPL ----------
-IMPL -> ANNOTATIONS impl PATH obraces IMPL_DEF cbraces #impl
+IMPL -> ANNOTATIONS impl EXPRESSION obraces IMPL_DEF cbraces #impl
 IMPL_DEF -> FUNCTION IMPL_DEF #impl_def
+%prefer 3
 IMPL_DEF -> EPSILON #impl_def_null
 
 
@@ -197,6 +195,7 @@ EXTERN -> ANNOTATIONS extern id opar PARAMS cpar arrow TYPE semicolon #extern_ty
 # ---------- BLOCK (STATEMENTS) ----------
 BLOCK -> obraces STATEMENTS cbraces #block
 STATEMENTS -> STATEMENT STATEMENTS #stmts_rec
+%prefer 1
 STATEMENTS -> EPSILON #stmts_null
 STATEMENT -> BLOCK #stmt_block
 STATEMENT -> DECLARATION semicolon #stmt_decl

@@ -4,7 +4,7 @@ struct Number { a: word, }
 
 impl Number {
     @static
-    fn make(n: word) -> Self: new Self { a = n, };
+    fn make(n: word) -> Self: Self { a = n, };
 
     fn times(n: word) -> Self: Self.make(self.a * n);
     fn square -> Self: Self.make(self.a * self.a);

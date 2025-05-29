@@ -172,26 +172,51 @@ foundtok:
     return ret;
 }
 
-size_t handle_conflict(
-    const Grammar *g, state st, symbol sym, const Entry *old) {
+/*
+    Handles a reduce/reduce conflict with %prefer
+    Returns:
+    - 0 for keep old
+    - 1 for change
+    Throws if unclear
+*/
+size_t handle_reduce_reduce(const Grammar *g, state st, symbol sym,
+    const Entry *old, const Entry *new) {
+    bool prefer_old, prefer_new;
+
+    prefer_old = buffer_get(g->g, old->info, Production)->prefer;
+    prefer_new = buffer_get(g->g, new->info, Production)->prefer;
+    if (prefer_old > prefer_new)
+        return 0;
+    else if (prefer_old < prefer_new)
+        return 1;
+
+    printf("\nREDUCE/REDUCE GRAMMAR CONFLICT\n");
+    if (!prefer_old && !prefer_new) {
+        printf("This generally cannot be helped, fix your grammar\n");
+        printf("If you know what you're doing, consider using %%prefer\n");
+        printf("Using %%prefer has consequences, study in depth\n");
+    } else if (prefer_old && prefer_new) {
+        printf("Both possible reductions have %%prefer\n");
+    }
+    print_state(g, st);
+    printf("Conflict with: ");
+    print_symbol(g, sym);
+    printf("\n");
+    printf("Reduce to %lu or %lu?\n", old->info, new->info);
+    throw("grammar conflict");
+    return 69;
+}
+
+size_t handle_conflict(const Grammar *g, state st, symbol sym, const Entry *old,
+    const Entry *new) {
     /*
         Found "old" in the table, but came up with a reduce. What to do?
         - If old is shift, this is a shift/reduce conflict
         - If old is reduce, this is a reduce/reduce conflict
     */
 
-    if (old->type == ENTRY_SHIFT || old->type == ENTRY_GOTO) {
-        /* shift/reduce */
+    if (old->type == ENTRY_SHIFT || old->type == ENTRY_GOTO)
         return handle_shift_reduce(g, st, sym);
-    } else {
-        /* reduce/reduce conflict */
-        printf("\nREDUCE/REDUCE GRAMMAR CONFLICT\n");
-        printf("This cannot be helped, fix your grammar\n");
-        print_state(g, st);
-        printf("Conflict with: ");
-        print_symbol(g, sym);
-        printf("\n");
-        throw("grammar conflict");
-        return 69;
-    }
+    else
+        return handle_reduce_reduce(g, st, sym, old, new);
 }

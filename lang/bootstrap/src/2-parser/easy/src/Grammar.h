@@ -36,6 +36,7 @@ typedef struct {
     symbol lhs;
     buffer rhs; /* buffer<symbol> */
     symbol hint;
+    size_t prefer;
 } Production;
 
 typedef void *(*sdt_callback)(void **sub);
@@ -108,6 +109,7 @@ void Grammar_set_debugging(
     Grammar *g, const char **strtokens, const char **strnts);
 void Grammar_add(Grammar *g, symbol lhs, buffer rhs);
 void Grammar_add_hint(Grammar *g, size_t prod, symbol hint);
+void Grammar_prefer(Grammar *g, size_t prod, size_t n);
 void Grammar_shrink(Grammar *g);
 void Grammar_clean(Grammar *g); /* Free everything not needed for parsing */
 void Grammar_out(Grammar *g);

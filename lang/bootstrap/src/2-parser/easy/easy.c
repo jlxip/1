@@ -90,6 +90,7 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
     size_t lineno;
     size_t prio = 1;
     symbol hint = 0;
+    size_t prefer = 0;
 
     /* Symbol map */
     map_new_string(&all_symbols, sizeof(symbol), hash_symbol, equal_symbol,
@@ -157,6 +158,12 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
                 assert(buffer_num(spaces) == 2);
                 strsym = *buffer_get(spaces, 1, const char *);
                 hint = *map_get(all_symbols, strsym, symbol);
+            } else if (strcmp(statement, "prefer") == 0) {
+                /* Prefer next production over others */
+                assert(buffer_num(spaces) == 2);
+                prefer = atoi(*buffer_get(spaces, 1, const char *));
+                if (!prefer)
+                    throw("%%prefer must be greater than zero");
             } else {
                 /* Must be precedence */
                 size_t assoc;
@@ -233,9 +240,12 @@ void *grammar(const char **tokens, const char **nts, const char *cstr,
         Grammar_add(ret, *lhs, symbols);
         if (hint)
             Grammar_add_hint(ret, buffer_num(ret->g) - 1, hint);
+        if (prefer)
+            Grammar_prefer(ret, buffer_num(ret->g) - 1, prefer);
 
         buffer_out(&symbols_named);
         hint = 0;
+        prefer = 0;
     }
 
     map_out(&all_symbols);

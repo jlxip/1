@@ -159,11 +159,16 @@ void Grammar_add(Grammar *g, symbol lhs, buffer rhs) {
     prod.lhs = lhs;
     prod.rhs = rhs;
     prod.hint = 0;
+    prod.prefer = 0;
     buffer_push(g->g, &prod);
 }
 
 void Grammar_add_hint(Grammar *g, size_t prod, symbol hint) {
     buffer_get(g->g, prod, Production)->hint = hint;
+}
+
+void Grammar_prefer(Grammar *g, size_t prod, size_t n) {
+    buffer_get(g->g, prod, Production)->prefer = n;
 }
 
 void Grammar_shrink(Grammar *g) { buffer_shrink(g->g); }

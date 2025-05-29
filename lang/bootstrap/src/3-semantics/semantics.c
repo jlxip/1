@@ -55,40 +55,6 @@ static const char *get_id(Ctx *ctx, iToken itoken) {
     return token->data.str;
 }
 
-static iIR lookup_path(Ctx *ctx, iIR iir, IRType type) {
-    IR *ir = GET_IR(iir);
-    for (;;) {
-        switch (type) {
-        case IR_path_id:
-            assert(GET_IRTYPE(0) == IR_TOKEN);
-            return lookup(ctx, get_id(ctx, GET_IRID(0)));
-        case IR_path_dot: {
-            iIR lhs;
-            const char *rhs;
-            lhs = lookup_path(ctx, GET_IRID(0), GET_IRTYPE(0));
-            assert(GET_IRTYPE(0) == IR_TOKEN);
-            rhs = get_id(ctx, GET_IRID(2));
-            (void)rhs;
-            switch (TYPE(lhs)->id) {
-            case TYPE_STRUCT_DEF:
-                todo();
-                break;
-            case TYPE_MODULE:
-                todo();
-                break;
-            default:
-                throw("unsupported type for pathing");
-            }
-            break;
-        }
-        default:
-            UNREACHABLE;
-        }
-    }
-}
-
-#define LOOKUP_PATH(N) lookup_path(ctx, GET_IRID(N), GET_IRTYPE(N))
-
 static bool check_types(Type a, Type b) {
     if (!a.id)
         throw("TYPE_UNKNOWN! (bug, a)");
@@ -129,6 +95,7 @@ static bool check_types(Type a, Type b) {
 
 /* --- */
 
+static void sem_expr(Ctx *ctx, iIR iir, IRType type);
 static void sem_type(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
 
@@ -163,14 +130,11 @@ static void sem_type(Ctx *ctx, iIR iir, IRType type) {
         TYPE(iir)->data.ptr = NULL;
         TYPE(iir)->flags = 0;
         break;
-    case IR_type_path: {
-        iIR x = LOOKUP_PATH(0);
-        if (TYPE(x)->id != TYPE_STRUCT_DEF)
+    case IR_type_expr: {
+        SEMT(expr, 0);
+        if (TYPE_CHILD(0)->id != TYPE_STRUCT_DEF)
             throw("referenced non-struct id as type");
-
-        TYPE(iir)->id = TYPE_STRUCT_INST;
-        TYPE(iir)->data.word = x;
-        TYPE(iir)->flags = 0;
+        COPY_TYPE(0);
         break;
     }
     case IR_type_tuple:
@@ -210,24 +174,6 @@ static void sem_lit(Ctx *ctx, iIR iir, IRType type) {
     default:
         UNREACHABLE;
     }
-}
-
-static const char *sem_name_nolookup(Ctx *ctx, iIR iir) {
-    IR *ir = GET_IR(iir);
-    const char *ret;
-    assert(GET_IRTYPE(0) == IR_TOKEN);
-    ret = get_id(ctx, GET_IRID(0));
-    buffer_set(ctx->mangling, iir, &ret);
-    return ret;
-}
-
-static iIR sem_name(Ctx *ctx, iIR iir) {
-    iIR ret = 0;
-    ret = lookup(ctx, sem_name_nolookup(ctx, iir));
-    assert(*buffer_get(ctx->mangling, ret, void *));
-    buffer_set(ctx->mangling, iir, buffer_get(ctx->mangling, ret, void));
-    *TYPE(iir) = *TYPE(ret);
-    return ret;
 }
 
 static void sem_expr(Ctx *ctx, iIR iir, IRType type);
@@ -349,23 +295,21 @@ static void sem_call(Ctx *ctx, iIR iir, IRType type) {
 static void sem_struct_inst(Ctx *ctx, iIR iir) {
     IR *ir = GET_IR(iir);
     IRType irtype;
-    iIR base;
     Struct *obj;
     set seen = NULL;
 
-    base = LOOKUP_PATH(1);
-    if (TYPE(base)->id != TYPE_STRUCT_DEF)
+    SEMT(expr, 0);
+    if (TYPE_CHILD(0)->id != TYPE_STRUCT_DEF)
         throw("cannot instantiate non-struct");
-
+    obj = (Struct *)(TYPE_CHILD(0)->data.ptr);
     TYPE(iir)->id = TYPE_STRUCT_INST;
-    TYPE(iir)->data.word = base;
+    TYPE(iir)->data.word = obj->this;
     TYPE(iir)->flags = 0;
 
     /* Go through the fields */
-    obj = (Struct *)(TYPE(base)->data.ptr);
     set_new_string(&seen);
-    iir = GET_IRID(3);
-    irtype = GET_IRTYPE(3);
+    iir = GET_IRID(2);
+    irtype = GET_IRTYPE(2);
     for (;;) {
         ir = GET_IR(iir);
 
@@ -447,13 +391,20 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         SEMT(expr, 1);
         COPY_TYPE(1);
         break;
-    case IR_expr_name:
-        SEM(name, 0);
-        COPY_TYPE(0);
+    case IR_expr_id: {
+        iIR ref;
+        assert(GET_IRTYPE(0) == IR_TOKEN);
+        ref = lookup(ctx, get_id(ctx, GET_IRID(0)));
+        assert(*buffer_get(ctx->mangling, ref, void *));
+        buffer_set(ctx->mangling, iir, buffer_get(ctx->mangling, ref, void));
+        *TYPE(iir) = *TYPE(ref);
         break;
+    }
     case IR_expr_dot: {
-        const char *name = SEM(name_nolookup, 2);
+        const char *name;
         SEMT(expr, 0);
+        assert(GET_IRTYPE(2) == IR_TOKEN);
+        name = get_id(ctx, GET_IRID(2));
 
         switch (TYPE_CHILD(0)->id) {
         case TYPE_STRUCT_DEF: {
@@ -852,6 +803,14 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     if (!func->ret.id)
         throwe("yankee with no brim? Function type: %u\n", type);
 
+    if (func->ret.id == TYPE_STRUCT_DEF) {
+        /* If a struct is returned, it's actually an instance */
+        Struct *obj = (Struct *)(func->ret.data.ptr);
+        func->ret.id = TYPE_STRUCT_INST;
+        func->ret.data.word = obj->this;
+        func->ret.flags = 0;
+    }
+
     /* Save type information */
     TYPE(iir)->id = TYPE_FUNC;
     TYPE(iir)->data.ptr = func;
@@ -953,6 +912,7 @@ static void sem_struct(Ctx *ctx, iIR iir) {
 
 done:
     map_new_string(&obj->methods, sizeof(iIR), NULL, NULL, NULL, NULL);
+    obj->this = struct_def;
     TYPE(struct_def)->id = TYPE_STRUCT_DEF;
     TYPE(struct_def)->data.ptr = obj;
     TYPE(struct_def)->flags = 0;
@@ -967,10 +927,11 @@ static void sem_impl(Ctx *ctx, iIR iir) {
     IRType type;
     const char *method_name;
 
-    struct_def = LOOKUP_PATH(2);
-    if (TYPE(struct_def)->id != TYPE_STRUCT_DEF)
+    SEMT(expr, 2);
+    if (TYPE_CHILD(2)->id != TYPE_STRUCT_DEF)
         throw("tried to impl a non-struct");
-    obj = (Struct *)(TYPE(struct_def)->data.ptr);
+    obj = (Struct *)(TYPE_CHILD(2)->data.ptr);
+    struct_def = obj->this;
 
     /* This comes very handy for emit */
     TYPE(iir)->data.word = struct_def;

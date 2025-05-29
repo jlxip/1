@@ -50,6 +50,7 @@ typedef struct {
 typedef struct {
     map fields;  /* map<const char*, Type> */
     map methods; /* map<const char*, iIR> */
+    size_t this; /* iIR of myself, this simplifies things */
 } Struct;
 
 typedef buffer Types; /* buffer<Type> */

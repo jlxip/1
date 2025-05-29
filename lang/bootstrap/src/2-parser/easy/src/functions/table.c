@@ -54,7 +54,7 @@ void Grammar_compile(Grammar *g) {
 
                     if (map_has(entries, &sym)) {
                         const Entry *old = map_get(entries, &sym, Entry);
-                        switch (handle_conflict(g, idx, sym, old)) {
+                        switch (handle_conflict(g, idx, sym, old, &entry)) {
                         case 0:
                             /* Prefer shift (keep old) */
                             break;

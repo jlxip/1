@@ -167,10 +167,6 @@ static string emit_lit(Ctx *ctx, iIR iir, IRType type) {
     return ret;
 }
 
-static string emit_name(Ctx *ctx, iIR iir) {
-    return sc(*buffer_get(ctx->sem.mangling, iir, const char *));
-}
-
 static Expr emit_expr(Ctx *ctx, iIR iir, IRType type);
 static Expr emit_expr_list(Ctx *ctx, iIR iir, IRType type) {
     Expr ret, sub;
@@ -224,8 +220,8 @@ static Expr emit_struct_inst(Ctx *ctx, iIR iir) {
     push_decl(ctx, struct_name, name, snew());
 
     /* Fill fields */
-    iir = GET_IRID(3);
-    irtype = GET_IRTYPE(3);
+    iir = GET_IRID(2);
+    irtype = GET_IRTYPE(2);
     for (;;) {
         ir = GET_IR(iir);
 
@@ -319,13 +315,13 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         buffer_join(ret.above, sub.above);
         ret.lvalue = sub.lvalue;
         break;
-    case IR_expr_name:
-        sadd(&ret.code, EMIT(name, 0));
+    case IR_expr_id:
+        ret.code = sc(*buffer_get(ctx->sem.mangling, iir, const char *));
         ret.self_val = ret.code;
         ret.lvalue = 1;
         break;
     case IR_expr_dot: {
-        string name = EMIT(name, 2);
+        string name = sc(get_id(ctx, GET_IRID(2)));
         sub = EMITT(expr, 0);
         buffer_join(ret.above, sub.above);
 
