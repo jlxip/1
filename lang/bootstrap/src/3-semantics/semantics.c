@@ -84,14 +84,109 @@ static bool check_types(Type a, Type b) {
     case TYPE_STRUCT_DEF:
     case TYPE_FUNC:
     case TYPE_MODULE:
-        UNREACHABLE;
-        break;
     default:
         UNREACHABLE;
     }
 
     return true;
 }
+
+static void __bool__(Ctx *ctx, Type type) {
+    switch (type.id) {
+    case TYPE_BOOL:
+    case TYPE_BYTE:
+    case TYPE_FLOAT:
+    case TYPE_PTR:
+    case TYPE_STRING:
+    case TYPE_WORD:
+        /* These are OK */
+        break;
+    case TYPE_TUPLE:
+        throw("bool downcast is undefined for tuples");
+        break;
+    case TYPE_STRUCT_INST: {
+        size_t base;
+        Struct *obj;
+        iIR ifunc;
+        Function *func;
+        base = type.data.word;
+        obj = (Struct *)(TYPE(base)->data.ptr);
+        if (!map_has(obj->methods, "__bool__"))
+            throw("struct does not implement `__bool__'");
+        ifunc = *map_get(obj->methods, "__bool__", iIR);
+        if (IS_STATIC(ifunc))
+            throw("struct's `__bool__' is static");
+        func = (Function *)(TYPE(ifunc)->data.ptr);
+        if (func->params)
+            if (!buffer_empty(func->params))
+                throw("struct's `__bool__' must no receive parameters");
+        if (func->ret.id != TYPE_BOOL)
+            throw("struct's `__bool__' does not return bool");
+        break;
+    }
+    default:
+        throw("bool downcast does not apply here");
+    }
+}
+
+static Type _arith(Ctx *ctx, Type lhs, Type rhs, const char *functor) {
+    Type ret;
+
+    switch (lhs.id) {
+    case TYPE_BOOL:
+        throwe("%s is undefined for bool", functor);
+        break;
+    case TYPE_PTR:
+        throwe("%s is undefined for ptr", functor);
+        break;
+    case TYPE_TUPLE:
+        throwe("%s is undefined for tuple", functor);
+        break;
+    case TYPE_BYTE:
+    case TYPE_FLOAT:
+    case TYPE_WORD:
+        if (lhs.id != rhs.id)
+            throw("type mismatch in multiplication");
+
+        ret.id = lhs.id;
+        ret.data.ptr = NULL;
+        break;
+    case TYPE_STRING:
+        todo();
+        break;
+    case TYPE_STRUCT_INST: {
+        size_t base;
+        Struct *obj;
+        iIR ifunc;
+        Function *func;
+        base = lhs.data.word;
+        obj = (Struct *)(TYPE(base)->data.ptr);
+        if (!map_has(obj->methods, functor))
+            throwe("struct does not implement `%s'", functor);
+        ifunc = *map_get(obj->methods, functor, iIR);
+        if (IS_STATIC(ifunc))
+            throwe("struct's `%s' is static", functor);
+        func = (Function *)(TYPE(ifunc)->data.ptr);
+        if (buffer_num(func->params) != 1)
+            throwe("struct's `%s' must receive one parameter", functor);
+        /* TODO: make rhs is constant reference */
+        if (!check_types(rhs, *buffer_get(func->params, 0, Type)))
+            throwe("unexpected type for struct's `%s'", functor);
+
+        ret = func->ret;
+        break;
+    }
+    default:
+        throwe("`%s' does not apply here", functor);
+    }
+
+    return ret;
+}
+
+#define __star__(LHS, RHS) _arith(ctx, LHS, RHS, "__star__")
+#define __slash__(LHS, RHS) _arith(ctx, LHS, RHS, "__slash__")
+#define __plus__(LHS, RHS) _arith(ctx, LHS, RHS, "__plus__")
+#define __minus__(LHS, RHS) _arith(ctx, LHS, RHS, "__minus__")
 
 /* --- */
 
@@ -491,19 +586,23 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
     case IR_expr_star:
         SEMT(expr, 0);
         SEMT(expr, 2);
-        switch (TYPE_CHILD(0)->id) {
-        case TYPE_WORD:
-            if (TYPE_CHILD(2)->id != TYPE_WORD)
-                throw("tried to multiply word and non-word");
-            COPY_TYPE(0);
-            break;
-        default:
-            todo();
-        }
+        *TYPE(iir) = __star__(*TYPE_CHILD(0), *TYPE_CHILD(2));
         break;
     case IR_expr_slash:
+        SEMT(expr, 0);
+        SEMT(expr, 2);
+        *TYPE(iir) = __slash__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        break;
     case IR_expr_plus:
+        SEMT(expr, 0);
+        SEMT(expr, 2);
+        *TYPE(iir) = __plus__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        break;
     case IR_expr_minus:
+        SEMT(expr, 0);
+        SEMT(expr, 2);
+        *TYPE(iir) = __minus__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        break;
     case IR_expr_deq:
     case IR_expr_neq:
     case IR_expr_lt:
@@ -576,24 +675,7 @@ static void sem_stmt(Ctx *ctx, iIR iir, IRType type) {
         break;
     case IR_stmt_assert:
         SEMT(expr, 1);
-        switch (TYPE_CHILD(1)->id) {
-        case TYPE_BOOL:
-        case TYPE_BYTE:
-        case TYPE_FLOAT:
-        case TYPE_PTR:
-        case TYPE_STRING:
-        case TYPE_WORD:
-            /* These are OK */
-            break;
-        case TYPE_TUPLE:
-            throw("bool downcast is undefined for tuples");
-            break;
-        case TYPE_STRUCT_INST:
-            todo();
-            break;
-        default:
-            throw("bool downcast does not apply here");
-        }
+        __bool__(ctx, *TYPE_CHILD(1));
         break;
     case IR_stmt_break:
         todo();
