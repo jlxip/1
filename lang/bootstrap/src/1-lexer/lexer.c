@@ -9,14 +9,63 @@
 
 size_t lineno = 0;
 
+static bool comment(Capture *ret, const char *cur) {
+    size_t consumed = 2;
+    assert(*cur++ == '/');
+    switch (*cur++) {
+    case '/':
+        /* Line comment, advance until \n */
+        for (;;)
+            switch (*cur++) {
+            case '\0':
+            case '\n':
+                ret->consumed = consumed;
+                ret->token.id = T_NULL;
+                return true;
+            default:
+                ++consumed;
+            }
+        UNREACHABLE;
+        break;
+    case '*':
+        /* Block comment, advance until end */
+        for (;;)
+            switch (*cur++) {
+            case '\0':
+                throw("unfinished block comment");
+                return false;
+            case '*':
+                if (*cur == '/') {
+                    /* Close block */
+                    ret->consumed = consumed + 2;
+                    ret->token.id = T_NULL;
+                    return true;
+                }
+                /* fallthrough */
+            default:
+                ++consumed;
+            }
+        UNREACHABLE;
+        break;
+    default:
+        return false;
+    }
+
+    UNREACHABLE;
+}
+
 static bool capture(Capture *ret, const char *cur) {
     ret->token.lineno = lineno;
     ret->token.data.word = 0;
 
     /* Special cases */
     switch (*cur) {
-    case 0:
+    case '\0':
         return false; /* end */
+    case '/':
+        if (comment(ret, cur))
+            return true;
+        break;
     case '\n':
         ++lineno;
         /* fallthrough */
@@ -29,11 +78,11 @@ static bool capture(Capture *ret, const char *cur) {
 
     /* Actual matches */
     if (match_keyword(ret, cur))
-        return 1;
+        return true;
     if (match_id(ret, cur))
-        return 1;
+        return true;
     if (match_symbol(ret, cur))
-        return 1;
+        return true;
 
     /* Lexical error */
     throwe("lexical error in line %lu", lineno);

@@ -166,17 +166,8 @@ size_t match_keyword(Capture *ret, const char *cur) {
         MATCH_REST("et", T_LET);
         return 0;
     case 'n':
-        /* n: new, not */
-        switch (*cur++) {
-        case 'e':
-            /* ne: new */
-            MATCH_REST("w", T_NEW);
-            return 0;
-        case 'o':
-            /* no: not */
-            MATCH_REST("t", T_NOT);
-            return 0;
-        }
+        /* n: not */
+        MATCH_REST("ot", T_NOT);
         return 0;
     case 'o':
         /* o: or */
