@@ -406,6 +406,13 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         buffer_set(ctx->mangling, iir, buffer_get(ctx->mangling, ref, void));
         break;
     }
+    case IR_expr_self:
+        if (!in_scope(ctx, "."))
+            throw("cannot use dot (self) in this context");
+        TYPE(iir)->id = TYPE_STRUCT_INST;
+        TYPE(iir)->data.word = lookup(ctx, "@");
+        TYPE(iir)->flags = 0; /* TODO: might be mutable */
+        break;
     case IR_expr_local: {
         const char *name;
         Struct *obj;
@@ -468,8 +475,6 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         break;
     }
     case IR_expr_call_noargs:
-        sem_call(ctx, iir, type);
-        break;
     case IR_expr_call:
         sem_call(ctx, iir, type);
         break;
@@ -656,6 +661,14 @@ static const char *sem_typed_id(Ctx *ctx, iIR iir) {
     /* Resolve type and copy */
     SEMT(type, 2);
     COPY_TYPE(2);
+
+    /* If type is struct, it's not def but inst */
+    if (TYPE(iir)->id == TYPE_STRUCT_DEF) {
+        Struct *obj = (Struct *)(TYPE(iir)->data.ptr);
+        TYPE(iir)->id = TYPE_STRUCT_INST;
+        TYPE(iir)->data.word = obj->this;
+        /* Flags are kept the same */
+    }
 
     /* Return id */
     assert(GET_IRTYPE(0) == IR_TOKEN);
@@ -1014,9 +1027,7 @@ static void sem_extern(Ctx *ctx, iIR iir, IRType type) {
     switch (type) {
     case IR_extern_noargs_void:
         func->params = NULL;
-        func->ret.id = TYPE_NOTHING;
-        func->ret.data.ptr = NULL;
-        func->ret.flags = 0;
+        func->ret = NULL_TYPE;
         break;
     case IR_extern_noargs_typed:
         func->params = NULL;
@@ -1024,9 +1035,7 @@ static void sem_extern(Ctx *ctx, iIR iir, IRType type) {
         break;
     case IR_extern_void:
         func->params = SEMT(extern_params, 4);
-        func->ret.id = TYPE_NOTHING;
-        func->ret.data.ptr = NULL;
-        func->ret.flags = 0;
+        func->ret = NULL_TYPE;
         break;
     case IR_extern_typed:
         func->params = SEMT(extern_params, 4);

@@ -321,6 +321,10 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         ret.self_val = ret.code;
         ret.lvalue = 1;
         break;
+    case IR_expr_self:
+        ret.code = sc("*self"); /* TODO: might be reference! */
+        ret.lvalue = 1;
+        break;
     case IR_expr_local: {
         string name;
         Struct *obj;
@@ -815,18 +819,23 @@ static string emit_func(Ctx *ctx, iIR iir, IRType type) {
         decls = pop_decls(ctx);
 
         saddlnc(&ret, "{");
+
         /* Declarations */
         for (i = 0; i < buffer_num(decls); ++i)
             saddln(&ret, *buffer_get(decls, i, string));
         if (i)
             snewln(&ret);
+
         /* Auxiliary assigns */
         for (i = 0; i < buffer_num(expr.above); ++i)
             saddln(&ret, *buffer_get(expr.above, i, string));
+
         /* Return */
-        saddc(&ret, "return ");
-        saddln(&ret, expr.code);
+        if (func->ret.id != TYPE_NOTHING)
+            saddc(&ret, "return ");
+        sadd(&ret, expr.code);
         saddlnc(&ret, ";");
+
         saddc(&ret, "}");
     } else {
         sadd(&ret, EMIT(block, block));

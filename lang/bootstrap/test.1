@@ -11,6 +11,12 @@ impl Number {
     fn get -> word: .a;
 }
 
+fn exit_number(n: Number): c_exit(n.get());
+
+impl Number {
+    fn exit: exit_number(.);
+}
+
 fn main {
-    c_exit(Number.make(3).times(2).square().get());
+    Number.make(3).times(2).square().exit();
 }

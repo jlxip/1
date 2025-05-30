@@ -44,6 +44,7 @@ EXPRESSION -> opar EXPRESSION cpar #expr_par
 %left id
 EXPRESSION -> id #expr_id
 EXPRESSION -> atsymbol #expr_at
+EXPRESSION -> dot #expr_self
 EXPRESSION -> dot id #expr_local
 
 # Struct instantiation
