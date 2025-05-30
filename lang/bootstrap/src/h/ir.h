@@ -57,6 +57,7 @@ typedef enum {
     IR_tuple_one,
     IR_tuple_many,
     IR_expr_sizeof,
+    IR_expr_tilde,
     IR_expr_hat,
     IR_expr_amp,
     IR_expr_bar,

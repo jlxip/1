@@ -81,7 +81,8 @@ EXPRESSION -> sizeof EXPRESSION #expr_sizeof
 
 # Bitwise: highest priority, it's grouped first
 # That means small chunks: 1 + 3 ^ 5 or 0 -> 1 + (3 ^ 5) or 0
-%left hat amp bar
+%left tilde hat amp bar
+EXPRESSION -> tilde EXPRESSION #expr_tilde
 EXPRESSION -> EXPRESSION hat EXPRESSION #expr_hat
 EXPRESSION -> EXPRESSION amp EXPRESSION #expr_amp
 EXPRESSION -> EXPRESSION bar EXPRESSION #expr_bar

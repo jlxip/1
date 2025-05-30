@@ -148,6 +148,8 @@ size_t match_symbol(Capture *ret, const char *cur) {
 
         /* > */
         OK_TOKEN(T_GT);
+    case '~':
+        OK_TOKEN(T_TILDE);
     case '.':
         OK_TOKEN(T_DOT);
     case ',':

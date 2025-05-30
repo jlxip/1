@@ -91,6 +91,51 @@ static bool check_types(Type a, Type b) {
     return true;
 }
 
+static Type overloading_unary(Ctx *ctx, Type lhs, const char *functor) {
+    size_t base;
+    Struct *obj;
+    iIR ifunc;
+    Function *func;
+
+    base = lhs.data.word;
+    obj = (Struct *)(TYPE(base)->data.ptr);
+    if (!map_has(obj->methods, functor))
+        throwe("struct does not implement `%s'", functor);
+    ifunc = *map_get(obj->methods, functor, iIR);
+    if (IS_STATIC(ifunc))
+        throwe("struct's `%s' is static", functor);
+    func = (Function *)(TYPE(ifunc)->data.ptr);
+    if (func->params)
+        if (!buffer_empty(func->params))
+            throwe("struct's `%s' must receive no parameters", functor);
+    return func->ret;
+}
+
+static Type overloading_binary(
+    Ctx *ctx, Type lhs, Type rhs, const char *functor) {
+    size_t base;
+    Struct *obj;
+    iIR ifunc;
+    Function *func;
+
+    base = lhs.data.word;
+    obj = (Struct *)(TYPE(base)->data.ptr);
+    if (!map_has(obj->methods, functor))
+        throwe("struct does not implement `%s'", functor);
+    ifunc = *map_get(obj->methods, functor, iIR);
+    if (IS_STATIC(ifunc))
+        throwe("struct's `%s' is static", functor);
+    func = (Function *)(TYPE(ifunc)->data.ptr);
+    if (!func->params)
+        throwe("struct's `%s' must receive one parameter", functor);
+    if (buffer_num(func->params) != 1)
+        throwe("struct's `%s' must receive one parameter", functor);
+    /* TODO: make rhs a constant reference */
+    if (!check_types(rhs, *buffer_get(func->params, 0, Type)))
+        throwe("unexpected type for struct's `%s'", functor);
+    return func->ret;
+}
+
 static void __bool__(Ctx *ctx, Type type) {
     switch (type.id) {
     case TYPE_BOOL:
@@ -101,83 +146,83 @@ static void __bool__(Ctx *ctx, Type type) {
     case TYPE_WORD:
         /* These are OK */
         break;
-    case TYPE_TUPLE:
-        throw("bool downcast is undefined for tuples");
+    case TYPE_STRUCT_INST:
+        if (overloading_unary(ctx, type, "__bool__").id != TYPE_BOOL)
+            throw("struct's  `__bool__' does not return bool");
         break;
-    case TYPE_STRUCT_INST: {
-        size_t base;
-        Struct *obj;
-        iIR ifunc;
-        Function *func;
-        base = type.data.word;
-        obj = (Struct *)(TYPE(base)->data.ptr);
-        if (!map_has(obj->methods, "__bool__"))
-            throw("struct does not implement `__bool__'");
-        ifunc = *map_get(obj->methods, "__bool__", iIR);
-        if (IS_STATIC(ifunc))
-            throw("struct's `__bool__' is static");
-        func = (Function *)(TYPE(ifunc)->data.ptr);
-        if (func->params)
-            if (!buffer_empty(func->params))
-                throw("struct's `__bool__' must no receive parameters");
-        if (func->ret.id != TYPE_BOOL)
-            throw("struct's `__bool__' does not return bool");
-        break;
-    }
     default:
-        throw("bool downcast does not apply here");
+        throw("bool downcast is undefined for given type");
     }
 }
+
+static Type _tilde(Ctx *ctx, Type lhs) {
+    Type ret;
+
+    switch (lhs.id) {
+    case TYPE_BYTE:
+    case TYPE_WORD:
+        ret.id = lhs.id;
+        ret.data.ptr = NULL;
+        ret.flags = 0;
+        break;
+    case TYPE_STRUCT_INST:
+        ret = overloading_unary(ctx, lhs, "__tilde__");
+        break;
+    default:
+        throw("`__tilde__' is undefined for the given type");
+    }
+
+    return ret;
+}
+
+static Type _bitwise_binary(Ctx *ctx, Type lhs, Type rhs, const char *functor) {
+    Type ret;
+
+    switch (lhs.id) {
+    case TYPE_BYTE:
+    case TYPE_WORD:
+        if (lhs.id != rhs.id)
+            throw("type mismatch in bitwise operation");
+        ret.id = lhs.id;
+        ret.data.ptr = NULL;
+        ret.flags = 0;
+        break;
+    case TYPE_STRUCT_INST:
+        ret = overloading_binary(ctx, lhs, rhs, functor);
+        break;
+    default:
+        throwe("`%s' is undefined for the given type", functor);
+    }
+
+    return ret;
+}
+
+#define __tilde__(LHS) _tilde(ctx, LHS)
+#define __hat__(LHS, RHS) _bitwise_binary(ctx, LHS, RHS, "__hat__")
+#define __amp__(LHS, RHS) _bitwise_binary(ctx, LHS, RHS, "__amp__")
+#define __bar__(LHS, RHS) _bitwise_binary(ctx, LHS, RHS, "__bar__")
 
 static Type _arith(Ctx *ctx, Type lhs, Type rhs, const char *functor) {
     Type ret;
 
     switch (lhs.id) {
-    case TYPE_BOOL:
-        throwe("%s is undefined for bool", functor);
-        break;
-    case TYPE_PTR:
-        throwe("%s is undefined for ptr", functor);
-        break;
-    case TYPE_TUPLE:
-        throwe("%s is undefined for tuple", functor);
-        break;
     case TYPE_BYTE:
     case TYPE_FLOAT:
     case TYPE_WORD:
         if (lhs.id != rhs.id)
-            throw("type mismatch in multiplication");
-
+            throw("type mismatch in arithmetic operation");
         ret.id = lhs.id;
         ret.data.ptr = NULL;
+        ret.flags = 0;
         break;
     case TYPE_STRING:
         todo();
         break;
-    case TYPE_STRUCT_INST: {
-        size_t base;
-        Struct *obj;
-        iIR ifunc;
-        Function *func;
-        base = lhs.data.word;
-        obj = (Struct *)(TYPE(base)->data.ptr);
-        if (!map_has(obj->methods, functor))
-            throwe("struct does not implement `%s'", functor);
-        ifunc = *map_get(obj->methods, functor, iIR);
-        if (IS_STATIC(ifunc))
-            throwe("struct's `%s' is static", functor);
-        func = (Function *)(TYPE(ifunc)->data.ptr);
-        if (buffer_num(func->params) != 1)
-            throwe("struct's `%s' must receive one parameter", functor);
-        /* TODO: make rhs is constant reference */
-        if (!check_types(rhs, *buffer_get(func->params, 0, Type)))
-            throwe("unexpected type for struct's `%s'", functor);
-
-        ret = func->ret;
+    case TYPE_STRUCT_INST:
+        ret = overloading_binary(ctx, lhs, rhs, functor);
         break;
-    }
     default:
-        throwe("`%s' does not apply here", functor);
+        throwe("`%s' is undefined for the given type", functor);
     }
 
     return ret;
@@ -578,10 +623,24 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         COPY_TYPE(0);
         break;
     case IR_expr_sizeof:
+    case IR_expr_tilde:
+        SEMT(expr, 1);
+        *TYPE(iir) = __tilde__(*TYPE_CHILD(1));
+        break;
     case IR_expr_hat:
+        SEMT(expr, 0);
+        SEMT(expr, 2);
+        *TYPE(iir) = __hat__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        break;
     case IR_expr_amp:
+        SEMT(expr, 0);
+        SEMT(expr, 2);
+        *TYPE(iir) = __amp__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        break;
     case IR_expr_bar:
-        todo();
+        SEMT(expr, 0);
+        SEMT(expr, 2);
+        *TYPE(iir) = __bar__(*TYPE_CHILD(0), *TYPE_CHILD(2));
         break;
     case IR_expr_star:
         SEMT(expr, 0);

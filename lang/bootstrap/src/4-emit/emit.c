@@ -85,6 +85,14 @@ static void push_decl(Ctx *ctx, string type, string name, string value) {
     buffer_push(*buffer_back(ctx->decl, buffer), &line);
 }
 
+static string get_functor(Ctx *ctx, iIR struct_def, const char *functor) {
+    Struct *obj;
+    iIR ifunc;
+    obj = (Struct *)(TYPE(struct_def)->data.ptr);
+    ifunc = *map_get(obj->methods, functor, iIR);
+    return sc(*buffer_get(ctx->sem.mangling, ifunc, const char *));
+}
+
 static Expr __bool__(Ctx *ctx, Expr expr, Type type) {
     Expr ret;
 
@@ -99,22 +107,15 @@ static Expr __bool__(Ctx *ctx, Expr expr, Type type) {
     case TYPE_PTR:
     case TYPE_STRING:
     case TYPE_WORD:
-        /* Rely on C's downcast */
+        /* Rely on C */
         ret.code = expr.code;
         break;
-    case TYPE_STRUCT_INST: {
-        size_t base;
-        Struct *obj;
-        iIR ifunc;
-        base = type.data.word;
-        obj = (Struct *)(TYPE(base)->data.ptr);
-        ifunc = *map_get(obj->methods, "__bool__", iIR);
-        ret.code = sc(*buffer_get(ctx->sem.mangling, ifunc, const char *));
+    case TYPE_STRUCT_INST:
+        ret.code = get_functor(ctx, type.data.word, "__bool__");
         saddc(&ret.code, "(&");
         sadd(&ret.code, expr.code);
         saddc(&ret.code, ")");
         break;
-    }
     default:
         UNREACHABLE;
     }
@@ -145,21 +146,14 @@ static Expr _arith(Ctx *ctx, Expr lhs, Type lhst, Expr rhs, const char *functor,
     case TYPE_STRING:
         todo();
         break;
-    case TYPE_STRUCT_INST: {
-        size_t base;
-        Struct *obj;
-        iIR ifunc;
-        base = lhst.data.word;
-        obj = (Struct *)(TYPE(base)->data.ptr);
-        ifunc = *map_get(obj->methods, functor, iIR);
-        ret.code = sc(*buffer_get(ctx->sem.mangling, ifunc, const char *));
+    case TYPE_STRUCT_INST:
+        ret.code = get_functor(ctx, lhst.data.word, functor);
         saddc(&ret.code, "(&");
         sadd(&ret.code, lhs.code);
         saddc(&ret.code, ", ");
         sadd(&ret.code, rhs.code);
         saddc(&ret.code, ")");
         break;
-    }
     default:
         UNREACHABLE;
     }
@@ -171,6 +165,75 @@ static Expr _arith(Ctx *ctx, Expr lhs, Type lhst, Expr rhs, const char *functor,
 #define __slash__(LHS, LHST, RHS) _arith(ctx, LHS, LHST, RHS, "__slash__", "/")
 #define __plus__(LHS, LHST, RHS) _arith(ctx, LHS, LHST, RHS, "__plus__", "+")
 #define __minus__(LHS, LHST, RHS) _arith(ctx, LHS, LHST, RHS, "__minus__", "-")
+
+static Expr _tilde(Ctx *ctx, Expr expr, Type type) {
+    Expr ret;
+
+    ret.above = buffer_copy(expr.above);
+    ret.self_val = snew();
+    ret.lvalue = 0;
+
+    switch (type.id) {
+    case TYPE_BYTE:
+    case TYPE_WORD:
+        /* Rely on C */
+        ret.code = sc("~");
+        sadd(&ret.code, expr.code);
+        break;
+    case TYPE_STRUCT_INST:
+        ret.code = get_functor(ctx, type.data.word, "__tilde__");
+        saddc(&ret.code, "(&");
+        sadd(&ret.code, expr.code);
+        saddc(&ret.code, ")");
+        break;
+    default:
+        UNREACHABLE;
+    }
+
+    return ret;
+}
+
+static Expr _bitwise_binary(Ctx *ctx, Expr lhs, Type lhst, Expr rhs,
+    const char *functor, const char *c) {
+    Expr ret;
+
+    ret.above = buffer_copy(lhs.above);
+    buffer_join(ret.above, rhs.above);
+    ret.self_val = snew();
+    ret.lvalue = 0;
+
+    switch (lhst.id) {
+    case TYPE_BYTE:
+    case TYPE_WORD:
+        /* Rely on C */
+        ret.code = lhs.code;
+        saddc(&ret.code, " ");
+        saddc(&ret.code, c);
+        saddc(&ret.code, " ");
+        sadd(&ret.code, rhs.code);
+        break;
+    case TYPE_STRUCT_INST:
+        ret.code = get_functor(ctx, lhst.data.word, functor);
+        saddc(&ret.code, "(&");
+        sadd(&ret.code, lhs.code);
+        saddc(&ret.code, ", ");
+        sadd(&ret.code, rhs.code);
+        saddc(&ret.code, ")");
+        break;
+    default:
+        UNREACHABLE;
+    }
+
+    return ret;
+}
+
+#define __tilde__(EXPR, TYPE) _tilde(ctx, EXPR, TYPE)
+#define __hat__(LHS, LHST, RHS)                                                \
+    _bitwise_binary(ctx, LHS, LHST, RHS, "__hat__", "^")
+#define __amp__(LHS, LHST, RHS)                                                \
+    _bitwise_binary(ctx, LHS, LHST, RHS, "__amp__", "&")
+#define __bar__(LHS, LHST, RHS)                                                \
+    _bitwise_binary(ctx, LHS, LHST, RHS, "__bar__", "|")
 
 /* --- */
 
@@ -535,10 +598,24 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         sadd(&ret.code, EMITT(lit, 0));
         break;
     case IR_expr_sizeof:
+    case IR_expr_tilde:
+        sub = EMITT(expr, 1);
+        ret = __tilde__(sub, *TYPE_CHILD(1));
+        break;
     case IR_expr_hat:
+        sub = EMITT(expr, 0);
+        sub2 = EMITT(expr, 2);
+        ret = __hat__(sub, *TYPE_CHILD(0), sub2);
+        break;
     case IR_expr_amp:
+        sub = EMITT(expr, 0);
+        sub2 = EMITT(expr, 2);
+        ret = __amp__(sub, *TYPE_CHILD(0), sub2);
+        break;
     case IR_expr_bar:
-        todo();
+        sub = EMITT(expr, 0);
+        sub2 = EMITT(expr, 2);
+        ret = __bar__(sub, *TYPE_CHILD(0), sub2);
         break;
     case IR_expr_star:
         sub = EMITT(expr, 0);
