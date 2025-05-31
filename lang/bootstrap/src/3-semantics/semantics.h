@@ -34,6 +34,8 @@ typedef struct {
     buffer funcrets; /* buffer<Type> */
     /* Shadowing stack */
     buffer shadowing; /* buffer<ShadowingTable> */
+    /* Mutable context (for impl @mut fn) */
+    bool mut_context;
 } Ctx;
 
 char *mangle(Ctx *ctx, const char *name);

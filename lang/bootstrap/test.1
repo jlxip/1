@@ -5,18 +5,33 @@ struct Number { a: word, }
 impl Number {
     @static
     fn new(n: word) -> @: @ { a: n, };
-
+    @mut
+    fn __assign__(other: Number) -> Number {
+        .a = other.a;
+        return .;
+    }
+    @mut
+    fn __assign_plus__(other: Number) -> Number {
+        .a += other.a;
+	return .;
+    }
+    fn __gt__(other: Number) -> bool: .a > other.a;
     fn __bool__ -> bool: .a;
 }
 
 fn main {
-    let zero = Number.new(0);
-    let one = Number.new(1);
+    let+ a = Number.new(0);
+    let b = Number.new(1);
 
-    assert one;
-    assert not zero;
-    assert zero or one;
-    assert one and one;
-    assert one and not zero;
+    // 0, 1
+    assert b;
+    assert not a;
+    // 1, 1
+    a = b;
+    assert a;
+    // 2, 1
+    a += b;
+    assert a > b;
+    
     c_exit(0);
 }

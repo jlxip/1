@@ -114,9 +114,8 @@ EXPRESSION -> EXPRESSION or EXPRESSION #expr_or
 
 # Assignments
 EXPRESSION -> ASSIGNMENT #expr_assign
-%right eq
+%right eq pluseq minuseq stareq slasheq hateq ampeq bareq
 ASSIGNMENT -> EXPRESSION eq EXPRESSION #assign_eq
-%nonassoc pluseq minuseq stareq slasheq hateq ampeq bareq
 ASSIGNMENT -> EXPRESSION pluseq EXPRESSION #assign_plus
 ASSIGNMENT -> EXPRESSION minuseq EXPRESSION #assign_minus
 ASSIGNMENT -> EXPRESSION stareq EXPRESSION #assign_star

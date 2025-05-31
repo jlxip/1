@@ -284,6 +284,49 @@ static void _comp_rest(Ctx *ctx, Type lhs, Type rhs, const char *functor) {
 #define __gt__(LHS, RHS) _comp_rest(ctx, LHS, RHS, "__gt__")
 #define __geq__(LHS, RHS) _comp_rest(ctx, LHS, RHS, "__geq__")
 
+static Type _assign_eq(Ctx *ctx, Type lhs, Type rhs) {
+    Type ret;
+
+    switch (lhs.id) {
+    case TYPE_BOOL:
+    case TYPE_BYTE:
+    case TYPE_FLOAT:
+    case TYPE_PTR:
+    case TYPE_WORD:
+        if (lhs.id != rhs.id)
+            throw("type mismatch in assignment operation");
+        ret.id = lhs.id;
+        ret.data.ptr = NULL;
+        ret.flags = 0;
+        break;
+    case TYPE_STRING:
+        todo();
+        break;
+    case TYPE_TUPLE:
+        todo();
+        break;
+    case TYPE_STRUCT_INST:
+        ret = overloading_binary(ctx, lhs, rhs, "__assign__");
+        break;
+    default:
+        throw("`__assign__' is undefined for the given type");
+    }
+
+    return ret;
+}
+
+#define __assign__(LHS, RHS) _assign_eq(ctx, LHS, RHS)
+#define __assign_plus__(LHS, RHS) _arith(ctx, LHS, RHS, "__assign_plus__")
+#define __assign_minus__(LHS, RHS) _arith(ctx, LHS, RHS, "__assign_minus__")
+#define __assign_star__(LHS, RHS) _arith(ctx, LHS, RHS, "__assign_star__")
+#define __assign_slash__(LHS, RHS) _arith(ctx, LHS, RHS, "__assign_slash__")
+#define __assign_hat__(LHS, RHS)                                               \
+    _bitwise_binary(ctx, LHS, RHS, "__assign_hat__")
+#define __assign_amp__(LHS, RHS)                                               \
+    _bitwise_binary(ctx, LHS, RHS, "__assign_amp__")
+#define __assign_bar__(LHS, RHS)                                               \
+    _bitwise_binary(ctx, LHS, RHS, "__assign_bar__")
+
 /* -------------------------------------------------------------------------- */
 
 static void sem_expr(Ctx *ctx, iIR iir, IRType type);
@@ -546,32 +589,40 @@ static void sem_struct_inst(Ctx *ctx, iIR iir) {
 static void sem_assign(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
 
-    /* Check lhs is a valid lvalue */
     SEMT(expr, 0);
+    SEMT(expr, 2);
+
     if (!IS_MUTABLE(GET_IRID(0)))
         throw("assign to immutable variable");
 
-    /* Check type of rhs matches */
-    SEMT(expr, 2);
-    if (!check_types(*TYPE_CHILD(0), *TYPE_CHILD(2)))
-        throw("type mismatch in assignment");
-
-    /* Check assignment can happen */
-    (void)type; /* TODO */
-    /*switch (type) {
+    switch (type) {
     case IR_assign_eq:
+        *TYPE(iir) = __assign__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        break;
     case IR_assign_plus:
+        *TYPE(iir) = __assign_plus__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        break;
     case IR_assign_minus:
+        *TYPE(iir) = __assign_minus__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        break;
     case IR_assign_star:
+        *TYPE(iir) = __assign_star__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        break;
     case IR_assign_slash:
+        *TYPE(iir) = __assign_slash__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        break;
     case IR_assign_hat:
+        *TYPE(iir) = __assign_hat__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        break;
     case IR_assign_amp:
+        *TYPE(iir) = __assign_amp__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        break;
     case IR_assign_bar:
-        todo();
+        *TYPE(iir) = __assign_bar__(*TYPE_CHILD(0), *TYPE_CHILD(2));
         break;
     default:
         UNREACHABLE;
-        }*/
+    }
 }
 
 static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
@@ -617,10 +668,15 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
 
         if (map_has(obj->fields, name)) {
             *TYPE(iir) = *map_get(obj->fields, name, Type);
+            if (ctx->mut_context)
+                TYPE(iir)->flags |= TYPE_FLAG_MUTABLE;
         } else if (map_has(obj->methods, name)) {
             iIR method = *map_get(obj->methods, name, iIR);
             if (IS_STATIC(method))
                 throwe("method `%s' is static, use @", name);
+            if (IS_MUTABLE(method) && !ctx->mut_context)
+                throwe(
+                    "call to mutable method `%s' from immutable context", name);
             *TYPE(iir) = *TYPE(method);
         } else
             throwe("no `%s' in struct", name);
@@ -794,6 +850,7 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         break;
     case IR_expr_assign:
         SEMT(assign, 0);
+        COPY_TYPE(0);
         break;
     default:
         UNREACHABLE;
@@ -1008,6 +1065,13 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
         flags |= TYPE_FLAG_STATIC;
         map_remove(annot, "static");
     }
+    if (map_has(annot, "mut")) {
+        if (!in_scope(ctx, "@"))
+            throw("@mut used in non-method");
+        ctx->mut_context = true;
+        flags |= TYPE_FLAG_MUTABLE;
+        map_remove(annot, "mut");
+    }
 
     if (!map_empty(annot))
         throw("unused annotations");
@@ -1106,6 +1170,7 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     else
         SEM(block, block);
 
+    ctx->mut_context = false;
     buffer_pop(ctx->funcrets);
     pop_scope(ctx);
 }
@@ -1429,6 +1494,8 @@ SemResult semantics(Tokens tokens, IRs irs) {
     /* State: shadowing stack */
     ctx.shadowing = NULL;
     buffer_new(&ctx.shadowing, sizeof(ShadowingTable));
+    /* State: mutable context */
+    ctx.mut_context = false;
 
     sem_program(&ctx, IIR_BEGIN);
 

@@ -322,6 +322,54 @@ static Expr _comp_rest(Ctx *ctx, Expr lhs, Type lhst, Expr rhs,
 #define __gt__(LHS, LHST, RHS) _comp_rest(ctx, LHS, LHST, RHS, "__gt__", ">")
 #define __geq__(LHS, LHST, RHS) _comp_rest(ctx, LHS, LHST, RHS, "__geq__", ">=")
 
+static Expr _assign_eq(Ctx *ctx, Expr lhs, Type lhst, Expr rhs) {
+    Expr ret;
+
+    ret.above = buffer_copy(lhs.above);
+    buffer_join(ret.above, rhs.above);
+    ret.self_val = snew();
+    ret.lvalue = 0;
+
+    switch (lhst.id) {
+    case TYPE_BOOL:
+    case TYPE_BYTE:
+    case TYPE_FLOAT:
+    case TYPE_PTR:
+    case TYPE_WORD:
+        ret.code = RELY_ON_C_BINARY("=");
+        break;
+    case TYPE_STRING:
+        todo();
+        break;
+    case TYPE_TUPLE:
+        todo();
+        break;
+    case TYPE_STRUCT_INST:
+        ret.code = FUNCTOR_BINARY("__assign__");
+        break;
+    default:
+        UNREACHABLE;
+    }
+
+    return ret;
+}
+
+#define __assign__(LHS, LHST, RHS) _assign_eq(ctx, LHS, LHST, RHS)
+#define __assign_plus__(LHS, LHST, RHS)                                        \
+    _arith(ctx, LHS, LHST, RHS, "__assign_plus__", "+=")
+#define __assign_minus__(LHS, LHST, RHS)                                       \
+    _arith(ctx, LHS, LHST, RHS, "__assign_minus__", "-=")
+#define __assign_star__(LHS, LHST, RHS)                                        \
+    _arith(ctx, LHS, LHST, RHS, "__assign_star__", "*=")
+#define __assign_slash__(LHS, LHST, RHS)                                       \
+    _arith(ctx, LHS, LHST, RHS, "__assign_slash__", "/=")
+#define __assign_hat__(LHS, LHST, RHS)                                         \
+    _arith(ctx, LHS, LHST, RHS, "__assign_hat__", "^=")
+#define __assign_amp__(LHS, LHST, RHS)                                         \
+    _arith(ctx, LHS, LHST, RHS, "__assign_amp__", "&=")
+#define __assign_bar__(LHS, LHST, RHS)                                         \
+    _arith(ctx, LHS, LHST, RHS, "__assign_bar__", "|=")
+
 /* --- */
 
 static string emit_type(Ctx *ctx, Type type) {
@@ -498,39 +546,33 @@ next:
 }
 
 static Expr emit_assign(Ctx *ctx, iIR iir, IRType type) {
-    Expr ret, sub;
+    Expr sub, sub2;
     IR *ir = GET_IR(iir);
-
-    ret.code = snew();
-    ret.above = NULL;
-    buffer_new(&ret.above, sizeof(string));
-    ret.lvalue = 0; /* I'm not sure */
+    sub = EMITT(expr, 0);
+    sub2 = EMITT(expr, 2);
 
     switch (type) {
     case IR_assign_eq:
-        /* TODO: if reference, dereference */
-        sub = EMITT(expr, 0);
-        sadd(&ret.code, sub.code);
-        buffer_join(ret.above, sub.above);
-        saddc(&ret.code, " = ");
-        sub = EMITT(expr, 2);
-        sadd(&ret.code, sub.code);
-        buffer_join(ret.above, sub.above);
-        break;
+        return __assign__(sub, *TYPE_CHILD(0), sub2);
     case IR_assign_plus:
+        return __assign_plus__(sub, *TYPE_CHILD(0), sub2);
     case IR_assign_minus:
+        return __assign_minus__(sub, *TYPE_CHILD(0), sub2);
     case IR_assign_star:
+        return __assign_star__(sub, *TYPE_CHILD(0), sub2);
     case IR_assign_slash:
+        return __assign_slash__(sub, *TYPE_CHILD(0), sub2);
     case IR_assign_hat:
+        return __assign_hat__(sub, *TYPE_CHILD(0), sub2);
     case IR_assign_amp:
+        return __assign_amp__(sub, *TYPE_CHILD(0), sub2);
     case IR_assign_bar:
-        todo();
-        break;
+        return __assign_bar__(sub, *TYPE_CHILD(0), sub2);
     default:
         UNREACHABLE;
     }
 
-    return ret;
+    return sub;
 }
 
 static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
@@ -1046,7 +1088,8 @@ static string emit_func(Ctx *ctx, iIR iir, IRType type) {
         /* We have params */
         saddc(&ret, "(");
         if (IS_METHOD(iir) && !IS_STATIC(iir)) {
-            saddc(&ret, "const ");
+            if (!IS_MUTABLE(iir))
+                saddc(&ret, "const ");
             saddc(&ret,
                 *buffer_get(ctx->sem.mangling, ctx->self_struct, const char *));
             saddc(&ret, " *self, ");
@@ -1056,7 +1099,9 @@ static string emit_func(Ctx *ctx, iIR iir, IRType type) {
     } else {
         /* No params */
         if (IS_METHOD(iir) && !IS_STATIC(iir)) {
-            saddc(&ret, "(const ");
+            saddc(&ret, "(");
+            if (!IS_MUTABLE(iir))
+                saddc(&ret, "const ");
             saddc(&ret,
                 *buffer_get(ctx->sem.mangling, ctx->self_struct, const char *));
             saddc(&ret, " *self)");
