@@ -890,6 +890,53 @@ static void sem_decl_nonglobal(Ctx *ctx, iIR iir, IRType type) {
     push_to_scope(ctx, name, iir);
 }
 
+static void sem_stmt(Ctx *ctx, iIR iir, IRType type);
+static void sem_if(Ctx *ctx, iIR iir, IRType type) {
+    IR *ir = GET_IR(iir);
+
+    SEMT(expr, 1);
+    switch (type) {
+    case IR_if_only:
+        __bool__(ctx, *TYPE_CHILD(1));
+        SEMT(stmt, 2);
+        break;
+    case IR_if_elif:
+        __bool__(ctx, *TYPE_CHILD(1));
+        SEMT(stmt, 2);
+        iir = GET_IRID(3);
+        type = GET_IRTYPE(3);
+
+        for (;;) {
+            ir = GET_IR(iir);
+            switch (type) {
+            case IR_elif_only:
+                SEMT(expr, 1);
+                __bool__(ctx, *TYPE_CHILD(1));
+                SEMT(stmt, 2);
+                return;
+            case IR_elif_rec:
+                SEMT(expr, 1);
+                __bool__(ctx, *TYPE_CHILD(1));
+                SEMT(stmt, 2);
+                iir = GET_IRID(3);
+                type = GET_IRTYPE(3);
+                break;
+            case IR_elif_else:
+                iir = GET_IRID(0);
+                assert(GET_IRTYPE(0) == IR_else);
+                ir = GET_IR(iir);
+                SEMT(stmt, 1);
+                return;
+            default:
+                UNREACHABLE;
+            }
+        }
+        break;
+    default:
+        UNREACHABLE;
+    }
+}
+
 static void sem_block(Ctx *ctx, iIR iir);
 static void sem_stmt(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
@@ -927,7 +974,7 @@ static void sem_stmt(Ctx *ctx, iIR iir, IRType type) {
             throw("invalid return value type");
         break;
     case IR_stmt_if:
-        todo();
+        SEMT(if, 0);
         break;
     case IR_stmt_switch:
         todo();

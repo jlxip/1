@@ -1,37 +1,9 @@
 extern c_exit(retval: word);
 
-struct Number { a: word, }
-
-impl Number {
-    @static
-    fn new(n: word) -> @: @ { a: n, };
-    @mut
-    fn __assign__(other: Number) -> Number {
-        .a = other.a;
-        return .;
-    }
-    @mut
-    fn __assign_plus__(other: Number) -> Number {
-        .a += other.a;
-	return .;
-    }
-    fn __gt__(other: Number) -> bool: .a > other.a;
-    fn __bool__ -> bool: .a;
-}
-
 fn main {
-    let+ a = Number.new(0);
-    let b = Number.new(1);
-
-    // 0, 1
-    assert b;
-    assert not a;
-    // 1, 1
-    a = b;
-    assert a;
-    // 2, 1
-    a += b;
-    assert a > b;
-    
-    c_exit(0);
+    let a = false;
+    let b = true;
+    if a c_exit(0);
+    elif b c_exit(1);
+    else c_exit(2);
 }

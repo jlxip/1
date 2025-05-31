@@ -896,6 +896,77 @@ static string emit_decl(Ctx *ctx, iIR iir, IRType type) {
     return ret;
 }
 
+static string emit_stmt(Ctx *ctx, iIR iir, IRType type);
+static string emit_if(Ctx *ctx, iIR iir, IRType type) {
+    string above = snew();
+    string contents;
+    IR *ir = GET_IR(iir);
+    Expr cond;
+    size_t i;
+
+    cond = EMITT(expr, 1);
+    for (i = 0; i < buffer_num(cond.above); ++i)
+        saddln(&above, *buffer_get(cond.above, i, string));
+
+    contents = sc("if (");
+    sadd(&contents, cond.code);
+    saddlnc(&contents, ") {");
+    sadd(&contents, EMITT(stmt, 2));
+    switch (type) {
+    case IR_if_only:
+        /* Nothing to do */
+        break;
+    case IR_if_elif:
+        saddc(&contents, "} ");
+        iir = GET_IRID(3);
+        type = GET_IRTYPE(3);
+        for (;;) {
+            ir = GET_IR(iir);
+            switch (type) {
+            case IR_elif_only:
+                cond = EMITT(expr, 1);
+                for (i = 0; i < buffer_num(cond.above); ++i)
+                    saddln(&above, *buffer_get(cond.above, i, string));
+
+                saddc(&contents, "else if (");
+                sadd(&contents, cond.code);
+                saddlnc(&contents, ") {");
+                sadd(&contents, EMITT(stmt, 2));
+                goto end;
+            case IR_elif_rec:
+                cond = EMITT(expr, 1);
+                for (i = 0; i < buffer_num(cond.above); ++i)
+                    saddln(&above, *buffer_get(cond.above, i, string));
+
+                saddc(&contents, "else if (");
+                sadd(&contents, cond.code);
+                saddlnc(&contents, ") {");
+                sadd(&contents, EMITT(stmt, 2));
+                iir = GET_IRID(3);
+                type = GET_IRTYPE(3);
+                break;
+            case IR_elif_else:
+                iir = GET_IRID(0);
+                assert(GET_IRTYPE(0) == IR_else);
+                ir = GET_IR(iir);
+                saddlnc(&contents, "} else {");
+                sadd(&contents, EMITT(stmt, 1));
+                goto end;
+            default:
+                UNREACHABLE;
+            }
+        }
+        break;
+    default:
+        UNREACHABLE;
+    }
+
+end:
+    saddc(&contents, "}");
+    sadd(&above, contents);
+    return above;
+}
+
 static string emit_block(Ctx *ctx, iIR iir);
 static string emit_stmt(Ctx *ctx, iIR iir, IRType type) {
     string ret = snew();
@@ -954,7 +1025,7 @@ static string emit_stmt(Ctx *ctx, iIR iir, IRType type) {
         break;
     }
     case IR_stmt_if:
-        todo();
+        saddln(&ret, EMITT(if, 0));
         break;
     case IR_stmt_switch:
         todo();
