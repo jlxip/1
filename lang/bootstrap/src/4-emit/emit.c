@@ -93,6 +93,51 @@ static string get_functor(Ctx *ctx, iIR struct_def, const char *functor) {
     return sc(*buffer_get(ctx->sem.mangling, ifunc, const char *));
 }
 
+static string rely_on_c_unary(const char *symbol, string expr) {
+    string ret = sc(symbol);
+    sadd(&ret, expr);
+    return ret;
+}
+
+#define RELY_ON_C_UNARY(SYM) rely_on_c_unary(SYM, expr.code)
+
+static string rely_on_c_binary(const char *symbol, string lhs, string rhs) {
+    string ret = lhs;
+    saddc(&ret, " ");
+    saddc(&ret, symbol);
+    saddc(&ret, " ");
+    sadd(&ret, rhs);
+    return ret;
+}
+
+#define RELY_ON_C_BINARY(SYM) rely_on_c_binary(SYM, lhs.code, rhs.code)
+
+static string functor_unary(
+    Ctx *ctx, iIR struct_def, const char *functor, string expr) {
+    string ret = get_functor(ctx, struct_def, functor);
+    saddc(&ret, "(&");
+    sadd(&ret, expr);
+    saddc(&ret, ")");
+    return ret;
+}
+
+#define FUNCTOR_UNARY(FUNCTOR)                                                 \
+    functor_unary(ctx, type.data.word, FUNCTOR, expr.code)
+
+static string functor_binary(
+    Ctx *ctx, iIR struct_def, const char *functor, string lhs, string rhs) {
+    string ret = get_functor(ctx, struct_def, functor);
+    saddc(&ret, "(&");
+    sadd(&ret, lhs);
+    saddc(&ret, ", ");
+    sadd(&ret, rhs);
+    saddc(&ret, ")");
+    return ret;
+}
+
+#define FUNCTOR_BINARY(FUNCTOR)                                                \
+    functor_binary(ctx, lhst.data.word, FUNCTOR, lhs.code, rhs.code)
+
 static Expr __bool__(Ctx *ctx, Expr expr, Type type) {
     Expr ret;
 
@@ -111,10 +156,7 @@ static Expr __bool__(Ctx *ctx, Expr expr, Type type) {
         ret.code = expr.code;
         break;
     case TYPE_STRUCT_INST:
-        ret.code = get_functor(ctx, type.data.word, "__bool__");
-        saddc(&ret.code, "(&");
-        sadd(&ret.code, expr.code);
-        saddc(&ret.code, ")");
+        ret.code = FUNCTOR_UNARY("__bool__");
         break;
     default:
         UNREACHABLE;
@@ -136,23 +178,13 @@ static Expr _arith(Ctx *ctx, Expr lhs, Type lhst, Expr rhs, const char *functor,
     case TYPE_BYTE:
     case TYPE_FLOAT:
     case TYPE_WORD:
-        /* Rely on C */
-        ret.code = lhs.code;
-        saddc(&ret.code, " ");
-        saddc(&ret.code, c);
-        saddc(&ret.code, " ");
-        sadd(&ret.code, rhs.code);
+        ret.code = RELY_ON_C_BINARY(c);
         break;
     case TYPE_STRING:
         todo();
         break;
     case TYPE_STRUCT_INST:
-        ret.code = get_functor(ctx, lhst.data.word, functor);
-        saddc(&ret.code, "(&");
-        sadd(&ret.code, lhs.code);
-        saddc(&ret.code, ", ");
-        sadd(&ret.code, rhs.code);
-        saddc(&ret.code, ")");
+        ret.code = FUNCTOR_BINARY(functor);
         break;
     default:
         UNREACHABLE;
@@ -176,15 +208,10 @@ static Expr _tilde(Ctx *ctx, Expr expr, Type type) {
     switch (type.id) {
     case TYPE_BYTE:
     case TYPE_WORD:
-        /* Rely on C */
-        ret.code = sc("~");
-        sadd(&ret.code, expr.code);
+        ret.code = RELY_ON_C_UNARY("~");
         break;
     case TYPE_STRUCT_INST:
-        ret.code = get_functor(ctx, type.data.word, "__tilde__");
-        saddc(&ret.code, "(&");
-        sadd(&ret.code, expr.code);
-        saddc(&ret.code, ")");
+        ret.code = FUNCTOR_UNARY("__tilde__");
         break;
     default:
         UNREACHABLE;
@@ -192,6 +219,8 @@ static Expr _tilde(Ctx *ctx, Expr expr, Type type) {
 
     return ret;
 }
+
+#define __tilde__(EXPR, TYPE) _tilde(ctx, EXPR, TYPE)
 
 static Expr _bitwise_binary(Ctx *ctx, Expr lhs, Type lhst, Expr rhs,
     const char *functor, const char *c) {
@@ -205,20 +234,10 @@ static Expr _bitwise_binary(Ctx *ctx, Expr lhs, Type lhst, Expr rhs,
     switch (lhst.id) {
     case TYPE_BYTE:
     case TYPE_WORD:
-        /* Rely on C */
-        ret.code = lhs.code;
-        saddc(&ret.code, " ");
-        saddc(&ret.code, c);
-        saddc(&ret.code, " ");
-        sadd(&ret.code, rhs.code);
+        ret.code = RELY_ON_C_BINARY(c);
         break;
     case TYPE_STRUCT_INST:
-        ret.code = get_functor(ctx, lhst.data.word, functor);
-        saddc(&ret.code, "(&");
-        sadd(&ret.code, lhs.code);
-        saddc(&ret.code, ", ");
-        sadd(&ret.code, rhs.code);
-        saddc(&ret.code, ")");
+        ret.code = FUNCTOR_BINARY(functor);
         break;
     default:
         UNREACHABLE;
@@ -227,13 +246,81 @@ static Expr _bitwise_binary(Ctx *ctx, Expr lhs, Type lhst, Expr rhs,
     return ret;
 }
 
-#define __tilde__(EXPR, TYPE) _tilde(ctx, EXPR, TYPE)
 #define __hat__(LHS, LHST, RHS)                                                \
     _bitwise_binary(ctx, LHS, LHST, RHS, "__hat__", "^")
 #define __amp__(LHS, LHST, RHS)                                                \
     _bitwise_binary(ctx, LHS, LHST, RHS, "__amp__", "&")
 #define __bar__(LHS, LHST, RHS)                                                \
     _bitwise_binary(ctx, LHS, LHST, RHS, "__bar__", "|")
+
+static Expr _comp_eq(Ctx *ctx, Expr lhs, Type lhst, Expr rhs) {
+    Expr ret;
+
+    ret.above = buffer_copy(lhs.above);
+    buffer_join(ret.above, rhs.above);
+    ret.self_val = snew();
+    ret.lvalue = 0;
+
+    switch (lhst.id) {
+    case TYPE_BOOL:
+    case TYPE_BYTE:
+    case TYPE_FLOAT:
+    case TYPE_PTR:
+    case TYPE_WORD:
+        ret.code = RELY_ON_C_BINARY("==");
+        break;
+    case TYPE_STRING:
+        todo();
+        break;
+    case TYPE_TUPLE:
+        todo();
+        break;
+    case TYPE_STRUCT_INST:
+        ret.code = FUNCTOR_BINARY("__eq__");
+        break;
+    default:
+        UNREACHABLE;
+    }
+
+    return ret;
+}
+
+#define __eq__(LHS, LHST, RHS) _comp_eq(ctx, LHS, LHST, RHS)
+
+static Expr _comp_rest(Ctx *ctx, Expr lhs, Type lhst, Expr rhs,
+    const char *functor, const char *c) {
+    Expr ret;
+
+    ret.above = buffer_copy(lhs.above);
+    buffer_join(ret.above, rhs.above);
+    ret.self_val = snew();
+    ret.lvalue = 0;
+
+    switch (lhst.id) {
+    case TYPE_BOOL:
+    case TYPE_BYTE:
+    case TYPE_FLOAT:
+    case TYPE_WORD:
+        ret.code = RELY_ON_C_BINARY(c);
+        break;
+    case TYPE_STRING:
+        todo();
+        break;
+    case TYPE_STRUCT_INST:
+        ret.code = FUNCTOR_BINARY(functor);
+        break;
+    default:
+        UNREACHABLE;
+    }
+
+    return ret;
+}
+
+#define __neq__(LHS, LHST, RHS) _comp_rest(ctx, LHS, LHST, RHS, "__neq__", "!=")
+#define __lt__(LHS, LHST, RHS) _comp_rest(ctx, LHS, LHST, RHS, "__lt__", "<")
+#define __leq__(LHS, LHST, RHS) _comp_rest(ctx, LHS, LHST, RHS, "__leq__", "<=")
+#define __gt__(LHS, LHST, RHS) _comp_rest(ctx, LHS, LHST, RHS, "__gt__", ">")
+#define __geq__(LHS, LHST, RHS) _comp_rest(ctx, LHS, LHST, RHS, "__geq__", ">=")
 
 /* --- */
 
@@ -638,11 +725,35 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         ret = __minus__(sub, *TYPE_CHILD(0), sub2);
         break;
     case IR_expr_deq:
+        sub = EMITT(expr, 0);
+        sub2 = EMITT(expr, 2);
+        ret = __eq__(sub, *TYPE_CHILD(0), sub2);
+        break;
     case IR_expr_neq:
+        sub = EMITT(expr, 0);
+        sub2 = EMITT(expr, 2);
+        ret = __neq__(sub, *TYPE_CHILD(0), sub2);
+        break;
     case IR_expr_lt:
+        sub = EMITT(expr, 0);
+        sub2 = EMITT(expr, 2);
+        ret = __lt__(sub, *TYPE_CHILD(0), sub2);
+        break;
     case IR_expr_leq:
+        sub = EMITT(expr, 0);
+        sub2 = EMITT(expr, 2);
+        ret = __leq__(sub, *TYPE_CHILD(0), sub2);
+        break;
     case IR_expr_gt:
+        sub = EMITT(expr, 0);
+        sub2 = EMITT(expr, 2);
+        ret = __gt__(sub, *TYPE_CHILD(0), sub2);
+        break;
     case IR_expr_geq:
+        sub = EMITT(expr, 0);
+        sub2 = EMITT(expr, 2);
+        ret = __geq__(sub, *TYPE_CHILD(0), sub2);
+        break;
     case IR_expr_not:
     case IR_expr_and:
     case IR_expr_or:

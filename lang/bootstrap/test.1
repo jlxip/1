@@ -6,19 +6,24 @@ impl Number {
     @static
     fn new(n: word) -> @: @ { a: n, };
 
-    fn times(n: word) -> @: @.new(.a * n);
-    fn square -> @: .times(.a);
-    fn get -> word: .a;
-    fn exit: c_exit(.get());
-
-    //fn __bool__ -> bool: .a;
-    fn __plus__(rhs: Number) -> Number: @.new(.a + rhs.a);
-    //fn __minus__(rhs: Number) -> Number: @.new(.a - rhs.a);
-    //fn __star__(rhs: Number) -> Number: @.new(.a * rhs.a);
-    //fn __slash__(rhs: Number) -> Number: @.new(.a / rhs.a);
+    fn __eq__(other: Number) -> bool: .a == other.a;
+    fn __neq__(other: Number) -> bool: .a != other.a;
+    fn __lt__(other: Number) -> bool: .a < other.a;
+    fn __leq__(other: Number) -> bool: .a <= other.a;
+    fn __gt__(other: Number) -> bool: .a > other.a;
+    fn __geq__(other: Number) -> bool: .a >= other.a;
 }
 
 fn main {
-    let n = Number.new(3).times(2).square();
-    (n + Number.new(2)).exit();
+    let one = Number.new(1);
+    let two = Number.new(2);
+    let three = Number.new(3);
+
+    assert one == one;
+    assert one != two;
+    assert one < two;
+    assert one <= one;
+    assert three > two;
+    assert three >= three;
+    c_exit(0);
 }

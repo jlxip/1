@@ -175,6 +175,8 @@ static Type _tilde(Ctx *ctx, Type lhs) {
     return ret;
 }
 
+#define __tilde__(LHS) _tilde(ctx, LHS)
+
 static Type _bitwise_binary(Ctx *ctx, Type lhs, Type rhs, const char *functor) {
     Type ret;
 
@@ -197,7 +199,6 @@ static Type _bitwise_binary(Ctx *ctx, Type lhs, Type rhs, const char *functor) {
     return ret;
 }
 
-#define __tilde__(LHS) _tilde(ctx, LHS)
 #define __hat__(LHS, RHS) _bitwise_binary(ctx, LHS, RHS, "__hat__")
 #define __amp__(LHS, RHS) _bitwise_binary(ctx, LHS, RHS, "__amp__")
 #define __bar__(LHS, RHS) _bitwise_binary(ctx, LHS, RHS, "__bar__")
@@ -233,7 +234,57 @@ static Type _arith(Ctx *ctx, Type lhs, Type rhs, const char *functor) {
 #define __plus__(LHS, RHS) _arith(ctx, LHS, RHS, "__plus__")
 #define __minus__(LHS, RHS) _arith(ctx, LHS, RHS, "__minus__")
 
-/* --- */
+static void _comp_eq(Ctx *ctx, Type lhs, Type rhs) {
+    switch (lhs.id) {
+    case TYPE_BOOL:
+    case TYPE_BYTE:
+    case TYPE_FLOAT:
+    case TYPE_PTR:
+    case TYPE_WORD:
+    case TYPE_STRING:
+        if (lhs.id != rhs.id)
+            throw("type mismatch in comparison operation");
+        break;
+    case TYPE_TUPLE:
+        todo();
+        break;
+    case TYPE_STRUCT_INST:
+        if (overloading_binary(ctx, lhs, rhs, "__eq__").id != TYPE_BOOL)
+            throw("struct's `__eq__' does not return bool");
+        break;
+    default:
+        throw("`__eq__' is undefined for the given type");
+    }
+}
+
+#define __eq__(LHS, RHS) _comp_eq(ctx, LHS, RHS);
+
+static void _comp_rest(Ctx *ctx, Type lhs, Type rhs, const char *functor) {
+    switch (lhs.id) {
+    case TYPE_BOOL:
+    case TYPE_BYTE:
+    case TYPE_FLOAT:
+    case TYPE_WORD:
+    case TYPE_STRING:
+        if (lhs.id != rhs.id)
+            throw("type mismatch in comparison operation");
+        break;
+    case TYPE_STRUCT_INST:
+        if (overloading_binary(ctx, lhs, rhs, functor).id != TYPE_BOOL)
+            throwe("struct's `%s' does not return bool", functor);
+        break;
+    default:
+        throwe("`%s' is undefined for the given type", functor);
+    }
+}
+
+#define __neq__(LHS, RHS) _comp_rest(ctx, LHS, RHS, "__neq__")
+#define __lt__(LHS, RHS) _comp_rest(ctx, LHS, RHS, "__lt__")
+#define __leq__(LHS, RHS) _comp_rest(ctx, LHS, RHS, "__leq__")
+#define __gt__(LHS, RHS) _comp_rest(ctx, LHS, RHS, "__gt__")
+#define __geq__(LHS, RHS) _comp_rest(ctx, LHS, RHS, "__geq__")
+
+/* -------------------------------------------------------------------------- */
 
 static void sem_expr(Ctx *ctx, iIR iir, IRType type);
 static void sem_type(Ctx *ctx, iIR iir, IRType type) {
@@ -663,11 +714,53 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         *TYPE(iir) = __minus__(*TYPE_CHILD(0), *TYPE_CHILD(2));
         break;
     case IR_expr_deq:
+        SEMT(expr, 0);
+        SEMT(expr, 2);
+        __eq__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        TYPE(iir)->id = TYPE_BOOL;
+        TYPE(iir)->data.ptr = NULL;
+        TYPE(iir)->flags = 0;
+        break;
     case IR_expr_neq:
+        SEMT(expr, 0);
+        SEMT(expr, 2);
+        __neq__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        TYPE(iir)->id = TYPE_BOOL;
+        TYPE(iir)->data.ptr = NULL;
+        TYPE(iir)->flags = 0;
+        break;
     case IR_expr_lt:
+        SEMT(expr, 0);
+        SEMT(expr, 2);
+        __lt__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        TYPE(iir)->id = TYPE_BOOL;
+        TYPE(iir)->data.ptr = NULL;
+        TYPE(iir)->flags = 0;
+        break;
     case IR_expr_leq:
+        SEMT(expr, 0);
+        SEMT(expr, 2);
+        __leq__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        TYPE(iir)->id = TYPE_BOOL;
+        TYPE(iir)->data.ptr = NULL;
+        TYPE(iir)->flags = 0;
+        break;
     case IR_expr_gt:
+        SEMT(expr, 0);
+        SEMT(expr, 2);
+        __gt__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        TYPE(iir)->id = TYPE_BOOL;
+        TYPE(iir)->data.ptr = NULL;
+        TYPE(iir)->flags = 0;
+        break;
     case IR_expr_geq:
+        SEMT(expr, 0);
+        SEMT(expr, 2);
+        __geq__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        TYPE(iir)->id = TYPE_BOOL;
+        TYPE(iir)->data.ptr = NULL;
+        TYPE(iir)->flags = 0;
+        break;
     case IR_expr_not:
     case IR_expr_and:
     case IR_expr_or:
