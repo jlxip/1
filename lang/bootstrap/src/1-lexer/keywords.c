@@ -50,7 +50,7 @@ size_t match_keyword(Capture *ret, const char *cur) {
         switch (*cur++) {
         case 'n':
             /* an: and */
-            MATCH_REST("nd", T_AND);
+            MATCH_REST("d", T_AND);
             return 0;
         case 's':
             /* as: assert */

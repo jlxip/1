@@ -755,9 +755,33 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         ret = __geq__(sub, *TYPE_CHILD(0), sub2);
         break;
     case IR_expr_not:
+        saddc(&ret.code, "!");
+        sub = EMITT(expr, 1);
+        sub2 = __bool__(ctx, sub, *TYPE_CHILD(1));
+        sadd(&ret.code, sub2.code);
+        ret.above = sub2.above;
+        break;
     case IR_expr_and:
+        sub = EMITT(expr, 0);
+        sub2 = __bool__(ctx, sub, *TYPE_CHILD(0));
+        sadd(&ret.code, sub2.code);
+        ret.above = sub2.above;
+        saddc(&ret.code, " && ");
+        sub = EMITT(expr, 2);
+        sub2 = __bool__(ctx, sub, *TYPE_CHILD(2));
+        sadd(&ret.code, sub2.code);
+        buffer_join(ret.above, sub2.above);
+        break;
     case IR_expr_or:
-        todo();
+        sub = EMITT(expr, 0);
+        sub2 = __bool__(ctx, sub, *TYPE_CHILD(0));
+        sadd(&ret.code, sub2.code);
+        ret.above = sub2.above;
+        saddc(&ret.code, " || ");
+        sub = EMITT(expr, 2);
+        sub2 = __bool__(ctx, sub, *TYPE_CHILD(2));
+        sadd(&ret.code, sub2.code);
+        buffer_join(ret.above, sub2.above);
         break;
     case IR_expr_struct_inst:
         sub = EMIT(struct_inst, 0);

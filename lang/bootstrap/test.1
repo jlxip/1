@@ -6,24 +6,17 @@ impl Number {
     @static
     fn new(n: word) -> @: @ { a: n, };
 
-    fn __eq__(other: Number) -> bool: .a == other.a;
-    fn __neq__(other: Number) -> bool: .a != other.a;
-    fn __lt__(other: Number) -> bool: .a < other.a;
-    fn __leq__(other: Number) -> bool: .a <= other.a;
-    fn __gt__(other: Number) -> bool: .a > other.a;
-    fn __geq__(other: Number) -> bool: .a >= other.a;
+    fn __bool__ -> bool: .a;
 }
 
 fn main {
+    let zero = Number.new(0);
     let one = Number.new(1);
-    let two = Number.new(2);
-    let three = Number.new(3);
 
-    assert one == one;
-    assert one != two;
-    assert one < two;
-    assert one <= one;
-    assert three > two;
-    assert three >= three;
+    assert one;
+    assert not zero;
+    assert zero or one;
+    assert one and one;
+    assert one and not zero;
     c_exit(0);
 }

@@ -674,6 +674,8 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         COPY_TYPE(0);
         break;
     case IR_expr_sizeof:
+        todo();
+        break;
     case IR_expr_tilde:
         SEMT(expr, 1);
         *TYPE(iir) = __tilde__(*TYPE_CHILD(1));
@@ -762,9 +764,29 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         TYPE(iir)->flags = 0;
         break;
     case IR_expr_not:
+        SEMT(expr, 1);
+        __bool__(ctx, *TYPE_CHILD(1));
+        TYPE(iir)->id = TYPE_BOOL;
+        TYPE(iir)->data.ptr = NULL;
+        TYPE(iir)->flags = 0;
+        break;
     case IR_expr_and:
+        SEMT(expr, 0);
+        SEMT(expr, 2);
+        __bool__(ctx, *TYPE_CHILD(0));
+        __bool__(ctx, *TYPE_CHILD(2));
+        TYPE(iir)->id = TYPE_BOOL;
+        TYPE(iir)->data.ptr = NULL;
+        TYPE(iir)->flags = 0;
+        break;
     case IR_expr_or:
-        todo();
+        SEMT(expr, 0);
+        SEMT(expr, 2);
+        __bool__(ctx, *TYPE_CHILD(0));
+        __bool__(ctx, *TYPE_CHILD(2));
+        TYPE(iir)->id = TYPE_BOOL;
+        TYPE(iir)->data.ptr = NULL;
+        TYPE(iir)->flags = 0;
         break;
     case IR_expr_struct_inst:
         SEM(struct_inst, 0);
