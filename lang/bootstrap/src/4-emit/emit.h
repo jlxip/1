@@ -16,6 +16,8 @@ typedef struct {
     map decln;   /* map<string, size_t> */
 
     iIR self_struct; /* iIR of Self in current impl */
+    size_t loop_ctr; /* Unique loop counter */
+    buffer loops;    /* buffer<size_t> */
 } Ctx;
 
 #define GET_IR(N) (buffer_get(ctx->irs, N, IR))

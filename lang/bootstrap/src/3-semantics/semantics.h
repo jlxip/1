@@ -36,6 +36,8 @@ typedef struct {
     buffer shadowing; /* buffer<ShadowingTable> */
     /* Mutable context (for impl @mut fn) */
     bool mut_context;
+    /* How many nested loops */
+    size_t nested_loops;
 } Ctx;
 
 char *mangle(Ctx *ctx, const char *name);

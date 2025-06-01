@@ -4,6 +4,7 @@
 
 #define EMIT(X, N) emit_##X(ctx, GET_IRID(N))
 #define EMITT(X, N) emit_##X(ctx, GET_IRID(N), GET_IRTYPE(N))
+#define EMITTX(X, N, Y) emit_##X(ctx, GET_IRID(N), GET_IRTYPE(N), Y)
 #define TYPE(N) buffer_get(ctx->sem.types, N, Type)
 #define TYPE_CHILD(N) TYPE(GET_IRID(N))
 
@@ -896,7 +897,7 @@ static string emit_decl(Ctx *ctx, iIR iir, IRType type) {
     return ret;
 }
 
-static string emit_block(Ctx *ctx, iIR iir, IRType type);
+static string emit_block(Ctx *ctx, iIR iir, IRType type, bool loop);
 static string emit_if(Ctx *ctx, iIR iir, IRType type) {
     string above = snew();
     string contents;
@@ -911,7 +912,7 @@ static string emit_if(Ctx *ctx, iIR iir, IRType type) {
     contents = sc("if (");
     sadd(&contents, cond.code);
     saddc(&contents, ") ");
-    sadd(&contents, EMITT(block, 2));
+    sadd(&contents, EMITTX(block, 2, false));
     switch (type) {
     case IR_if_only:
         /* Nothing to do */
@@ -930,7 +931,7 @@ static string emit_if(Ctx *ctx, iIR iir, IRType type) {
                 saddc(&contents, "else if (");
                 sadd(&contents, cond.code);
                 saddc(&contents, ") ");
-                sadd(&contents, EMITT(block, 2));
+                sadd(&contents, EMITTX(block, 2, false));
                 goto end;
             case IR_elif_rec:
                 cond = EMITT(expr, 1);
@@ -940,7 +941,7 @@ static string emit_if(Ctx *ctx, iIR iir, IRType type) {
                 saddc(&contents, "else if (");
                 sadd(&contents, cond.code);
                 saddc(&contents, ") ");
-                sadd(&contents, EMITT(block, 2));
+                sadd(&contents, EMITTX(block, 2, false));
                 iir = GET_IRID(3);
                 type = GET_IRTYPE(3);
                 break;
@@ -949,7 +950,7 @@ static string emit_if(Ctx *ctx, iIR iir, IRType type) {
                 assert(GET_IRTYPE(0) == IR_else);
                 ir = GET_IR(iir);
                 saddc(&contents, "else ");
-                sadd(&contents, EMITT(block, 1));
+                sadd(&contents, EMITTX(block, 1, false));
                 goto end;
             default:
                 UNREACHABLE;
@@ -997,10 +998,14 @@ static string emit_stmt(Ctx *ctx, iIR iir, IRType type) {
         break;
     }
     case IR_stmt_break:
-        todo();
+        saddc(&ret, "goto loop");
+        saddi(&ret, *buffer_back(ctx->loops, size_t));
+        saddlnc(&ret, "_exit;");
         break;
     case IR_stmt_continue:
-        todo();
+        saddc(&ret, "goto loop");
+        saddi(&ret, *buffer_back(ctx->loops, size_t));
+        saddlnc(&ret, "_next;");
         break;
     case IR_stmt_fall:
         todo();
@@ -1027,9 +1032,22 @@ static string emit_stmt(Ctx *ctx, iIR iir, IRType type) {
     case IR_stmt_for:
         todo();
         break;
-    case IR_stmt_while:
-        todo();
+    case IR_stmt_while: {
+        Expr expr = EMITT(expr, 1);
+        size_t i;
+        for (i = 0; i < buffer_num(expr.above); ++i)
+            saddln(&ret, *buffer_get(expr.above, i, string));
+        saddc(&ret, "while (");
+        sadd(&ret, expr.code);
+        saddc(&ret, ") ");
+
+        i = ctx->loop_ctr++; /* recycle variable */
+        buffer_push(ctx->loops, &i);
+        sadd(&ret, EMITTX(block, 2, true));
+        buffer_pop(ctx->loops);
+        snewln(&ret);
         break;
+    }
     default:
         UNREACHABLE;
     }
@@ -1057,7 +1075,7 @@ static string emit_stmts(Ctx *ctx, iIR iir, IRType type) {
     }
 }
 
-static string emit_block(Ctx *ctx, iIR iir, IRType type) {
+static string emit_block(Ctx *ctx, iIR iir, IRType type, bool loop) {
     string ret = sc("{");
     IR *ir = GET_IR(iir);
     string body;
@@ -1084,7 +1102,23 @@ static string emit_block(Ctx *ctx, iIR iir, IRType type) {
         snewln(&ret);
     sadd(&ret, body);
 
-    /* Destructors here */
+    if (loop) {
+        size_t i = *buffer_back(ctx->loops, size_t);
+
+        saddc(&ret, "loop");
+        saddi(&ret, i);
+        saddlnc(&ret, "_next:");
+        /* TODO: destructors here */
+        saddlnc(&ret, "continue;");
+
+        saddc(&ret, "loop");
+        saddi(&ret, i);
+        saddlnc(&ret, "_exit:");
+        /* TODO: destructors here too */
+        saddlnc(&ret, "break;");
+    } else {
+        /* Destructors here */
+    }
 
     saddc(&ret, "}");
 
@@ -1251,7 +1285,7 @@ static string emit_func(Ctx *ctx, iIR iir, IRType type) {
 
         saddc(&ret, "}");
     } else {
-        sadd(&ret, EMITT(block, block));
+        sadd(&ret, EMITTX(block, block, false));
     }
 
     return ret;
@@ -1418,11 +1452,13 @@ char *emit(Tokens tokens, IRs irs, SemResult sem) {
     ctx.irs = irs;
     ctx.sem = sem;
     ctx.decl = NULL;
-    ctx.decln = NULL;
-    ctx.self_struct = 0;
-
     buffer_new(&ctx.decl, sizeof(buffer));
+    ctx.decln = NULL;
     map_new_string(&ctx.decln, sizeof(size_t), NULL, NULL, NULL, NULL);
+    ctx.self_struct = 0;
+    ctx.loop_ctr = 0;
+    ctx.loops = NULL;
+    buffer_new(&ctx.loops, sizeof(size_t));
 
     ret = sc(file_read_whole(PREAMBLE_PATH));
     snewln(&ret);

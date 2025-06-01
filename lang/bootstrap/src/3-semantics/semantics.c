@@ -952,10 +952,12 @@ static void sem_stmt(Ctx *ctx, iIR iir, IRType type) {
         __bool__(ctx, *TYPE_CHILD(1));
         break;
     case IR_stmt_break:
-        todo();
+        if (!ctx->nested_loops)
+            throw("`break' outside of a loop");
         break;
     case IR_stmt_continue:
-        todo();
+        if (!ctx->nested_loops)
+            throw("`continue' outside of a loop");
         break;
     case IR_stmt_fall:
         todo();
@@ -979,7 +981,11 @@ static void sem_stmt(Ctx *ctx, iIR iir, IRType type) {
         todo();
         break;
     case IR_stmt_while:
-        todo();
+        SEMT(expr, 1);
+        __bool__(ctx, *TYPE_CHILD(1));
+        ctx->nested_loops++;
+        SEMT(block, 2);
+        ctx->nested_loops--;
         break;
     default:
         UNREACHABLE;
@@ -1547,6 +1553,8 @@ SemResult semantics(Tokens tokens, IRs irs) {
     buffer_new(&ctx.shadowing, sizeof(ShadowingTable));
     /* State: mutable context */
     ctx.mut_context = false;
+    /* State: nested loops */
+    ctx.nested_loops = 0;
 
     sem_program(&ctx, IIR_BEGIN);
 
