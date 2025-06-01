@@ -157,12 +157,12 @@ TYPES -> TYPE #types_direct
 # ---------- CONDITIONAL ----------
 # Dangling else problem, solve by shift
 %left else elif if
-IF -> if EXPRESSION STATEMENT #if_only
-IF -> if EXPRESSION STATEMENT ELIF #if_elif
-ELIF -> elif EXPRESSION STATEMENT #elif_only
-ELIF -> elif EXPRESSION STATEMENT ELIF #elif_rec
+IF -> if EXPRESSION BLOCK #if_only
+IF -> if EXPRESSION BLOCK ELIF #if_elif
+ELIF -> elif EXPRESSION BLOCK #elif_only
+ELIF -> elif EXPRESSION BLOCK ELIF #elif_rec
 ELIF -> ELSE #elif_else
-ELSE -> else STATEMENT #else
+ELSE -> else BLOCK #else
 
 SWITCH -> switch EXPRESSION obraces SWITCH_BODY cbraces #switch
 SWITCH_BODY -> SWITCH_CASE SWITCH_BODY #switch_rec
@@ -197,11 +197,11 @@ EXTERN -> ANNOTATIONS extern id opar PARAMS cpar arrow TYPE semicolon #extern_ty
 
 
 # ---------- BLOCK (STATEMENTS) ----------
-BLOCK -> obraces STATEMENTS cbraces #block
+BLOCK -> obraces STATEMENTS cbraces #block_braces
+BLOCK -> STATEMENT #block_stmt
 STATEMENTS -> STATEMENT STATEMENTS #stmts_rec
 %prefer 1
 STATEMENTS -> EPSILON #stmts_null
-STATEMENT -> BLOCK #stmt_block
 STATEMENT -> DECLARATION semicolon #stmt_decl
 STATEMENT -> EXPRESSION semicolon #stmt_expr
 # --- CONTROL ---
@@ -215,5 +215,5 @@ STATEMENT -> return EXPRESSION semicolon #stmt_retval
 STATEMENT -> IF #stmt_if
 STATEMENT -> SWITCH #stmt_switch
 # --- LOOP ---
-STATEMENT -> for id in EXPRESSION STATEMENT #stmt_for
-STATEMENT -> while EXPRESSION STATEMENT #stmt_while
+STATEMENT -> for id in EXPRESSION BLOCK #stmt_for
+STATEMENT -> while EXPRESSION BLOCK #stmt_while

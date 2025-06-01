@@ -896,7 +896,7 @@ static string emit_decl(Ctx *ctx, iIR iir, IRType type) {
     return ret;
 }
 
-static string emit_stmt(Ctx *ctx, iIR iir, IRType type);
+static string emit_block(Ctx *ctx, iIR iir, IRType type);
 static string emit_if(Ctx *ctx, iIR iir, IRType type) {
     string above = snew();
     string contents;
@@ -910,14 +910,13 @@ static string emit_if(Ctx *ctx, iIR iir, IRType type) {
 
     contents = sc("if (");
     sadd(&contents, cond.code);
-    saddlnc(&contents, ") {");
-    sadd(&contents, EMITT(stmt, 2));
+    saddc(&contents, ") ");
+    sadd(&contents, EMITT(block, 2));
     switch (type) {
     case IR_if_only:
         /* Nothing to do */
         break;
     case IR_if_elif:
-        saddc(&contents, "} ");
         iir = GET_IRID(3);
         type = GET_IRTYPE(3);
         for (;;) {
@@ -930,8 +929,8 @@ static string emit_if(Ctx *ctx, iIR iir, IRType type) {
 
                 saddc(&contents, "else if (");
                 sadd(&contents, cond.code);
-                saddlnc(&contents, ") {");
-                sadd(&contents, EMITT(stmt, 2));
+                saddc(&contents, ") ");
+                sadd(&contents, EMITT(block, 2));
                 goto end;
             case IR_elif_rec:
                 cond = EMITT(expr, 1);
@@ -940,8 +939,8 @@ static string emit_if(Ctx *ctx, iIR iir, IRType type) {
 
                 saddc(&contents, "else if (");
                 sadd(&contents, cond.code);
-                saddlnc(&contents, ") {");
-                sadd(&contents, EMITT(stmt, 2));
+                saddc(&contents, ") ");
+                sadd(&contents, EMITT(block, 2));
                 iir = GET_IRID(3);
                 type = GET_IRTYPE(3);
                 break;
@@ -949,8 +948,8 @@ static string emit_if(Ctx *ctx, iIR iir, IRType type) {
                 iir = GET_IRID(0);
                 assert(GET_IRTYPE(0) == IR_else);
                 ir = GET_IR(iir);
-                saddlnc(&contents, "} else {");
-                sadd(&contents, EMITT(stmt, 1));
+                saddc(&contents, "else ");
+                sadd(&contents, EMITT(block, 1));
                 goto end;
             default:
                 UNREACHABLE;
@@ -962,20 +961,15 @@ static string emit_if(Ctx *ctx, iIR iir, IRType type) {
     }
 
 end:
-    saddc(&contents, "}");
     sadd(&above, contents);
     return above;
 }
 
-static string emit_block(Ctx *ctx, iIR iir);
 static string emit_stmt(Ctx *ctx, iIR iir, IRType type) {
     string ret = snew();
     IR *ir = GET_IR(iir);
 
     switch (type) {
-    case IR_stmt_block:
-        saddln(&ret, EMIT(block, 0));
-        break;
     case IR_stmt_decl:
         saddln(&ret, EMITT(decl, 0));
         break;
@@ -1063,7 +1057,7 @@ static string emit_stmts(Ctx *ctx, iIR iir, IRType type) {
     }
 }
 
-static string emit_block(Ctx *ctx, iIR iir) {
+static string emit_block(Ctx *ctx, iIR iir, IRType type) {
     string ret = sc("{");
     IR *ir = GET_IR(iir);
     string body;
@@ -1071,16 +1065,28 @@ static string emit_block(Ctx *ctx, iIR iir) {
     size_t i;
 
     snewln(&ret);
-
     push_decls(ctx);
-    body = EMITT(stmts, 1);
+    switch (type) {
+    case IR_block_braces:
+        body = EMITT(stmts, 1);
+        break;
+    case IR_block_stmt:
+        body = EMITT(stmt, 0);
+        break;
+    default:
+        UNREACHABLE;
+    }
     decls = pop_decls(ctx);
+
     for (i = 0; i < buffer_num(decls); ++i)
         saddln(&ret, *buffer_get(decls, i, string));
     if (i)
         snewln(&ret);
     sadd(&ret, body);
-    saddlnc(&ret, "}");
+
+    /* Destructors here */
+
+    saddc(&ret, "}");
 
     return ret;
 }
@@ -1235,6 +1241,8 @@ static string emit_func(Ctx *ctx, iIR iir, IRType type) {
         for (i = 0; i < buffer_num(expr.above); ++i)
             saddln(&ret, *buffer_get(expr.above, i, string));
 
+        /* TODO: consider destructors? */
+
         /* Return */
         if (func->ret.id != TYPE_NOTHING)
             saddc(&ret, "return ");
@@ -1243,7 +1251,7 @@ static string emit_func(Ctx *ctx, iIR iir, IRType type) {
 
         saddc(&ret, "}");
     } else {
-        sadd(&ret, EMIT(block, block));
+        sadd(&ret, EMITT(block, block));
     }
 
     return ret;

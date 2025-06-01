@@ -890,7 +890,7 @@ static void sem_decl_nonglobal(Ctx *ctx, iIR iir, IRType type) {
     push_to_scope(ctx, name, iir);
 }
 
-static void sem_stmt(Ctx *ctx, iIR iir, IRType type);
+static void sem_block(Ctx *ctx, iIR iir, IRType type);
 static void sem_if(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
 
@@ -898,11 +898,11 @@ static void sem_if(Ctx *ctx, iIR iir, IRType type) {
     switch (type) {
     case IR_if_only:
         __bool__(ctx, *TYPE_CHILD(1));
-        SEMT(stmt, 2);
+        SEMT(block, 2);
         break;
     case IR_if_elif:
         __bool__(ctx, *TYPE_CHILD(1));
-        SEMT(stmt, 2);
+        SEMT(block, 2);
         iir = GET_IRID(3);
         type = GET_IRTYPE(3);
 
@@ -912,12 +912,12 @@ static void sem_if(Ctx *ctx, iIR iir, IRType type) {
             case IR_elif_only:
                 SEMT(expr, 1);
                 __bool__(ctx, *TYPE_CHILD(1));
-                SEMT(stmt, 2);
+                SEMT(block, 2);
                 return;
             case IR_elif_rec:
                 SEMT(expr, 1);
                 __bool__(ctx, *TYPE_CHILD(1));
-                SEMT(stmt, 2);
+                SEMT(block, 2);
                 iir = GET_IRID(3);
                 type = GET_IRTYPE(3);
                 break;
@@ -925,7 +925,7 @@ static void sem_if(Ctx *ctx, iIR iir, IRType type) {
                 iir = GET_IRID(0);
                 assert(GET_IRTYPE(0) == IR_else);
                 ir = GET_IR(iir);
-                SEMT(stmt, 1);
+                SEMT(block, 1);
                 return;
             default:
                 UNREACHABLE;
@@ -937,14 +937,10 @@ static void sem_if(Ctx *ctx, iIR iir, IRType type) {
     }
 }
 
-static void sem_block(Ctx *ctx, iIR iir);
 static void sem_stmt(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
 
     switch (type) {
-    case IR_stmt_block:
-        SEM(block, 0);
-        break;
     case IR_stmt_decl:
         SEMT(decl_nonglobal, 0);
         break;
@@ -1008,10 +1004,18 @@ static void sem_stmts(Ctx *ctx, iIR iir, IRType type) {
     }
 }
 
-static void sem_block(Ctx *ctx, iIR iir) {
+static void sem_block(Ctx *ctx, iIR iir, IRType type) {
     IR *ir = GET_IR(iir);
-    ASSERT_CHILDREN(3);
-    SEMT(stmts, 1);
+    switch (type) {
+    case IR_block_braces:
+        SEMT(stmts, 1);
+        break;
+    case IR_block_stmt:
+        SEMT(stmt, 0);
+        break;
+    default:
+        UNREACHABLE;
+    }
 }
 
 static const char *sem_typed_id(Ctx *ctx, iIR iir) {
@@ -1215,7 +1219,7 @@ static void sem_func(Ctx *ctx, iIR iir, IRType type) {
     if (colon_mode)
         SEMT(expr, block);
     else
-        SEM(block, block);
+        SEMT(block, block);
 
     ctx->mut_context = false;
     buffer_pop(ctx->funcrets);
