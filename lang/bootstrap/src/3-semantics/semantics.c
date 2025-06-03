@@ -136,7 +136,7 @@ static Type overloading_binary(
     return func->ret;
 }
 
-static void __bool__(Ctx *ctx, Type type) {
+static void _bool(Ctx *ctx, Type type) {
     switch (type.id) {
     case TYPE_BOOL:
     case TYPE_BYTE:
@@ -154,6 +154,8 @@ static void __bool__(Ctx *ctx, Type type) {
         throw("bool downcast is undefined for given type");
     }
 }
+
+#define __bool__(TYPE) _bool(ctx, TYPE)
 
 static Type _tilde(Ctx *ctx, Type lhs) {
     Type ret;
@@ -202,6 +204,35 @@ static Type _bitwise_binary(Ctx *ctx, Type lhs, Type rhs, const char *functor) {
 #define __hat__(LHS, RHS) _bitwise_binary(ctx, LHS, RHS, "__hat__")
 #define __amp__(LHS, RHS) _bitwise_binary(ctx, LHS, RHS, "__amp__")
 #define __bar__(LHS, RHS) _bitwise_binary(ctx, LHS, RHS, "__bar__")
+
+static Type _arith_unary(Ctx *ctx, Type lhs, const char *functor) {
+    Type ret;
+
+    switch (lhs.id) {
+    case TYPE_BYTE:
+    case TYPE_FLOAT:
+    case TYPE_WORD:
+        ret.id = lhs.id;
+        ret.data.ptr = NULL;
+        ret.flags = 0;
+        break;
+    case TYPE_STRING:
+        todo();
+        break;
+    case TYPE_STRUCT_INST:
+        ret = overloading_unary(ctx, lhs, functor);
+        break;
+    default:
+        throwe("`%s' is undefined for the given type", functor);
+    }
+
+    return ret;
+}
+
+#define __incr__(LHS) _arith_unary(ctx, LHS, "__incr__")
+#define __incl__(LHS) _arith_unary(ctx, LHS, "__incl__")
+#define __decr__(LHS) _arith_unary(ctx, LHS, "__decr__")
+#define __decl__(LHS) _arith_unary(ctx, LHS, "__decl__")
 
 static Type _arith(Ctx *ctx, Type lhs, Type rhs, const char *functor) {
     Type ret;
@@ -611,6 +642,9 @@ static void sem_assign(Ctx *ctx, iIR iir, IRType type) {
     case IR_assign_slash:
         *TYPE(iir) = __assign_slash__(*TYPE_CHILD(0), *TYPE_CHILD(2));
         break;
+    case IR_assign_perc:
+        todo();
+        break;
     case IR_assign_hat:
         *TYPE(iir) = __assign_hat__(*TYPE_CHILD(0), *TYPE_CHILD(2));
         break;
@@ -729,6 +763,33 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         SEMT(lit, 0);
         COPY_TYPE(0);
         break;
+    case IR_expr_question:
+        todo();
+        break;
+    case IR_expr_inc_right:
+        SEMT(expr, 0);
+        if (!IS_MUTABLE(GET_IRID(0)))
+            throw("tried to increment an immutable variable");
+        *TYPE(iir) = __incr__(*TYPE_CHILD(0));
+        break;
+    case IR_expr_inc_left:
+        SEMT(expr, 0);
+        if (!IS_MUTABLE(GET_IRID(0)))
+            throw("tried to increment an immutable variable");
+        *TYPE(iir) = __incl__(*TYPE_CHILD(0));
+        break;
+    case IR_expr_dec_right:
+        SEMT(expr, 0);
+        if (!IS_MUTABLE(GET_IRID(0)))
+            throw("tried to decrement an immutable variable");
+        *TYPE(iir) = __decr__(*TYPE_CHILD(0));
+        break;
+    case IR_expr_dec_left:
+        SEMT(expr, 0);
+        if (!IS_MUTABLE(GET_IRID(0)))
+            throw("tried to decrement an immutable variable");
+        *TYPE(iir) = __decl__(*TYPE_CHILD(0));
+        break;
     case IR_expr_sizeof:
         todo();
         break;
@@ -751,6 +812,9 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         SEMT(expr, 2);
         *TYPE(iir) = __bar__(*TYPE_CHILD(0), *TYPE_CHILD(2));
         break;
+    case IR_expr_dstar:
+        todo();
+        break;
     case IR_expr_star:
         SEMT(expr, 0);
         SEMT(expr, 2);
@@ -760,6 +824,9 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         SEMT(expr, 0);
         SEMT(expr, 2);
         *TYPE(iir) = __slash__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        break;
+    case IR_expr_perc:
+        todo();
         break;
     case IR_expr_plus:
         SEMT(expr, 0);
@@ -821,7 +888,7 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         break;
     case IR_expr_not:
         SEMT(expr, 1);
-        __bool__(ctx, *TYPE_CHILD(1));
+        __bool__(*TYPE_CHILD(1));
         TYPE(iir)->id = TYPE_BOOL;
         TYPE(iir)->data.ptr = NULL;
         TYPE(iir)->flags = 0;
@@ -829,8 +896,8 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
     case IR_expr_and:
         SEMT(expr, 0);
         SEMT(expr, 2);
-        __bool__(ctx, *TYPE_CHILD(0));
-        __bool__(ctx, *TYPE_CHILD(2));
+        __bool__(*TYPE_CHILD(0));
+        __bool__(*TYPE_CHILD(2));
         TYPE(iir)->id = TYPE_BOOL;
         TYPE(iir)->data.ptr = NULL;
         TYPE(iir)->flags = 0;
@@ -838,8 +905,8 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
     case IR_expr_or:
         SEMT(expr, 0);
         SEMT(expr, 2);
-        __bool__(ctx, *TYPE_CHILD(0));
-        __bool__(ctx, *TYPE_CHILD(2));
+        __bool__(*TYPE_CHILD(0));
+        __bool__(*TYPE_CHILD(2));
         TYPE(iir)->id = TYPE_BOOL;
         TYPE(iir)->data.ptr = NULL;
         TYPE(iir)->flags = 0;
@@ -897,11 +964,11 @@ static void sem_if(Ctx *ctx, iIR iir, IRType type) {
     SEMT(expr, 1);
     switch (type) {
     case IR_if_only:
-        __bool__(ctx, *TYPE_CHILD(1));
+        __bool__(*TYPE_CHILD(1));
         SEMT(block, 2);
         break;
     case IR_if_elif:
-        __bool__(ctx, *TYPE_CHILD(1));
+        __bool__(*TYPE_CHILD(1));
         SEMT(block, 2);
         iir = GET_IRID(3);
         type = GET_IRTYPE(3);
@@ -911,12 +978,12 @@ static void sem_if(Ctx *ctx, iIR iir, IRType type) {
             switch (type) {
             case IR_elif_only:
                 SEMT(expr, 1);
-                __bool__(ctx, *TYPE_CHILD(1));
+                __bool__(*TYPE_CHILD(1));
                 SEMT(block, 2);
                 return;
             case IR_elif_rec:
                 SEMT(expr, 1);
-                __bool__(ctx, *TYPE_CHILD(1));
+                __bool__(*TYPE_CHILD(1));
                 SEMT(block, 2);
                 iir = GET_IRID(3);
                 type = GET_IRTYPE(3);
@@ -949,7 +1016,7 @@ static void sem_stmt(Ctx *ctx, iIR iir, IRType type) {
         break;
     case IR_stmt_assert:
         SEMT(expr, 1);
-        __bool__(ctx, *TYPE_CHILD(1));
+        __bool__(*TYPE_CHILD(1));
         break;
     case IR_stmt_break:
         if (!ctx->nested_loops)
@@ -982,7 +1049,7 @@ static void sem_stmt(Ctx *ctx, iIR iir, IRType type) {
         break;
     case IR_stmt_while:
         SEMT(expr, 1);
-        __bool__(ctx, *TYPE_CHILD(1));
+        __bool__(*TYPE_CHILD(1));
         ctx->nested_loops++;
         SEMT(block, 2);
         ctx->nested_loops--;
@@ -1090,8 +1157,8 @@ static Types sem_func_params(Ctx *ctx, iIR iir, IRType type) {
             aux = *TYPE_CHILD(0);
             buffer_push(ret, &aux);
 
-            iir = GET_IRID(1);
-            type = GET_IRTYPE(1);
+            iir = GET_IRID(2);
+            type = GET_IRTYPE(2);
             break;
         case IR_params_one:
             SEMT(func_param, 0);

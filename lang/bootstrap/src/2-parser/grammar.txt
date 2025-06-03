@@ -41,7 +41,7 @@ PARAM -> amp plus TYPED_ID #param_mutref
 EXPRESSION -> opar EXPRESSION cpar #expr_par
 
 # The id, atom of all expressions
-%left id
+%left id atsymbol
 EXPRESSION -> id #expr_id
 EXPRESSION -> atsymbol #expr_at
 EXPRESSION -> dot #expr_self
@@ -65,9 +65,11 @@ EXPRESSION -> EXPRESSION opar cpar #expr_call_noargs
 EXPRESSION -> EXPRESSION opar EXPRESSION_LIST cpar #expr_call
 %hint comma
 EXPRESSION_LIST -> EXPRESSION #expression_list_one
+%hint opar
 EXPRESSION_LIST -> EXPRESSION comma EXPRESSION_LIST #expression_list_rec
 
 EXPRESSION -> LITERAL #expr_lit
+%nonassoc bool word float string
 LITERAL -> bool #lit_bool
 LITERAL -> word #lit_word
 LITERAL -> float #lit_float
@@ -75,6 +77,15 @@ LITERAL -> string #lit_string
 LITERAL -> TUPLE #lit_tuple
 TUPLE -> opar EXPRESSION comma cpar #tuple_one
 TUPLE -> opar EXPRESSION comma EXPRESSION_LIST cpar #tuple_many
+
+# Unary arithmetic
+%left question
+EXPRESSION -> EXPRESSION question #expr_question
+%nonassoc dplus dminus
+EXPRESSION -> EXPRESSION dplus #expr_inc_right
+EXPRESSION -> dplus EXPRESSION #expr_inc_left
+EXPRESSION -> EXPRESSION dminus #expr_dec_right
+EXPRESSION -> dminus EXPRESSION #expr_dec_left
 
 %left sizeof
 EXPRESSION -> sizeof EXPRESSION #expr_sizeof
@@ -89,9 +100,12 @@ EXPRESSION -> EXPRESSION bar EXPRESSION #expr_bar
 
 # Arithmetic
 # 1 + 2 * 3 * 4 / 4 -> 1 + (((2 * 3) * 4) / 4)
-%left star slash plus minus
+%right dstar
+EXPRESSION -> EXPRESSION dstar EXPRESSION #expr_dstar
+%left star slash perc plus minus
 EXPRESSION -> EXPRESSION star EXPRESSION #expr_star
 EXPRESSION -> EXPRESSION slash EXPRESSION #expr_slash
+EXPRESSION -> EXPRESSION perc EXPRESSION #expr_perc
 EXPRESSION -> EXPRESSION plus EXPRESSION #expr_plus
 EXPRESSION -> EXPRESSION minus EXPRESSION #expr_minus
 
@@ -114,12 +128,13 @@ EXPRESSION -> EXPRESSION or EXPRESSION #expr_or
 
 # Assignments
 EXPRESSION -> ASSIGNMENT #expr_assign
-%right eq pluseq minuseq stareq slasheq hateq ampeq bareq
+%right eq pluseq minuseq stareq slasheq perceq hateq ampeq bareq
 ASSIGNMENT -> EXPRESSION eq EXPRESSION #assign_eq
 ASSIGNMENT -> EXPRESSION pluseq EXPRESSION #assign_plus
 ASSIGNMENT -> EXPRESSION minuseq EXPRESSION #assign_minus
 ASSIGNMENT -> EXPRESSION stareq EXPRESSION #assign_star
 ASSIGNMENT -> EXPRESSION slasheq EXPRESSION #assign_slash
+ASSIGNMENT -> EXPRESSION perceq EXPRESSION #assign_perc
 ASSIGNMENT -> EXPRESSION hateq EXPRESSION #assign_hat
 ASSIGNMENT -> EXPRESSION ampeq EXPRESSION #assign_amp
 ASSIGNMENT -> EXPRESSION bareq EXPRESSION #assign_bar

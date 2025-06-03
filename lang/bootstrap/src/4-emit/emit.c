@@ -94,13 +94,21 @@ static string get_functor(Ctx *ctx, iIR struct_def, const char *functor) {
     return sc(*buffer_get(ctx->sem.mangling, ifunc, const char *));
 }
 
-static string rely_on_c_unary(const char *symbol, string expr) {
+static string rely_on_c_unary_left(const char *symbol, string expr) {
     string ret = sc(symbol);
     sadd(&ret, expr);
     return ret;
 }
 
-#define RELY_ON_C_UNARY(SYM) rely_on_c_unary(SYM, expr.code)
+#define RELY_ON_C_UNARY_LEFT(SYM) rely_on_c_unary_left(SYM, expr.code)
+
+static string rely_on_c_unary_right(const char *symbol, string expr) {
+    string ret = expr;
+    saddc(&ret, symbol);
+    return ret;
+}
+
+#define RELY_ON_C_UNARY_RIGHT(SYM) rely_on_c_unary_right(SYM, expr.code)
 
 static string rely_on_c_binary(const char *symbol, string lhs, string rhs) {
     string ret = lhs;
@@ -166,6 +174,43 @@ static Expr __bool__(Ctx *ctx, Expr expr, Type type) {
     return ret;
 }
 
+static Expr _arith_unary(Ctx *ctx, Expr expr, Type type, const char *functor,
+    const char *c, bool left) {
+    Expr ret;
+
+    ret.above = buffer_copy(expr.above);
+    ret.self_val = snew();
+    ret.lvalue = 0;
+
+    switch (type.id) {
+    case TYPE_BYTE:
+    case TYPE_FLOAT:
+    case TYPE_WORD:
+        if (left)
+            ret.code = RELY_ON_C_UNARY_LEFT(c);
+        else
+            ret.code = RELY_ON_C_UNARY_RIGHT(c);
+        break;
+    case TYPE_STRING:
+        todo();
+        break;
+    case TYPE_STRUCT_INST:
+        ret.code = FUNCTOR_UNARY(functor);
+        break;
+    default:
+        throwe("`%s' is undefined for the given type", functor);
+    }
+
+    return ret;
+}
+
+#define __incr__(LHS, LHST)                                                    \
+    _arith_unary(ctx, LHS, LHST, "__incr__", "++", false)
+#define __incl__(LHS, LHST) _arith_unary(ctx, LHS, LHST, "__incl__", "++", true)
+#define __decr__(LHS, LHST)                                                    \
+    _arith_unary(ctx, LHS, LHST, "__decr__", "--", false)
+#define __decl__(LHS, LHST) _arith_unary(ctx, LHS, LHST, "__decl__", "--", true)
+
 static Expr _arith(Ctx *ctx, Expr lhs, Type lhst, Expr rhs, const char *functor,
     const char *c) {
     Expr ret;
@@ -209,7 +254,7 @@ static Expr _tilde(Ctx *ctx, Expr expr, Type type) {
     switch (type.id) {
     case TYPE_BYTE:
     case TYPE_WORD:
-        ret.code = RELY_ON_C_UNARY("~");
+        ret.code = RELY_ON_C_UNARY_LEFT("~");
         break;
     case TYPE_STRUCT_INST:
         ret.code = FUNCTOR_UNARY("__tilde__");
@@ -563,6 +608,10 @@ static Expr emit_assign(Ctx *ctx, iIR iir, IRType type) {
         return __assign_star__(sub, *TYPE_CHILD(0), sub2);
     case IR_assign_slash:
         return __assign_slash__(sub, *TYPE_CHILD(0), sub2);
+    case IR_assign_perc:
+        /*return __assign_perc__(sub, *TYPE_CHILD(0), sub2);*/
+        todo();
+        break;
     case IR_assign_hat:
         return __assign_hat__(sub, *TYPE_CHILD(0), sub2);
     case IR_assign_amp:
@@ -597,6 +646,7 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         break;
     case IR_expr_id:
     case IR_expr_at:
+        assert(*buffer_get(ctx->sem.mangling, iir, void *));
         ret.code = sc(*buffer_get(ctx->sem.mangling, iir, const char *));
         ret.self_val = ret.code;
         ret.lvalue = 1;
@@ -727,6 +777,25 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
     case IR_expr_lit:
         sadd(&ret.code, EMITT(lit, 0));
         break;
+    case IR_expr_question:
+        todo();
+        break;
+    case IR_expr_inc_right:
+        sub = EMITT(expr, 0);
+        ret = __incr__(sub, *TYPE_CHILD(0));
+        break;
+    case IR_expr_inc_left:
+        sub = EMITT(expr, 1);
+        ret = __incl__(sub, *TYPE_CHILD(1));
+        break;
+    case IR_expr_dec_right:
+        sub = EMITT(expr, 0);
+        ret = __decr__(sub, *TYPE_CHILD(0));
+        break;
+    case IR_expr_dec_left:
+        sub = EMITT(expr, 1);
+        ret = __decl__(sub, *TYPE_CHILD(1));
+        break;
     case IR_expr_sizeof:
     case IR_expr_tilde:
         sub = EMITT(expr, 1);
@@ -747,6 +816,9 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         sub2 = EMITT(expr, 2);
         ret = __bar__(sub, *TYPE_CHILD(0), sub2);
         break;
+    case IR_expr_dstar:
+        todo();
+        break;
     case IR_expr_star:
         sub = EMITT(expr, 0);
         sub2 = EMITT(expr, 2);
@@ -756,6 +828,9 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         sub = EMITT(expr, 0);
         sub2 = EMITT(expr, 2);
         ret = __slash__(sub, *TYPE_CHILD(0), sub2);
+        break;
+    case IR_expr_perc:
+        todo();
         break;
     case IR_expr_plus:
         sub = EMITT(expr, 0);

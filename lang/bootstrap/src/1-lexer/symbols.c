@@ -45,8 +45,13 @@ size_t match_symbol(Capture *ret, const char *cur) {
 
         break;
     case '+':
-        /* +: +, += */
-        if (*cur == '=') {
+        /* +: +, ++, += */
+        switch (*cur) {
+        case '+':
+            /* ++ */
+            ++cur;
+            OK_TOKEN(T_DPLUS);
+        case '=':
             /* += */
             ++cur;
             OK_TOKEN(T_PLUSEQ);
@@ -55,8 +60,12 @@ size_t match_symbol(Capture *ret, const char *cur) {
         /* + */
         OK_TOKEN(T_PLUS);
     case '-':
-        /* -: -, -=, -> */
+        /* -: -, --, -=, -> */
         switch (*cur) {
+        case '-':
+            /* -- */
+            ++cur;
+            OK_TOKEN(T_DMINUS);
         case '=':
             /* -= */
             ++cur;
@@ -70,8 +79,13 @@ size_t match_symbol(Capture *ret, const char *cur) {
         /* - */
         OK_TOKEN(T_MINUS);
     case '*':
-        /* *: *, *= */
-        if (*cur == '=') {
+        /* *: *, **, *= */
+        switch (*cur) {
+        case '*':
+            /* ** */
+            ++cur;
+            OK_TOKEN(T_DSTAR);
+        case '=':
             /* *= */
             ++cur;
             OK_TOKEN(T_STAREQ);
@@ -89,6 +103,16 @@ size_t match_symbol(Capture *ret, const char *cur) {
 
         /* / */
         OK_TOKEN(T_SLASH);
+    case '%':
+        /* %: %, %= */
+        if (*cur == '%') {
+            /* %= */
+            ++cur;
+            OK_TOKEN(T_PERCEQ);
+        }
+
+        /* % */
+        OK_TOKEN(T_PERC);
     case '^':
         /* ^: ^, ^= */
         if (*cur == '=') {
@@ -150,6 +174,8 @@ size_t match_symbol(Capture *ret, const char *cur) {
         OK_TOKEN(T_GT);
     case '~':
         OK_TOKEN(T_TILDE);
+    case '?':
+        OK_TOKEN(T_QUESTION);
     case '.':
         OK_TOKEN(T_DOT);
     case ',':
