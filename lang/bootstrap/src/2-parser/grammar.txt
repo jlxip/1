@@ -46,6 +46,7 @@ EXPRESSION -> id #expr_id
 EXPRESSION -> atsymbol #expr_at
 EXPRESSION -> dot #expr_self
 EXPRESSION -> dot id #expr_local
+EXPRESSION -> question #expr_nothing
 
 # Struct instantiation
 EXPRESSION -> STRUCT_INST #expr_struct_inst
@@ -80,6 +81,7 @@ TUPLE -> opar EXPRESSION comma EXPRESSION_LIST cpar #tuple_many
 
 # Unary arithmetic
 %left question
+%prefer 1
 EXPRESSION -> EXPRESSION question #expr_question
 %nonassoc dplus dminus
 EXPRESSION -> EXPRESSION dplus #expr_inc_right
@@ -160,6 +162,8 @@ TYPE -> kword #type_word
 TYPE -> EXPRESSION #type_expr
 TYPE -> TUPLEDEF #type_tuple
 TYPE -> TUPLEDEF star EXPRESSION #type_tuple_star
+%prefer 2
+TYPE -> TYPE question #type_option
 
 TUPLEDEF -> opar TYPE comma cpar #tupledef_one
 TUPLEDEF -> opar TYPE comma TYPES cpar #tupledef_many

@@ -6,7 +6,7 @@
 
 typedef enum {
     TYPE_UNKNOWN, /* default type for anything */
-    TYPE_NOTHING, /* only used in function returns */
+    TYPE_NOTHING, /* only for function returns */
 
     /* Atomic types */
     TYPE_BOOL,
@@ -22,16 +22,19 @@ typedef enum {
     TYPE_STRUCT_DEF,
     TYPE_STRUCT_INST,
     TYPE_SELF,
-    TYPE_MODULE
+    TYPE_MODULE,
+    TYPE_NONE /* only for `?' */
 } TypeId;
 
 #define TYPE_FLAG_MUTABLE (1 << 0)
 #define TYPE_FLAG_METHOD (1 << 1)
 #define TYPE_FLAG_STATIC (1 << 2)
+#define TYPE_FLAG_INFER (1 << 3)
 
 #define IS_MUTABLE(N) (TYPE(N)->flags & TYPE_FLAG_MUTABLE)
 #define IS_METHOD(N) (TYPE(N)->flags & TYPE_FLAG_METHOD)
 #define IS_STATIC(N) (TYPE(N)->flags & TYPE_FLAG_STATIC)
+#define IS_INFER(N) (TYPE(N)->flags & TYPE_FLAG_INFER)
 
 typedef struct {
     TypeId id;

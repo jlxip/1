@@ -1,12 +1,37 @@
 extern c_exit(retval: word);
 
-fn main {
-    let+ ret = 0;
-    let+ i = 0;
-    while (1) {
-        ret += i++;
-        if i == 10 break;
-    }
+/* This will be changed to be @generic */
+struct MaybeWord {
+    yes: bool,
+    x: word,
+}
 
-    c_exit(ret);
+impl MaybeWord {
+    @static
+    fn something(x: word) -> @: @ { yes: true, x: x, };
+    @static
+    fn nothing -> @: @ { yes: false, x: 0, };
+    @static
+    fn __from__(x: word) -> @: @.something(x);
+    @static
+    fn __none__ -> @: @.nothing();
+
+    fn __bool__ -> bool: .yes;
+    fn __question__ -> word {
+        assert .;
+        return .x;
+    }
+}
+
+/* --- */
+
+fn maybe(yes: bool) -> word? {
+    if yes
+        return 42;
+    else
+        return ?;
+}
+
+fn main {
+    c_exit(maybe(true)?);
 }

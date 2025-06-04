@@ -416,6 +416,44 @@ static Expr _assign_eq(Ctx *ctx, Expr lhs, Type lhst, Expr rhs) {
 #define __assign_bar__(LHS, LHST, RHS)                                         \
     _arith(ctx, LHS, LHST, RHS, "__assign_bar__", "|=")
 
+static Expr _question(Ctx *ctx, Expr expr, Type type) {
+    Expr ret;
+
+    ret.above = buffer_copy(expr.above);
+    ret.self_val = snew();
+    ret.lvalue = 0;
+
+    switch (type.id) {
+    case TYPE_BOOL:
+    case TYPE_BYTE:
+    case TYPE_FLOAT:
+    case TYPE_PTR:
+    case TYPE_WORD: {
+        string assertion = sc("_Xassert(");
+        /* These types all have bool downcast */
+        sadd(&assertion, expr.code);
+        saddc(&assertion, ");");
+
+        ret.code = expr.code;
+        buffer_push(ret.above, &assertion);
+        break;
+    }
+    case TYPE_STRING:
+    case TYPE_TUPLE:
+        todo();
+        break;
+    case TYPE_STRUCT_INST:
+        ret.code = FUNCTOR_UNARY("__question__");
+        break;
+    default:
+        throw("`__question__' is undefined for the given type");
+    }
+
+    return ret;
+}
+
+#define __question__(EXPR, TYPE) _question(ctx, EXPR, TYPE)
+
 /* --- */
 
 static string emit_type(Ctx *ctx, Type type) {
@@ -677,6 +715,9 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
             UNREACHABLE;
         break;
     }
+    case IR_expr_nothing:
+        /* Nothing to do here, relies on context */
+        break;
     case IR_expr_dot: {
         string name = sc(get_id(ctx, GET_IRID(2)));
         sub = EMITT(expr, 0);
@@ -765,6 +806,7 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         buffer_join(ret.above, sub.above);
         saddc(&ret.code, "(");
         if (IS_METHOD(GET_IRID(0)) && !IS_STATIC(GET_IRID(0))) {
+            /* TODO: `&' hardcoded in self_val is so cursed */
             assert(sub.self_val.len);
             sadd(&ret.code, sub.self_val);
             saddc(&ret.code, ", ");
@@ -773,12 +815,36 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         sadd(&ret.code, sub.code);
         buffer_join(ret.above, sub.above);
         saddc(&ret.code, ")");
+
+        /* TODO: This is terrible.
+           This should happen at a later point,
+           when a reference is needed and it's an rvalue */
+        if (TYPE(iir)->id == TYPE_STRUCT_INST) {
+            iIR base;
+            string struct_name, name, assignment;
+
+            base = TYPE(iir)->data.word;
+            struct_name =
+                sc(*buffer_get(ctx->sem.mangling, base, const char *));
+            name = sc("_Xinst");
+            countit(ctx, &name);
+            push_decl(ctx, struct_name, name, snew());
+
+            assignment = sdup(name);
+            saddc(&assignment, " = ");
+            sadd(&assignment, ret.code);
+            saddc(&assignment, ";");
+            buffer_push(ret.above, &assignment);
+            ret.code = name;
+        }
+
         break;
     case IR_expr_lit:
         sadd(&ret.code, EMITT(lit, 0));
         break;
     case IR_expr_question:
-        todo();
+        sub = EMITT(expr, 0);
+        ret = __question__(sub, *TYPE_CHILD(0));
         break;
     case IR_expr_inc_right:
         sub = EMITT(expr, 0);
@@ -1091,6 +1157,38 @@ static string emit_stmt(Ctx *ctx, iIR iir, IRType type) {
     case IR_stmt_retval: {
         Expr expr = EMITT(expr, 1);
         size_t i;
+
+        if (IS_INFER(iir)) {
+            Expr aux;
+            Type expected;
+            Struct *obj;
+
+            aux.above = expr.above;
+            expected = *(Type *)(TYPE(iir)->data.ptr);
+            free(TYPE(iir)->data.ptr);
+            if (expected.id == TYPE_STRUCT_INST)
+                expected = *TYPE(expected.data.word);
+            obj = (Struct *)(expected.data.ptr);
+
+            if (TYPE_CHILD(1)->id == TYPE_NONE) {
+                iIR inone;
+                inone = *map_get(obj->methods, "__none__", iIR);
+                aux.code =
+                    sc(*buffer_get(ctx->sem.mangling, inone, const char *));
+                saddc(&aux.code, "()");
+            } else {
+                iIR ifrom;
+                ifrom = *map_get(obj->methods, "__from__", iIR);
+                aux.code =
+                    sc(*buffer_get(ctx->sem.mangling, ifrom, const char *));
+                saddc(&aux.code, "(");
+                sadd(&aux.code, expr.code);
+                saddc(&aux.code, ")");
+            }
+
+            expr = aux;
+        }
+
         for (i = 0; i < buffer_num(expr.above); ++i)
             saddln(&ret, *buffer_get(expr.above, i, string));
         saddc(&ret, "return ");

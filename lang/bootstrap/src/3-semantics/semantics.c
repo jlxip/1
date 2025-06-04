@@ -32,6 +32,12 @@ Type _NULL_TYPE() {
 
 /* --- */
 
+static Type *copy_type(Type type) {
+    Type *ret = malloc(sizeof(Type));
+    *ret = type;
+    return ret;
+}
+
 static iIR lookup(Ctx *ctx, const char *name) {
     SymbolTable table;
     size_t i;
@@ -81,12 +87,53 @@ static bool check_types(Type a, Type b) {
         if (a.data.word != b.data.word)
             return false;
         break;
-    case TYPE_STRUCT_DEF:
+    case TYPE_STRUCT_DEF: {
+        Struct *obja = (Struct *)(a.data.ptr);
+        Struct *objb = (Struct *)(b.data.ptr);
+        /* I'm thanking me very much for "->this" */
+        if (obja->this != objb->this)
+            return false;
+        break;
+    }
     case TYPE_FUNC:
     case TYPE_MODULE:
     default:
         UNREACHABLE;
     }
+
+    return true;
+}
+
+static bool check_from(Ctx *ctx, Type a, Type b) {
+    Struct *obj;
+    iIR ifunc;
+    Function *func;
+    Type from_ret;
+
+    if (a.id == TYPE_STRUCT_INST)
+        a = *TYPE(a.data.word);
+    if (a.id != TYPE_STRUCT_DEF)
+        return false;
+
+    /* Check if there's a __from__ */
+    obj = (Struct *)(a.data.ptr);
+    if (!map_has(obj->methods, "__from__"))
+        return false;
+    ifunc = *map_get(obj->methods, "__from__", iIR);
+    if (!IS_STATIC(ifunc))
+        throw("struct's `__from__' isn't static");
+    func = (Function *)(TYPE(ifunc)->data.ptr);
+    if (!func->params)
+        throw("struct's `__from__' must receive one parameter");
+    if (buffer_num(func->params) != 1)
+        throw("struct's `__from__' must receive one parameter");
+    if (!check_types(*buffer_get(func->params, 0, Type), b))
+        throw("struct's `__from__' receives a different type");
+    from_ret = func->ret;
+    if (from_ret.id == TYPE_STRUCT_INST)
+        from_ret = *TYPE(from_ret.data.word);
+    if (!check_types(from_ret, a))
+        throw("struct's `__from__' does not return an instance of itself");
 
     return true;
 }
@@ -358,6 +405,33 @@ static Type _assign_eq(Ctx *ctx, Type lhs, Type rhs) {
 #define __assign_bar__(LHS, RHS)                                               \
     _bitwise_binary(ctx, LHS, RHS, "__assign_bar__")
 
+static Type _question(Ctx *ctx, Type lhs) {
+    Type ret;
+
+    switch (lhs.id) {
+    case TYPE_BOOL:
+    case TYPE_BYTE:
+    case TYPE_FLOAT:
+    case TYPE_PTR:
+    case TYPE_WORD:
+        ret = lhs;
+        break;
+    case TYPE_STRING:
+    case TYPE_TUPLE:
+        todo();
+        break;
+    case TYPE_STRUCT_INST:
+        ret = overloading_unary(ctx, lhs, "__question__");
+        break;
+    default:
+        throw("`__question__' is undefined for the given type");
+    }
+
+    return ret;
+}
+
+#define __question__(LHS) _question(ctx, LHS)
+
 /* -------------------------------------------------------------------------- */
 
 static void sem_expr(Ctx *ctx, iIR iir, IRType type);
@@ -405,6 +479,14 @@ static void sem_type(Ctx *ctx, iIR iir, IRType type) {
     case IR_type_tuple:
     case IR_type_tuple_star:
         todo();
+        break;
+    case IR_type_option:
+        /* TODO: change this to std.Option<T> */
+        SEMT(type, 0);
+        if (TYPE_CHILD(0)->id != TYPE_WORD)
+            todo();
+        assert(in_scope(ctx, "MaybeWord"));
+        *TYPE(iir) = *TYPE(lookup(ctx, "MaybeWord"));
         break;
     default:
         UNREACHABLE;
@@ -716,6 +798,11 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
             throwe("no `%s' in struct", name);
         break;
     }
+    case IR_expr_nothing:
+        TYPE(iir)->id = TYPE_NONE;
+        TYPE(iir)->data.ptr = NULL;
+        TYPE(iir)->flags = 0;
+        break;
     case IR_expr_dot: {
         const char *name;
         SEMT(expr, 0);
@@ -764,7 +851,8 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         COPY_TYPE(0);
         break;
     case IR_expr_question:
-        todo();
+        SEMT(expr, 0);
+        *TYPE(iir) = __question__(*TYPE_CHILD(0));
         break;
     case IR_expr_inc_right:
         SEMT(expr, 0);
@@ -1030,14 +1118,57 @@ static void sem_stmt(Ctx *ctx, iIR iir, IRType type) {
         todo();
         break;
     case IR_stmt_ret:
+        if (buffer_empty(ctx->funcrets))
+            throw("tried to return outside of a function");
         if (buffer_back(ctx->funcrets, Type)->id != TYPE_NOTHING)
             throw("tried to return nothing, expected something");
         break;
-    case IR_stmt_retval:
+    case IR_stmt_retval: {
+        Type expected, given;
+
         SEMT(expr, 1);
-        if (!check_types(*TYPE_CHILD(1), *buffer_back(ctx->funcrets, Type)))
-            throw("invalid return value type");
+        if (buffer_empty(ctx->funcrets))
+            throw("tried to return outside of a function");
+        expected = *buffer_back(ctx->funcrets, Type);
+        given = *TYPE_CHILD(1);
+        TYPE(iir)->flags = 0;
+
+        if (given.id == TYPE_NONE) {
+            Type ret;
+            Struct *obj;
+            iIR inonefunc;
+            Function *nonefunc;
+            ret = expected;
+            if (ret.id == TYPE_STRUCT_INST)
+                ret = *TYPE(ret.data.word);
+            if (ret.id != TYPE_STRUCT_DEF)
+                throw("tried to return `?' but return type is not a struct");
+            obj = (Struct *)(ret.data.ptr);
+            if (!map_has(obj->methods, "__none__"))
+                throw("tried to return `?' but missing struct's `__none__'");
+            inonefunc = *map_get(obj->methods, "__none__", iIR);
+            if (!IS_STATIC(inonefunc))
+                throw("tried to return `?' but struct's `__none__' is not "
+                      "static");
+            nonefunc = (Function *)(TYPE(inonefunc)->data.ptr);
+            if (nonefunc->params)
+                if (!buffer_empty(nonefunc->params))
+                    throw("tried to return `?' but `__none__' expected "
+                          "parameters");
+            given = nonefunc->ret;
+            TYPE(iir)->flags = TYPE_FLAG_INFER;
+        }
+
+        TYPE(iir)->data.ptr = copy_type(expected);
+
+        if (!check_types(given, expected)) {
+            if (!check_from(ctx, expected, given))
+                throw("invalid return value type");
+            else
+                TYPE(iir)->flags = TYPE_FLAG_INFER;
+        }
         break;
+    }
     case IR_stmt_if:
         SEMT(if, 0);
         break;
