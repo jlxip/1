@@ -130,10 +130,11 @@ EXPRESSION -> EXPRESSION or EXPRESSION #expr_or
 
 # Assignments
 EXPRESSION -> ASSIGNMENT #expr_assign
-%right eq pluseq minuseq stareq slasheq perceq hateq ampeq bareq
+%right eq pluseq minuseq dstareq stareq slasheq perceq hateq ampeq bareq
 ASSIGNMENT -> EXPRESSION eq EXPRESSION #assign_eq
 ASSIGNMENT -> EXPRESSION pluseq EXPRESSION #assign_plus
 ASSIGNMENT -> EXPRESSION minuseq EXPRESSION #assign_minus
+ASSIGNMENT -> EXPRESSION dstareq EXPRESSION #assign_dstar
 ASSIGNMENT -> EXPRESSION stareq EXPRESSION #assign_star
 ASSIGNMENT -> EXPRESSION slasheq EXPRESSION #assign_slash
 ASSIGNMENT -> EXPRESSION perceq EXPRESSION #assign_perc

@@ -241,8 +241,39 @@ static Expr _arith(Ctx *ctx, Expr lhs, Type lhst, Expr rhs, const char *functor,
 
 #define __star__(LHS, LHST, RHS) _arith(ctx, LHS, LHST, RHS, "__star__", "*")
 #define __slash__(LHS, LHST, RHS) _arith(ctx, LHS, LHST, RHS, "__slash__", "/")
+#define __perc__(LHS, LHST, RHS) _arith(ctx, LHS, LHST, RHS, "__perc__", "%")
 #define __plus__(LHS, LHST, RHS) _arith(ctx, LHS, LHST, RHS, "__plus__", "+")
 #define __minus__(LHS, LHST, RHS) _arith(ctx, LHS, LHST, RHS, "__minus__", "-")
+
+static Expr _dstar(Ctx *ctx, Expr lhs, Type lhst, Expr rhs) {
+    Expr ret;
+
+    ret.above = buffer_copy(lhs.above);
+    buffer_join(ret.above, rhs.above);
+    ret.self_val = snew();
+    ret.lvalue = 0;
+
+    switch (lhst.id) {
+    case TYPE_BYTE:
+    case TYPE_FLOAT:
+    case TYPE_WORD:
+        /* preamble: pow_byte, pow_float, pow_word */
+        todo();
+        break;
+    case TYPE_STRING:
+        todo();
+        break;
+    case TYPE_STRUCT_INST:
+        ret.code = FUNCTOR_BINARY("__dstar__");
+        break;
+    default:
+        UNREACHABLE;
+    }
+
+    return ret;
+}
+
+#define __dstar__(LHS, LHST, RHS) _dstar(ctx, LHS, LHST, RHS)
 
 static Expr _tilde(Ctx *ctx, Expr expr, Type type) {
     Expr ret;
@@ -409,12 +440,44 @@ static Expr _assign_eq(Ctx *ctx, Expr lhs, Type lhst, Expr rhs) {
     _arith(ctx, LHS, LHST, RHS, "__assign_star__", "*=")
 #define __assign_slash__(LHS, LHST, RHS)                                       \
     _arith(ctx, LHS, LHST, RHS, "__assign_slash__", "/=")
+#define __assign_perc__(LHS, LHST, RHS)                                        \
+    _arith(ctx, LHS, LHST, RHS, "__assign_perc__", "%=")
 #define __assign_hat__(LHS, LHST, RHS)                                         \
     _arith(ctx, LHS, LHST, RHS, "__assign_hat__", "^=")
 #define __assign_amp__(LHS, LHST, RHS)                                         \
     _arith(ctx, LHS, LHST, RHS, "__assign_amp__", "&=")
 #define __assign_bar__(LHS, LHST, RHS)                                         \
     _arith(ctx, LHS, LHST, RHS, "__assign_bar__", "|=")
+
+static Expr _assign_dstar(Ctx *ctx, Expr lhs, Type lhst, Expr rhs) {
+    Expr ret;
+
+    ret.above = buffer_copy(lhs.above);
+    buffer_join(ret.above, rhs.above);
+    ret.self_val = snew();
+    ret.lvalue = 0;
+
+    switch (lhst.id) {
+    case TYPE_BYTE:
+    case TYPE_FLOAT:
+    case TYPE_WORD:
+        /* preamble: pow_byte, pow_float, pow_word */
+        todo();
+        break;
+    case TYPE_STRING:
+        todo();
+        break;
+    case TYPE_STRUCT_INST:
+        ret.code = FUNCTOR_BINARY("__assign_dstar__");
+        break;
+    default:
+        UNREACHABLE;
+    }
+
+    return ret;
+}
+
+#define __assign_dstar__(LHS, LHST, RHS) _assign_dstar(ctx, LHS, LHST, RHS)
 
 static Expr _question(Ctx *ctx, Expr expr, Type type) {
     Expr ret;
@@ -642,14 +705,14 @@ static Expr emit_assign(Ctx *ctx, iIR iir, IRType type) {
         return __assign_plus__(sub, *TYPE_CHILD(0), sub2);
     case IR_assign_minus:
         return __assign_minus__(sub, *TYPE_CHILD(0), sub2);
+    case IR_assign_dstar:
+        return __assign_dstar__(sub, *TYPE_CHILD(0), sub2);
     case IR_assign_star:
         return __assign_star__(sub, *TYPE_CHILD(0), sub2);
     case IR_assign_slash:
         return __assign_slash__(sub, *TYPE_CHILD(0), sub2);
     case IR_assign_perc:
-        /*return __assign_perc__(sub, *TYPE_CHILD(0), sub2);*/
-        todo();
-        break;
+        return __assign_perc__(sub, *TYPE_CHILD(0), sub2);
     case IR_assign_hat:
         return __assign_hat__(sub, *TYPE_CHILD(0), sub2);
     case IR_assign_amp:
@@ -883,7 +946,9 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         ret = __bar__(sub, *TYPE_CHILD(0), sub2);
         break;
     case IR_expr_dstar:
-        todo();
+        sub = EMITT(expr, 0);
+        sub2 = EMITT(expr, 2);
+        ret = __dstar__(sub, *TYPE_CHILD(0), sub2);
         break;
     case IR_expr_star:
         sub = EMITT(expr, 0);
@@ -896,7 +961,9 @@ static Expr emit_expr(Ctx *ctx, iIR iir, IRType type) {
         ret = __slash__(sub, *TYPE_CHILD(0), sub2);
         break;
     case IR_expr_perc:
-        todo();
+        sub = EMITT(expr, 0);
+        sub2 = EMITT(expr, 2);
+        ret = __perc__(sub, *TYPE_CHILD(0), sub2);
         break;
     case IR_expr_plus:
         sub = EMITT(expr, 0);

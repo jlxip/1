@@ -307,8 +307,10 @@ static Type _arith(Ctx *ctx, Type lhs, Type rhs, const char *functor) {
     return ret;
 }
 
+#define __dstar__(LHS, RHS) _arith(ctx, LHS, RHS, "__dstar__")
 #define __star__(LHS, RHS) _arith(ctx, LHS, RHS, "__star__")
 #define __slash__(LHS, RHS) _arith(ctx, LHS, RHS, "__slash__")
+#define __perc__(LHS, RHS) _arith(ctx, LHS, RHS, "__perc__")
 #define __plus__(LHS, RHS) _arith(ctx, LHS, RHS, "__plus__")
 #define __minus__(LHS, RHS) _arith(ctx, LHS, RHS, "__minus__")
 
@@ -396,8 +398,10 @@ static Type _assign_eq(Ctx *ctx, Type lhs, Type rhs) {
 #define __assign__(LHS, RHS) _assign_eq(ctx, LHS, RHS)
 #define __assign_plus__(LHS, RHS) _arith(ctx, LHS, RHS, "__assign_plus__")
 #define __assign_minus__(LHS, RHS) _arith(ctx, LHS, RHS, "__assign_minus__")
+#define __assign_dstar__(LHS, RHS) _arith(ctx, LHS, RHS, "__assign_dstar__")
 #define __assign_star__(LHS, RHS) _arith(ctx, LHS, RHS, "__assign_star__")
 #define __assign_slash__(LHS, RHS) _arith(ctx, LHS, RHS, "__assign_slash__")
+#define __assign_perc__(LHS, RHS) _arith(ctx, LHS, RHS, "__assign_perc__")
 #define __assign_hat__(LHS, RHS)                                               \
     _bitwise_binary(ctx, LHS, RHS, "__assign_hat__")
 #define __assign_amp__(LHS, RHS)                                               \
@@ -718,6 +722,9 @@ static void sem_assign(Ctx *ctx, iIR iir, IRType type) {
     case IR_assign_minus:
         *TYPE(iir) = __assign_minus__(*TYPE_CHILD(0), *TYPE_CHILD(2));
         break;
+    case IR_assign_dstar:
+        *TYPE(iir) = __assign_dstar__(*TYPE_CHILD(0), *TYPE_CHILD(2));
+        break;
     case IR_assign_star:
         *TYPE(iir) = __assign_star__(*TYPE_CHILD(0), *TYPE_CHILD(2));
         break;
@@ -725,7 +732,7 @@ static void sem_assign(Ctx *ctx, iIR iir, IRType type) {
         *TYPE(iir) = __assign_slash__(*TYPE_CHILD(0), *TYPE_CHILD(2));
         break;
     case IR_assign_perc:
-        todo();
+        *TYPE(iir) = __assign_perc__(*TYPE_CHILD(0), *TYPE_CHILD(2));
         break;
     case IR_assign_hat:
         *TYPE(iir) = __assign_hat__(*TYPE_CHILD(0), *TYPE_CHILD(2));
@@ -901,7 +908,9 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         *TYPE(iir) = __bar__(*TYPE_CHILD(0), *TYPE_CHILD(2));
         break;
     case IR_expr_dstar:
-        todo();
+        SEMT(expr, 0);
+        SEMT(expr, 2);
+        *TYPE(iir) = __dstar__(*TYPE_CHILD(0), *TYPE_CHILD(2));
         break;
     case IR_expr_star:
         SEMT(expr, 0);
@@ -914,7 +923,9 @@ static void sem_expr(Ctx *ctx, iIR iir, IRType type) {
         *TYPE(iir) = __slash__(*TYPE_CHILD(0), *TYPE_CHILD(2));
         break;
     case IR_expr_perc:
-        todo();
+        SEMT(expr, 0);
+        SEMT(expr, 2);
+        *TYPE(iir) = __perc__(*TYPE_CHILD(0), *TYPE_CHILD(2));
         break;
     case IR_expr_plus:
         SEMT(expr, 0);

@@ -86,6 +86,7 @@ typedef enum {
     IR_assign_eq,
     IR_assign_plus,
     IR_assign_minus,
+    IR_assign_dstar,
     IR_assign_star,
     IR_assign_slash,
     IR_assign_perc,
